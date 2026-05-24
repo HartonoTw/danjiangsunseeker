@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import java.time.LocalDate
 import javax.inject.Inject
 
@@ -155,6 +156,59 @@ class HotspotListViewModel @Inject constructor(
         _state.value = _state.value.copy(editor = ed.copy(showLocationPicker = false))
     }
 
+    fun flyEditorToCurrentLocation() {
+        val ed = _state.value.editor ?: return
+        if (ed.locatingCurrentLocation) return
+        if (!locationProvider.hasPermission()) {
+            _state.value = _state.value.copy(
+                editor = ed.copy(locationMessage = "需要位置權限才能飛到目前位置"),
+            )
+            return
+        }
+
+        _state.value = _state.value.copy(
+            editor = ed.copy(locatingCurrentLocation = true, locationMessage = null),
+        )
+        viewModelScope.launch {
+            runCatching {
+                withTimeout(10_000L) {
+                    withContext(Dispatchers.IO) {
+                        locationProvider.locationUpdates(intervalMillis = 1_000L).first()
+                    }
+                }
+            }.onSuccess { loc ->
+                val current = _state.value.editor ?: return@onSuccess
+                lastKnownGps = GeoPoint(
+                    latitude = loc.latitude,
+                    longitude = loc.longitude,
+                    elevationMeters = if (loc.hasAltitude()) loc.altitude else 0.0,
+                )
+                _state.value = _state.value.copy(
+                    editor = current.copy(
+                        latitude = "%.6f".format(loc.latitude),
+                        longitude = "%.6f".format(loc.longitude),
+                        elevation = (if (loc.hasAltitude()) loc.altitude else 0.0).toString(),
+                        locatingCurrentLocation = false,
+                        currentLocationFlyRequest = current.currentLocationFlyRequest + 1,
+                    ),
+                )
+            }.onFailure { e ->
+                val current = _state.value.editor ?: return@onFailure
+                _state.value = _state.value.copy(
+                    editor = current.copy(
+                        locatingCurrentLocation = false,
+                        locationMessage = "目前無法取得位置，請確認 GPS 已開啟",
+                    ),
+                )
+            }
+        }
+    }
+
+    fun clearEditorLocationMessage() {
+        val ed = _state.value.editor ?: return
+        _state.value = _state.value.copy(editor = ed.copy(locationMessage = null))
+    }
+
     fun updateEditorField(field: EditorField, value: String) {
         val ed = _state.value.editor ?: return
         _state.value = _state.value.copy(
@@ -278,6 +332,9 @@ data class HotspotEditorState(
     val originalIsDefault: Boolean = false,
     /** true 時顯示地圖選點覆蓋層，取代編輯 Dialog */
     val showLocationPicker: Boolean = false,
+    val locatingCurrentLocation: Boolean = false,
+    val currentLocationFlyRequest: Int = 0,
+    val locationMessage: String? = null,
 ) {
     val isEditing: Boolean get() = editingId != null
 }

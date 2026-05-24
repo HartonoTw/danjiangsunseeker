@@ -1,7 +1,9 @@
 ﻿package studio.freestyle.labs.danjiangsunseeker.presentation.hotspot
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -37,6 +39,7 @@ import androidx.compose.material.icons.outlined.Directions
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.FolderOpen
 import androidx.compose.material.icons.outlined.Map
+import androidx.compose.material.icons.outlined.MyLocation
 import androidx.compose.material.icons.outlined.Upload
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
@@ -89,6 +92,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import studio.freestyle.labs.danjiangsunseeker.R
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.AlignmentClass
@@ -133,6 +137,12 @@ fun HotspotListScreen(
             val text = readUriText(ctx, it)
             if (text != null) vm.importJson(text)
         }
+    }
+    val locationPermLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        if (granted) vm.flyEditorToCurrentLocation()
+        else Toast.makeText(ctx, "未授權位置權限", Toast.LENGTH_SHORT).show()
     }
 
     state.importMessage?.let { msg ->
@@ -240,11 +250,29 @@ fun HotspotListScreen(
     }
 
     state.editor?.let { ed ->
+        ed.locationMessage?.let { msg ->
+            LaunchedEffect(msg) {
+                Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show()
+                vm.clearEditorLocationMessage()
+            }
+        }
         if (ed.showLocationPicker) {
             // ── 地圖選點覆蓋層（全螢幕）────────────────────────────────
             LocationPickerOverlay(
                 initLat = ed.latitude.toDoubleOrNull() ?: BridgeTower.LATITUDE,
                 initLon = ed.longitude.toDoubleOrNull() ?: BridgeTower.LONGITUDE,
+                currentLat = ed.latitude.toDoubleOrNull(),
+                currentLon = ed.longitude.toDoubleOrNull(),
+                currentLocationFlyRequest = ed.currentLocationFlyRequest,
+                locatingCurrentLocation = ed.locatingCurrentLocation,
+                onFlyToCurrentLocation = {
+                    val granted = ContextCompat.checkSelfPermission(
+                        ctx,
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                    ) == PackageManager.PERMISSION_GRANTED
+                    if (granted) vm.flyEditorToCurrentLocation()
+                    else locationPermLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                },
                 onConfirm = { lat, lon ->
                     vm.updateEditorField(EditorField.LAT, "%.6f".format(lat))
                     vm.updateEditorField(EditorField.LON, "%.6f".format(lon))
@@ -598,12 +626,32 @@ private fun Double.format(digits: Int) = "%.${digits}f".format(this)
 private fun LocationPickerOverlay(
     initLat: Double,
     initLon: Double,
+    currentLat: Double?,
+    currentLon: Double?,
+    currentLocationFlyRequest: Int,
+    locatingCurrentLocation: Boolean,
+    onFlyToCurrentLocation: () -> Unit,
     onConfirm: (Double, Double) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var pickedLat by remember { mutableStateOf<Double?>(null) }
     var pickedLon by remember { mutableStateOf<Double?>(null) }
     var mapRef    by remember { mutableStateOf<MapLibreMap?>(null) }
+
+    LaunchedEffect(currentLocationFlyRequest) {
+        if (currentLocationFlyRequest == 0) return@LaunchedEffect
+        val lat = currentLat ?: return@LaunchedEffect
+        val lon = currentLon ?: return@LaunchedEffect
+        pickedLat = lat
+        pickedLon = lon
+        mapRef?.animateCamera(
+            org.maplibre.android.camera.CameraUpdateFactory.newLatLngZoom(
+                LatLng(lat, lon),
+                mapRef?.cameraPosition?.zoom?.coerceAtLeast(16.0) ?: 16.0,
+            ),
+            900,
+        )
+    }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -679,6 +727,27 @@ private fun LocationPickerOverlay(
                             Icon(Icons.Outlined.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.size(4.dp))
                             Text("確認")
+                        }
+                    }
+                }
+
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = 82.dp, end = 16.dp)
+                        .size(48.dp),
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 4.dp,
+                ) {
+                    IconButton(
+                        onClick = onFlyToCurrentLocation,
+                        enabled = !locatingCurrentLocation,
+                    ) {
+                        if (locatingCurrentLocation) {
+                            CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
+                        } else {
+                            Icon(Icons.Outlined.MyLocation, contentDescription = "飛到目前位置")
                         }
                     }
                 }
