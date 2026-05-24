@@ -202,8 +202,9 @@ private fun DrawScope.drawBridge(state: FocalSimulatorState, w: Float, h: Float)
     // 相機對準主塔，塔永遠在畫面水平中央
     val midX = w / 2f
     val topY   = (state.towerTopYFrac.toFloat()    * h).coerceIn(0f, h)
-    val deckY  = (state.horizonYFrac.toFloat()     * h).coerceIn(0f, h)
+    val deckY  = (state.deckYFrac.toFloat()        * h).coerceIn(0f, h)
     val botY   = (state.towerBottomYFrac.toFloat() * h).coerceIn(0f, h)
+    val waterY = (state.waterYFrac.toFloat()       * h).coerceIn(0f, h)
 
     if (topY >= deckY) return   // 主塔不在畫面內
 
@@ -230,6 +231,8 @@ private fun DrawScope.drawBridge(state: FocalSimulatorState, w: Float, h: Float)
     val tamsuilSpanMinFrac = (towerVisH / w) * (BridgeTower.SIDE_SPAN_M / BridgeTower.TOWER_TIP_ELEVATION_M).toFloat()
     val baliSpanFrac    = state.baliSpanFrac.toFloat().coerceAtLeast(baliSpanMinFrac)
     val tamsuilSpanFrac = state.tamsuilSpanFrac.toFloat().coerceAtLeast(tamsuilSpanMinFrac)
+    val baliSpanPx = baliSpanFrac * w
+    val tamsuiSpanPx = tamsuilSpanFrac * w
 
     // ── 1. 引橋（主跨/側跨外的橋面延伸）
     drawApproachSpans(
@@ -253,9 +256,19 @@ private fun DrawScope.drawBridge(state: FocalSimulatorState, w: Float, h: Float)
     // ── 4. A 字主塔（甲板以下倒 V 基座 + 甲板以上 A 字塔身）
     drawTowerAFrame(midX, topY, aJoinY, deckY, botY, h, hw)
 
-    // ── 5. 水面倒影：倒影高度跟著「塔可見高度 (deckY - topY)」走，
+    // ── 5. 水面倒影：水面使用海平面投影，不吃畫面剩餘高度比例，
+    //   避免 zoom in 時水面和橋面被不自然拉開。
+    //   倒影高度跟著「塔可見高度 (deckY - topY)」走，
     //   而非固定 50% 反射區，這樣 zoom in 時倒影也跟著放大
-    drawWaterReflection(midX, topY, deckY, w, h, hw)
+    drawWaterReflection(midX, topY, deckY, waterY, w, h, hw)
+    drawShoreMasks(
+        baliX = if (state.baliIsOnLeft) midX - baliSpanPx else midX + baliSpanPx,
+        tamsuiX = if (state.baliIsOnLeft) midX + tamsuiSpanPx else midX - tamsuiSpanPx,
+        baliIsOnLeft = state.baliIsOnLeft,
+        deckY = deckY,
+        waterY = waterY,
+        hw = hw,
+    )
 }
 
 /**
@@ -537,10 +550,10 @@ private fun DrawScope.drawTowerAFrame(
 
 /** 水面倒影：模糊的倒立塔柱 + 水平漣漪線。倒影高度跟著實際塔可見高度走。 */
 private fun DrawScope.drawWaterReflection(
-    midX: Float, topY: Float, deckY: Float, w: Float, h: Float, hw: Float,
+    midX: Float, topY: Float, deckY: Float, waterY: Float, w: Float, h: Float, hw: Float,
 ) {
-    // 水面從橋下淨空（橋面正下方一點）開始，留 8% 給橋墩陰影
-    val waterStart = deckY + (h - deckY) * 0.08f
+    // 水面是世界座標的海平面投影；若被畫面裁切，保留至少一點橋下空間給陰影。
+    val waterStart = projectedWaterStart(deckY, waterY, hw)
     if (waterStart >= h) return
     val waterRegion = h - waterStart
 
@@ -574,10 +587,51 @@ private fun DrawScope.drawWaterReflection(
     }
 }
 
+/** 端點外側已靠岸，不再畫水面；用黑色陸地遮住水域。 */
+private fun DrawScope.drawShoreMasks(
+    baliX: Float,
+    tamsuiX: Float,
+    baliIsOnLeft: Boolean,
+    deckY: Float,
+    waterY: Float,
+    hw: Float,
+) {
+    val waterStart = projectedWaterStart(deckY, waterY, hw)
+    if (waterStart <= deckY) return
+
+    val shoreColor = Color.Black.copy(alpha = 0.92f)
+    val shoreHeight = waterStart - deckY
+    fun fillLeft(untilX: Float) {
+        val x = untilX.coerceIn(0f, size.width)
+        if (x > 0f) {
+            drawRect(shoreColor, topLeft = Offset(0f, deckY), size = Size(x, shoreHeight))
+        }
+    }
+    fun fillRight(fromX: Float) {
+        val x = fromX.coerceIn(0f, size.width)
+        if (x < size.width) {
+            drawRect(shoreColor, topLeft = Offset(x, deckY), size = Size(size.width - x, shoreHeight))
+        }
+    }
+
+    if (baliIsOnLeft) {
+        fillLeft(baliX)
+        fillRight(tamsuiX)
+    } else {
+        fillRight(baliX)
+        fillLeft(tamsuiX)
+    }
+}
+
+private fun projectedWaterStart(deckY: Float, waterY: Float, hw: Float): Float {
+    val minVisibleGap = (hw * 1.6f).coerceIn(4f, 18f)
+    return waterY.coerceAtLeast(deckY + minVisibleGap)
+}
+
 /** 在畫面角落疊加橋樑標示文字（左右依方位動態翻轉）*/
 private fun DrawScope.drawBridgeLabels(state: FocalSimulatorState, w: Float, h: Float) {
-    val deckY = (state.horizonYFrac.toFloat() * h).coerceIn(0f, h)
-    if (state.towerTopYFrac >= state.horizonYFrac) return   // 塔不在畫面
+    val deckY = (state.deckYFrac.toFloat() * h).coerceIn(0f, h)
+    if (state.towerTopYFrac >= state.deckYFrac) return   // 塔不在畫面
 
     val paint = Paint().apply {
         isAntiAlias = true
@@ -587,14 +641,14 @@ private fun DrawScope.drawBridgeLabels(state: FocalSimulatorState, w: Float, h: 
     }
     val nc = drawContext.canvas.nativeCanvas
 
-    // 八里（主跨 450m + 引橋 150m）/ 淡水（側跨 175m + 引橋 145m）依 baliIsOnLeft 決定在左或右
+    // 八里 / 淡水依 baliIsOnLeft 決定在左或右
     val (leftLabel, rightLabel) = if (state.baliIsOnLeft) {
-        "← 八里 450m" to "175m 淡水 →"
+        "← 八里" to "淡水 →"
     } else {
-        "← 淡水 175m" to "450m 八里 →"
+        "← 淡水" to "八里 →"
     }
 
-    nc.drawText(leftLabel,  12f, deckY - 12f, paint)
+    nc.drawText(leftLabel, 12f, deckY - 12f, paint)
     val rw = paint.measureText(rightLabel)
     nc.drawText(rightLabel, w - rw - 12f, deckY - 12f, paint)
 

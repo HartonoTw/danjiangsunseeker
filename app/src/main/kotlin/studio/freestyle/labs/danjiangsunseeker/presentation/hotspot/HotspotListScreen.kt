@@ -98,6 +98,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlin.math.atan
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -347,6 +348,7 @@ private fun HotspotRow(
             HotspotThumbnail(
                 trail = p.prediction.lastHourSunTrail,
                 towerBearing = p.prediction.bearingToTowerDegrees,
+                distanceToTowerMeters = p.prediction.distanceToTowerMeters,
                 classification = p.prediction.classification,
                 modifier = Modifier
                     .width(72.dp)
@@ -695,6 +697,7 @@ private fun LocationPickerOverlay(
 private fun HotspotThumbnail(
     trail: List<SunTrailPoint>,
     towerBearing: Double,
+    distanceToTowerMeters: Double,
     classification: AlignmentClass,
     modifier: Modifier = Modifier,
 ) {
@@ -711,13 +714,14 @@ private fun HotspotThumbnail(
             drawLine(Color.White.copy(alpha = 0.18f), Offset(0f, horizonY), Offset(size.width, horizonY), 1f)
             return@Canvas
         }
-        drawSunTrailThumbnail(trail, towerBearing, classification)
+        drawSunTrailThumbnail(trail, towerBearing, distanceToTowerMeters, classification)
     }
 }
 
 private fun DrawScope.drawSunTrailThumbnail(
     trail: List<SunTrailPoint>,
     towerBearing: Double,
+    distanceToTowerMeters: Double,
     classification: AlignmentClass,
 ) {
     val w = size.width
@@ -762,7 +766,11 @@ private fun DrawScope.drawSunTrailThumbnail(
             AlignmentClass.NEAR    -> Color(0xFFFFD66B)  // 黃（接近）
             else                   -> Color(0xFFE63946)  // 紅（偏離）
         }
-        val towerTopY = horizonY * 0.35f
+        val towerAngularHeightDeg = Math.toDegrees(
+            atan(BridgeTower.TOWER_TIP_ELEVATION_M / distanceToTowerMeters.coerceAtLeast(1.0)),
+        )
+        val towerTopY = (horizonY - (towerAngularHeightDeg / vFov * horizonY).toFloat())
+            .coerceIn(0f, horizonY - 3f)
         drawLine(
             towerColor.copy(alpha = 0.95f),
             Offset(towerX, towerTopY),

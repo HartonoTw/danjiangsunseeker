@@ -178,8 +178,12 @@ class FocalSimulatorViewModel @Inject constructor(
         val towerHalfWidthFrac = baseSim.towerWidthFractionOfFrame / 2.0
         val towerTopAltDeg = Math.toDegrees(atan((BridgeTower.TOWER_TIP_ELEVATION_M - s.observer.elevationMeters) / distance))
         val towerBottomAltDeg = Math.toDegrees(atan((BridgeTower.BASE_ELEVATION_M - s.observer.elevationMeters) / distance))
+        val deckAltDeg = Math.toDegrees(atan((BridgeTower.DECK_ELEVATION_M - s.observer.elevationMeters) / distance))
+        val waterAltDeg = Math.toDegrees(atan((0.0 - s.observer.elevationMeters) / distance))
         val towerTopYFrac = 0.5 - (towerTopAltDeg - opticalAxisAltitudeDeg) / fovV
         val towerBottomYFrac = 0.5 - (towerBottomAltDeg - opticalAxisAltitudeDeg) / fovV
+        val deckYFrac = 0.5 - (deckAltDeg - opticalAxisAltitudeDeg) / fovV
+        val waterYFrac = 0.5 - (waterAltDeg - opticalAxisAltitudeDeg) / fovV
         val horizonYFrac = 0.5 + opticalAxisAltitudeDeg / fovV
 
         // ── 橋樑方位判斷 ──────────────────────────────────────────────
@@ -239,6 +243,8 @@ class FocalSimulatorViewModel @Inject constructor(
             towerRightFrac = 0.5 + towerHalfWidthFrac,
             towerTopYFrac = towerTopYFrac,
             towerBottomYFrac = towerBottomYFrac,
+            deckYFrac = deckYFrac.coerceIn(-1.0, 2.0),
+            waterYFrac = waterYFrac.coerceIn(-1.0, 2.0),
             horizonYFrac = horizonYFrac.coerceIn(-1.0, 2.0),
             sunRadiusFrac = baseSim.sunWidthFractionOfFrame / 2.0,
             sun = sunInFrame,
@@ -305,6 +311,8 @@ data class FocalSimulatorState(
     val towerRightFrac: Double = 0.6,
     val towerTopYFrac: Double = 0.1,
     val towerBottomYFrac: Double = 0.9,
+    val deckYFrac: Double = 0.55,
+    val waterYFrac: Double = 0.6,
     val horizonYFrac: Double = 0.5,
     val sunRadiusFrac: Double = 0.05,
     val sun: SunFramePosition = SunFramePosition(0.5, 0.5),
