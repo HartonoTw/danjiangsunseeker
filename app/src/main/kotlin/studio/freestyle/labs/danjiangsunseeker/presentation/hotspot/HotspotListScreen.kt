@@ -261,6 +261,7 @@ fun HotspotListScreen(
             LocationPickerOverlay(
                 initLat = ed.latitude.toDoubleOrNull() ?: BridgeTower.LATITUDE,
                 initLon = ed.longitude.toDoubleOrNull() ?: BridgeTower.LONGITUDE,
+                markInitialLocation = ed.isEditing,
                 currentLat = ed.latitude.toDoubleOrNull(),
                 currentLon = ed.longitude.toDoubleOrNull(),
                 currentLocationFlyRequest = ed.currentLocationFlyRequest,
@@ -626,6 +627,7 @@ private fun Double.format(digits: Int) = "%.${digits}f".format(this)
 private fun LocationPickerOverlay(
     initLat: Double,
     initLon: Double,
+    markInitialLocation: Boolean,
     currentLat: Double?,
     currentLon: Double?,
     currentLocationFlyRequest: Int,
@@ -634,8 +636,8 @@ private fun LocationPickerOverlay(
     onConfirm: (Double, Double) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var pickedLat by remember { mutableStateOf<Double?>(null) }
-    var pickedLon by remember { mutableStateOf<Double?>(null) }
+    var pickedLat by remember { mutableStateOf<Double?>(if (markInitialLocation) initLat else null) }
+    var pickedLon by remember { mutableStateOf<Double?>(if (markInitialLocation) initLon else null) }
     var mapRef    by remember { mutableStateOf<MapLibreMap?>(null) }
 
     LaunchedEffect(currentLocationFlyRequest) {

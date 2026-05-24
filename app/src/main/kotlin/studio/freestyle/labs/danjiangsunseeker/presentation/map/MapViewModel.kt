@@ -107,6 +107,68 @@ class MapViewModel @Inject constructor(
         _state.value = _state.value.copy(tap = null)
     }
 
+    fun showAddTapHotspotDialog() {
+        val tap = _state.value.tap ?: return
+        val point = tap.point
+        _state.value = _state.value.copy(
+            hotspotDraft = MapHotspotDraft(
+                latitude = "%.6f".format(point.latitude),
+                longitude = "%.6f".format(point.longitude),
+                elevation = point.elevationMeters.toString(),
+            ),
+        )
+    }
+
+    fun closeHotspotDraft() {
+        _state.value = _state.value.copy(hotspotDraft = null)
+    }
+
+    fun updateHotspotDraft(field: MapHotspotDraftField, value: String) {
+        val draft = _state.value.hotspotDraft ?: return
+        _state.value = _state.value.copy(
+            hotspotDraft = when (field) {
+                MapHotspotDraftField.Name -> draft.copy(name = value, error = null)
+                MapHotspotDraftField.Elevation -> draft.copy(elevation = value, error = null)
+                MapHotspotDraftField.Description -> draft.copy(description = value, error = null)
+            },
+        )
+    }
+
+    fun saveHotspotDraft() {
+        val draft = _state.value.hotspotDraft ?: return
+        val lat = draft.latitude.toDoubleOrNull()
+        val lon = draft.longitude.toDoubleOrNull()
+        val elev = draft.elevation.toDoubleOrNull() ?: 0.0
+        if (draft.name.isBlank() || lat == null || lon == null) {
+            _state.value = _state.value.copy(
+                hotspotDraft = draft.copy(error = "請輸入名稱，並確認座標正確"),
+            )
+            return
+        }
+        val hotspot = Hotspot(
+            id = "${CustomHotspotStore.ID_PREFIX}${System.currentTimeMillis()}",
+            nameRes = null,
+            customName = draft.name.trim(),
+            position = GeoPoint(lat, lon, elev),
+            description = draft.description.trim(),
+        )
+        viewModelScope.launch {
+            runCatching { customHotspotStore.upsert(hotspot) }
+                .onSuccess {
+                    _state.value = _state.value.copy(
+                        hotspotDraft = null,
+                        locationMessage = "已新增熱點",
+                    )
+                }
+                .onFailure { e ->
+                    val current = _state.value.hotspotDraft
+                    _state.value = _state.value.copy(
+                        hotspotDraft = current?.copy(error = "新增熱點失敗: ${e.message}"),
+                    )
+                }
+        }
+    }
+
     fun flyToCurrentLocation() {
         if (_state.value.locatingCurrentLocation) return
         if (!locationProvider.hasPermission()) {
@@ -153,18 +215,28 @@ class MapViewModel @Inject constructor(
 
     private fun rebuildTap(point: GeoPoint): TapAnalysis {
         val geodesic = Geodesy.inverse(point, BridgeTower.position)
-        val event = targetSunResolver.resolve(_state.value.selectedDate, point, _state.value.towerTarget)
-        val offset = event.azimuthDegrees?.let {
+        val lowerEvent = targetSunResolver.resolve(_state.value.selectedDate, point, TowerTarget.LowerY)
+        val lowerOffset = lowerEvent.azimuthDegrees?.let {
             Geodesy.signedAzimuthDelta(it, geodesic.initialBearingDegrees)
         }
+        val upperEvent = targetSunResolver.resolve(_state.value.selectedDate, point, TowerTarget.UpperY)
+        val upperOffset = upperEvent.azimuthDegrees?.let {
+            Geodesy.signedAzimuthDelta(it, geodesic.initialBearingDegrees)
+        }
+        val selectedEvent = if (_state.value.towerTarget == TowerTarget.UpperY) upperEvent else lowerEvent
+        val selectedOffset = if (_state.value.towerTarget == TowerTarget.UpperY) upperOffset else lowerOffset
         return TapAnalysis(
             point = point,
             distanceToTowerMeters = geodesic.distanceMeters,
             bearingToTowerDegrees = geodesic.initialBearingDegrees,
-            sunsetAzimuthDegrees = event.azimuthDegrees,
-            alignmentOffsetDegrees = offset,
-            targetTime = event.time,
+            sunsetAzimuthDegrees = selectedEvent.azimuthDegrees,
+            alignmentOffsetDegrees = selectedOffset,
+            targetTime = selectedEvent.time,
             towerTarget = _state.value.towerTarget,
+            lowerTargetTime = lowerEvent.time,
+            lowerAlignmentOffsetDegrees = lowerOffset,
+            upperTargetTime = upperEvent.time,
+            upperAlignmentOffsetDegrees = upperOffset,
         )
     }
 }
@@ -182,7 +254,19 @@ data class MapUiState(
     val currentLocationFlyRequest: Int = 0,
     val locatingCurrentLocation: Boolean = false,
     val locationMessage: String? = null,
+    val hotspotDraft: MapHotspotDraft? = null,
 )
+
+data class MapHotspotDraft(
+    val name: String = "",
+    val latitude: String = "",
+    val longitude: String = "",
+    val elevation: String = "0.0",
+    val description: String = "",
+    val error: String? = null,
+)
+
+enum class MapHotspotDraftField { Name, Elevation, Description }
 
 data class TapAnalysis(
     val point: GeoPoint,
@@ -191,6 +275,10 @@ data class TapAnalysis(
     val sunsetAzimuthDegrees: Double?,
     val targetTime: java.time.ZonedDateTime?,
     val towerTarget: TowerTarget,
+    val lowerTargetTime: java.time.ZonedDateTime?,
+    val lowerAlignmentOffsetDegrees: Double?,
+    val upperTargetTime: java.time.ZonedDateTime?,
+    val upperAlignmentOffsetDegrees: Double?,
     /**
      * 從點擊位置看，太陽方位相對主塔方位的偏差 (deg, signed)。
      * 正值: 太陽位於主塔右側 (順時針); 負值: 左側。

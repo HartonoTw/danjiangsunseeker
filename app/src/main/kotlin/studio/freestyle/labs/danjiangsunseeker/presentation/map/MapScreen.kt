@@ -20,9 +20,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.MyLocation
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Card
@@ -33,6 +35,7 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -208,7 +211,13 @@ fun MapScreen(vm: MapViewModel = hiltViewModel()) {
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             SunSummaryCard(state)
-            state.tap?.let { tap -> TapAnalysisCard(tap, onClose = { vm.clearTap() }) }
+            state.tap?.let { tap ->
+                TapAnalysisCard(
+                    tap = tap,
+                    onAddHotspot = { vm.showAddTapHotspotDialog() },
+                    onClose = { vm.clearTap() },
+                )
+            }
         }
     }
 
@@ -238,6 +247,15 @@ fun MapScreen(vm: MapViewModel = hiltViewModel()) {
         ) {
             DatePicker(state = pickerState)
         }
+    }
+
+    state.hotspotDraft?.let { draft ->
+        AddHotspotDialog(
+            draft = draft,
+            onChange = vm::updateHotspotDraft,
+            onSave = vm::saveHotspotDraft,
+            onDismiss = vm::closeHotspotDraft,
+        )
     }
 }
 
@@ -277,7 +295,11 @@ private fun SunSummaryCard(state: MapUiState) {
 }
 
 @Composable
-private fun TapAnalysisCard(tap: TapAnalysis, onClose: () -> Unit) {
+private fun TapAnalysisCard(
+    tap: TapAnalysis,
+    onAddHotspot: () -> Unit,
+    onClose: () -> Unit,
+) {
     val offset = tap.alignmentOffsetDegrees
     val (verdict: String, verdictColor: Color) = when {
         offset == null -> "—" to MaterialTheme.colorScheme.outline
@@ -293,6 +315,9 @@ private fun TapAnalysisCard(tap: TapAnalysis, onClose: () -> Unit) {
         Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("選定座標", style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
+                IconButton(onClick = onAddHotspot, modifier = Modifier.size(32.dp)) {
+                    Icon(Icons.Outlined.Add, contentDescription = "新增熱點", modifier = Modifier.size(18.dp))
+                }
                 IconButton(onClick = onClose, modifier = Modifier.size(32.dp)) {
                     Icon(Icons.Outlined.Close, contentDescription = "關閉", modifier = Modifier.size(18.dp))
                 }
@@ -309,21 +334,73 @@ private fun TapAnalysisCard(tap: TapAnalysis, onClose: () -> Unit) {
             }
             Spacer(Modifier.height(2.dp))
             Text(
-                "日落方位偏差: ${tap.alignmentOffsetDegrees?.let { "%+.2f°".format(it) } ?: "—"}",
+                "塔基偏差: ${tap.lowerAlignmentOffsetDegrees?.let { "%+.2f°".format(it) } ?: "—"}" +
+                    " · ${tap.lowerTargetTime?.let { "時間 %02d:%02d".format(it.hour, it.minute) } ?: "時間 —"}",
                 style = MaterialTheme.typography.bodySmall,
             )
-            tap.targetTime?.let {
-                Spacer(Modifier.height(2.dp))
-                Text(
-                    "${tap.towerTarget.displayName}: %02d:%02d".format(it.hour, it.minute),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.outline,
-                )
-            }
+            Spacer(Modifier.height(2.dp))
+            Text(
+                "塔頂偏差: ${tap.upperAlignmentOffsetDegrees?.let { "%+.2f°".format(it) } ?: "—"}" +
+                    " · ${tap.upperTargetTime?.let { "時間 %02d:%02d".format(it.hour, it.minute) } ?: "時間 —"}",
+                style = MaterialTheme.typography.bodySmall,
+            )
             Spacer(Modifier.height(4.dp))
             Text(verdict, color = verdictColor, style = MaterialTheme.typography.bodySmall)
         }
     }
+}
+
+@Composable
+private fun AddHotspotDialog(
+    draft: MapHotspotDraft,
+    onChange: (MapHotspotDraftField, String) -> Unit,
+    onSave: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("新增熱點") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = draft.name,
+                    onValueChange = { onChange(MapHotspotDraftField.Name, it) },
+                    label = { Text("名稱") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Text(
+                    "${draft.latitude}°N, ${draft.longitude}°E",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline,
+                )
+                OutlinedTextField(
+                    value = draft.elevation,
+                    onValueChange = { onChange(MapHotspotDraftField.Elevation, it) },
+                    label = { Text("海拔高度 (m)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = draft.description,
+                    onValueChange = { onChange(MapHotspotDraftField.Description, it) },
+                    label = { Text("描述 (選填)") },
+                    minLines = 2,
+                    maxLines = 4,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                draft.error?.let {
+                    Text(
+                        it,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onSave) { Text("儲存") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } },
+    )
 }
 
 /** 持有 Compose 重組之間共用的 MapLibre 物件參考。 */
