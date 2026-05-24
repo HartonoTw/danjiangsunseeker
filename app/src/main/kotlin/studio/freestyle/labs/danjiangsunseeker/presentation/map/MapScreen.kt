@@ -94,10 +94,11 @@ fun MapScreen(vm: MapViewModel = hiltViewModel()) {
         Log.d("MapDebug", "LE[hotspots] -> updateHotspots, ids=${state.mergedHotspots.map { it.id }}")
         MapLayers.updateHotspots(style, state.mergedHotspots, ctx)
     }
-    LaunchedEffect(mapHolder.styleVersion, state.goldenLine) {
+    LaunchedEffect(mapHolder.styleVersion, state.goldenLine, state.towerTopGoldenLine) {
         if (mapHolder.styleVersion == 0) return@LaunchedEffect
         val style = mapHolder.style ?: return@LaunchedEffect
         MapLayers.updateGoldenLine(style, state.goldenLine)
+        MapLayers.updateTowerTopGoldenLine(style, state.towerTopGoldenLine)
     }
     LaunchedEffect(mapHolder.styleVersion, state.tap) {
         if (mapHolder.styleVersion == 0) return@LaunchedEffect
@@ -131,6 +132,7 @@ fun MapScreen(vm: MapViewModel = hiltViewModel()) {
                 // install() 只做「add-if-not-exists」，在此同步呼叫一次，保證首幀就有標記
                 MapLayers.install(ctx, style, state.mergedHotspots)
                 MapLayers.updateGoldenLine(style, state.goldenLine)
+                MapLayers.updateTowerTopGoldenLine(style, state.towerTopGoldenLine)
                 mapHolder.styleVersion += 1
                 Log.d("MapDebug", "onMapReady: styleVersion bumped to ${mapHolder.styleVersion}")
                 // 初始相機定位在主塔上方
@@ -242,7 +244,8 @@ fun MapScreen(vm: MapViewModel = hiltViewModel()) {
 @Composable
 private fun SunSummaryCard(state: MapUiState) {
     val az = state.sunsetAzimuthAtTower
-    val bearing = state.goldenLine?.bearingFromTowerDegrees
+    val baseBearing = state.goldenLine?.bearingFromTowerDegrees
+    val topBearing = state.towerTopGoldenLine?.bearingFromTowerDegrees
     Card(
         modifier = Modifier.fillMaxWidth().shadow(2.dp, RoundedCornerShape(14.dp)),
         shape = RoundedCornerShape(14.dp),
@@ -254,8 +257,14 @@ private fun SunSummaryCard(state: MapUiState) {
             )
             Spacer(Modifier.height(2.dp))
             Text(
-                "黃金射線: ${bearing?.let { "%.2f°".format(it) } ?: "—"}",
+                "黃金線 塔基: ${baseBearing?.let { "%.2f°".format(it) } ?: "—"}",
                 style = MaterialTheme.typography.bodyMedium,
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                "黃金線 塔頂: ${topBearing?.let { "%.2f°".format(it) } ?: "—"}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
             )
             Spacer(Modifier.height(4.dp))
             Text(

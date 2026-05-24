@@ -82,13 +82,15 @@ class MapViewModel @Inject constructor(
     fun setDate(date: LocalDate) {
         _state.value = _state.value.copy(selectedDate = date, computing = true)
         viewModelScope.launch {
-            val (gl, sunsetAz) = withContext(Dispatchers.Default) {
+            val (gl, topGl, sunsetAz) = withContext(Dispatchers.Default) {
                 val gl = computeGoldenLine(date)
+                val topGl = computeGoldenLine(date, target = TowerTarget.UpperY)
                 val sunAz = sunCalc.dailyEvents(date, BridgeTower.position).sunsetAzimuthDegrees
-                gl to sunAz
+                Triple(gl, topGl, sunAz)
             }
             _state.value = _state.value.copy(
                 goldenLine = gl,
+                towerTopGoldenLine = topGl,
                 sunsetAzimuthAtTower = sunsetAz,
                 computing = false,
                 tap = _state.value.tap?.let { rebuildTap(it.point) },
@@ -170,6 +172,7 @@ class MapViewModel @Inject constructor(
 data class MapUiState(
     val selectedDate: LocalDate = LocalDate.now(ZoneId.of("Asia/Taipei")),
     val goldenLine: GoldenLine? = null,
+    val towerTopGoldenLine: GoldenLine? = null,
     val sunsetAzimuthAtTower: Double? = null,
     val computing: Boolean = false,
     val tap: TapAnalysis? = null,

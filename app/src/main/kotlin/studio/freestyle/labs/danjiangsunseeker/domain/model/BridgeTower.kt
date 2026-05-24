@@ -18,7 +18,7 @@ object BridgeTower {
      * Note: 實際塔基在水下 EL -11.4m，但繪圖/AR 中以「水面下露出」之最低可見點為基準，
      * 用一個略高於水面的近似值即可。詳見 BASE_TRUE_ELEVATION_M。
      */
-    const val BASE_ELEVATION_M: Double = 5.0
+    const val BASE_ELEVATION_M: Double = 30.0
 
     /** 真實塔基海拔（水下，EL -11.4m）。用於工程數據展示，不用於繪圖。 */
     const val BASE_TRUE_ELEVATION_M: Double = -11.4

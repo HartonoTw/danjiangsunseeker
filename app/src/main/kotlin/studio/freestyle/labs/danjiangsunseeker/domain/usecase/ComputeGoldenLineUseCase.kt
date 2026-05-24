@@ -4,8 +4,11 @@ import studio.freestyle.labs.danjiangsunseeker.data.astro.SunCalcDataSource
 import studio.freestyle.labs.danjiangsunseeker.domain.model.BridgeTower
 import studio.freestyle.labs.danjiangsunseeker.domain.model.GoldenLine
 import studio.freestyle.labs.danjiangsunseeker.domain.model.GoldenLinePoint
+import studio.freestyle.labs.danjiangsunseeker.domain.model.TowerTarget
 import studio.freestyle.labs.danjiangsunseeker.domain.physics.Geodesy
+import java.time.Duration
 import java.time.LocalDate
+import java.time.ZonedDateTime
 import javax.inject.Inject
 import kotlin.math.atan
 
@@ -35,33 +38,81 @@ class ComputeGoldenLineUseCase @Inject constructor(
         date: LocalDate,
         maxRangeKm: Double = 12.0,
         sampleStepMeters: Double = 100.0,
+        target: TowerTarget = TowerTarget.LowerY,
     ): GoldenLine? {
         val events = sunCalc.dailyEvents(date, BridgeTower.position)
         val sunsetAzimuth = events.sunsetAzimuthDegrees ?: return null
         val sunsetTime = events.sunset ?: return null
-
-        // 觀察者位於主塔朝 (sunsetAzimuth + 180°) 的方向上
-        val bearingFromTower = (sunsetAzimuth + 180.0) % 360.0
         val maxDistM = maxRangeKm * 1000.0
         val numSamples = (maxDistM / sampleStepMeters).toInt()
 
-        val points = (1..numSamples).map { i ->
-            val dist = sampleStepMeters * i
-            val pt = Geodesy.direct(BridgeTower.position, bearingFromTower, dist)
-            GoldenLinePoint(
-                point = pt,
-                distanceFromTowerMeters = dist,
-                towerAngularWidthDegrees =
-                    2.0 * Math.toDegrees(atan((BridgeTower.TOWER_WIDTH_M / 2.0) / dist)),
+        val samples = (1..numSamples).mapNotNull { i ->
+            val distance = sampleStepMeters * i
+            val targetAltitude = Math.toDegrees(
+                atan((target.elevationMeters - GOLDEN_LINE_OBSERVER_ELEVATION_M) / distance),
+            )
+            val eventTime = findDescendingAltitudeTime(
+                targetAltitudeDegrees = targetAltitude,
+                startTime = sunsetTime.minusMinutes(180),
+                endTime = sunsetTime.plusMinutes(30),
+            ) ?: return@mapNotNull null
+            val sun = sunCalc.positionAt(eventTime, BridgeTower.position).azimuthDegrees
+            val bearingFromTower = (sun + 180.0) % 360.0
+            val point = Geodesy.direct(BridgeTower.position, bearingFromTower, distance)
+            GoldenLineSample(
+                point = GoldenLinePoint(
+                    point = point,
+                    distanceFromTowerMeters = distance,
+                    towerAngularWidthDegrees =
+                        2.0 * Math.toDegrees(atan((BridgeTower.TOWER_WIDTH_M / 2.0) / distance)),
+                ),
+                bearingFromTowerDegrees = bearingFromTower,
+                eventTime = eventTime,
             )
         }
+        if (samples.isEmpty()) return null
 
+        val representative = samples[samples.lastIndex / 2]
         return GoldenLine(
             fromTower = BridgeTower.position,
-            bearingFromTowerDegrees = bearingFromTower,
-            sampledPoints = points,
+            bearingFromTowerDegrees = representative.bearingFromTowerDegrees,
+            sampledPoints = samples.map { it.point },
             maxRangeKm = maxRangeKm,
-            eventTime = sunsetTime,
+            eventTime = representative.eventTime,
+            target = target,
         )
+    }
+
+    private fun findDescendingAltitudeTime(
+        targetAltitudeDegrees: Double,
+        startTime: ZonedDateTime,
+        endTime: ZonedDateTime,
+    ): ZonedDateTime? {
+        var lo = startTime
+        var hi = endTime
+        val loAlt = sunCalc.positionAt(lo, BridgeTower.position).altitudeDegrees
+        val hiAlt = sunCalc.positionAt(hi, BridgeTower.position).altitudeDegrees
+        if (targetAltitudeDegrees !in hiAlt..loAlt) return null
+
+        repeat(22) {
+            val mid = lo.plusNanos(Duration.between(lo, hi).toNanos() / 2)
+            val midAlt = sunCalc.positionAt(mid, BridgeTower.position).altitudeDegrees
+            if (midAlt > targetAltitudeDegrees) lo = mid else hi = mid
+        }
+        return hi
+    }
+
+    private data class GoldenLineSample(
+        val point: GoldenLinePoint,
+        val bearingFromTowerDegrees: Double,
+        val eventTime: ZonedDateTime,
+    )
+
+    private companion object {
+        /**
+         * Map page 的黃金線沒有 DEM，所以先以海平面觀測者估算。
+         * 這讓塔基 30m / 塔頂 200m 都會依距離轉成目標仰角，而不是把塔基當日落地平線。
+         */
+        private const val GOLDEN_LINE_OBSERVER_ELEVATION_M = 0.0
     }
 }

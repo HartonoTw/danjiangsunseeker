@@ -112,7 +112,7 @@ presentation  ──▶  domain  ──▶  data
 object BridgeTower {
     const val LATITUDE = 25.17531        // WGS-84
     const val LONGITUDE = 121.41778
-    const val BASE_ELEVATION_M = 5.0     // 海平面以上（繪圖用近似值）
+    const val BASE_ELEVATION_M = 30.0    // APP 幾何/黃金線使用的塔基計算高度
     const val BASE_TRUE_ELEVATION_M = -11.4  // 真實塔基（水下）
     const val TOWER_TIP_ELEVATION_M = 200.0  // 塔頂海拔
     const val TOWER_HEIGHT_M = 211.0         // 總高（水下塔基到塔頂）
@@ -125,7 +125,7 @@ object BridgeTower {
 }
 ```
 
-**注意**：`TOWER_TIP_ELEVATION_M = 200.0`（塔頂海拔 200m），`TOWER_HEIGHT_M = 211.0`（從水下塔基 EL -11.4m 到塔頂，總高 211m）。兩者不同，不可混淆。
+**注意**：`BASE_ELEVATION_M = 30.0` 是 APP 目前用於幾何運算、黃金線與塔基對焦目標的塔基計算高度；`BASE_TRUE_ELEVATION_M = -11.4` 是真實水下工程塔基基準，僅作資料展示。`TOWER_TIP_ELEVATION_M = 200.0`（塔頂海拔 200m），`TOWER_HEIGHT_M = 211.0`（從水下塔基 EL -11.4m 到塔頂，總高 211m）。這幾個高度不可混淆。
 
 ### `TowerTarget` (對焦高度選擇)
 
@@ -135,7 +135,7 @@ enum class TowerTarget(
     val elevationMeters: Double,
 ) {
     UpperY("塔頂", BridgeTower.TOWER_TIP_ELEVATION_M),  // 200m
-    LowerY("塔基", BridgeTower.BASE_ELEVATION_M),        // 5m
+    LowerY("塔基", BridgeTower.BASE_ELEVATION_M),        // 30m
 }
 ```
 

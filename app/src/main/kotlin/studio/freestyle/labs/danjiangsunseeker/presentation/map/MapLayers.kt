@@ -26,6 +26,7 @@ object MapLayers {
     private const val SRC_TOWER = "src-tower"
     private const val SRC_HOTSPOTS = "src-hotspots"
     private const val SRC_GOLDEN_LINE = "src-golden-line"
+    private const val SRC_TOWER_TOP_GOLDEN_LINE = "src-tower-top-golden-line"
     private const val SRC_TAP = "src-tap"
 
     private const val LAYER_TOWER_CIRCLE = "layer-tower-circle"
@@ -33,6 +34,7 @@ object MapLayers {
     private const val LAYER_HOTSPOT_CIRCLE = "layer-hotspot-circle"
     private const val LAYER_HOTSPOT_LABEL = "layer-hotspot-label"
     private const val LAYER_GOLDEN_LINE = "layer-golden-line"
+    private const val LAYER_TOWER_TOP_GOLDEN_LINE = "layer-tower-top-golden-line"
     private const val LAYER_TAP_CIRCLE = "layer-tap-circle"
     private const val LAYER_TAP_MARK = "layer-tap-mark"
 
@@ -56,11 +58,13 @@ object MapLayers {
         val towerExists = style.getSourceAs<GeoJsonSource>(SRC_TOWER) != null
         val hotspotsExists = style.getSourceAs<GeoJsonSource>(SRC_HOTSPOTS) != null
         val goldenExists = style.getSourceAs<GeoJsonSource>(SRC_GOLDEN_LINE) != null
+        val towerTopGoldenExists = style.getSourceAs<GeoJsonSource>(SRC_TOWER_TOP_GOLDEN_LINE) != null
         val tapExists = style.getSourceAs<GeoJsonSource>(SRC_TAP) != null
-        Log.d(TAG, "install: hotspots.size=${hotspots.size} existing(tower=$towerExists hotspots=$hotspotsExists golden=$goldenExists tap=$tapExists)")
+        Log.d(TAG, "install: hotspots.size=${hotspots.size} existing(tower=$towerExists hotspots=$hotspotsExists golden=$goldenExists topGolden=$towerTopGoldenExists tap=$tapExists)")
         if (!towerExists) addTower(style)
         if (!hotspotsExists) addHotspots(style, hotspots, context)
-        if (!goldenExists) addGoldenLine(style)
+        if (!goldenExists) addGoldenLine(style, SRC_GOLDEN_LINE, LAYER_GOLDEN_LINE, "#EB6432", 4f, 0.85f)
+        if (!towerTopGoldenExists) addGoldenLine(style, SRC_TOWER_TOP_GOLDEN_LINE, LAYER_TOWER_TOP_GOLDEN_LINE, "#2F80ED", 3.5f, 0.82f)
         if (!tapExists) addTapMark(style)
     }
 
@@ -90,7 +94,15 @@ object MapLayers {
     }
 
     fun updateGoldenLine(style: Style, line: GoldenLine?) {
-        val src = style.getSourceAs<GeoJsonSource>(SRC_GOLDEN_LINE) ?: return
+        updateLineSource(style, SRC_GOLDEN_LINE, line)
+    }
+
+    fun updateTowerTopGoldenLine(style: Style, line: GoldenLine?) {
+        updateLineSource(style, SRC_TOWER_TOP_GOLDEN_LINE, line)
+    }
+
+    private fun updateLineSource(style: Style, sourceId: String, line: GoldenLine?) {
+        val src = style.getSourceAs<GeoJsonSource>(sourceId) ?: return
         if (line == null) {
             src.setGeoJson(FeatureCollection.fromFeatures(emptyList()))
             return
@@ -202,14 +214,21 @@ object MapLayers {
         )
     }
 
-    private fun addGoldenLine(style: Style) {
+    private fun addGoldenLine(
+        style: Style,
+        sourceId: String,
+        layerId: String,
+        color: String,
+        width: Float,
+        opacity: Float,
+    ) {
         // 先放一個空的 source；資料由 updateGoldenLine 設定
-        style.addSource(GeoJsonSource(SRC_GOLDEN_LINE, FeatureCollection.fromFeatures(emptyList())))
+        style.addSource(GeoJsonSource(sourceId, FeatureCollection.fromFeatures(emptyList())))
         style.addLayer(
-            LineLayer(LAYER_GOLDEN_LINE, SRC_GOLDEN_LINE).withProperties(
-                PropertyFactory.lineColor("#EB6432"),
-                PropertyFactory.lineWidth(4f),
-                PropertyFactory.lineOpacity(0.85f),
+            LineLayer(layerId, sourceId).withProperties(
+                PropertyFactory.lineColor(color),
+                PropertyFactory.lineWidth(width),
+                PropertyFactory.lineOpacity(opacity),
             )
         )
     }

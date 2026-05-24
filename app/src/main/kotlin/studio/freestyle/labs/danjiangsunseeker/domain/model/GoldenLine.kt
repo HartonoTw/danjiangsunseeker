@@ -17,6 +17,7 @@ data class GoldenLine(
     val sampledPoints: List<GoldenLinePoint>,
     val maxRangeKm: Double,
     val eventTime: ZonedDateTime,
+    val target: TowerTarget = TowerTarget.LowerY,
 )
 
 /**
