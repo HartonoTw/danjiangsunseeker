@@ -50,7 +50,6 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -156,6 +155,9 @@ fun HotspotListScreen(
                 }) {
                     Icon(Icons.Outlined.Upload, contentDescription = "匯出")
                 }
+                IconButton(onClick = { vm.showEditor() }) {
+                    Icon(Icons.Outlined.Add, contentDescription = "新增熱點")
+                }
             }
             Spacer(Modifier.height(8.dp))
             DateChipRow(
@@ -194,12 +196,6 @@ fun HotspotListScreen(
             }
         }
 
-        FloatingActionButton(
-            onClick = { vm.showEditor() },
-            modifier = Modifier.align(Alignment.BottomEnd).padding(20.dp),
-        ) {
-            Icon(Icons.Outlined.Add, contentDescription = "新增熱點")
-        }
     }
 
     if (showDatePicker) {

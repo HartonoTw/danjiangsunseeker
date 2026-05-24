@@ -1,5 +1,6 @@
 ﻿package studio.freestyle.labs.danjiangsunseeker.presentation.hotspot
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,6 +10,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
@@ -23,10 +27,17 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import studio.freestyle.labs.danjiangsunseeker.R
@@ -64,44 +75,68 @@ fun HotspotDetailScreen(
             return@Scaffold
         }
         val prediction = scored.prediction
-        Column(
-            modifier = Modifier.fillMaxSize().padding(pad).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+        val scrollState = rememberScrollState()
+        var viewportHeightPx by remember { mutableIntStateOf(0) }
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(pad)
+                .onSizeChanged { viewportHeightPx = it.height },
         ) {
-            Text(prediction.hotspot.description, style = MaterialTheme.typography.bodyLarge)
-            if (prediction.hotspot.accessNote.isNotEmpty()) {
-                Text(
-                    prediction.hotspot.accessNote,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
-                )
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(scrollState)
+                    .padding(16.dp)
+                    .padding(end = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Text(prediction.hotspot.description, style = MaterialTheme.typography.bodyLarge)
+                if (prediction.hotspot.accessNote.isNotEmpty()) {
+                    Text(
+                        prediction.hotspot.accessNote,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
+                ScoreSection(scored.score)
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
+                DetailSection("日落事件") {
+                    DetailRow(stringResource(R.string.label_sunset_time), prediction.events.sunset?.format(F))
+                    DetailRow("日出", prediction.events.sunrise?.format(F))
+                    DetailRow("正午", prediction.events.solarNoon?.format(F))
+                    DetailRow("黃金時刻", "${prediction.events.goldenHourEveningStart?.format(F).orEmpty()} → ${prediction.events.goldenHourEveningEnd?.format(F).orEmpty()}")
+                    DetailRow("藍調時刻", "${prediction.events.blueHourEveningStart?.format(F).orEmpty()} → ${prediction.events.blueHourEveningEnd?.format(F).orEmpty()}")
+                }
+
+                DetailSection("與主塔的關係") {
+                    DetailRow(
+                        stringResource(R.string.label_sun_azimuth),
+                        prediction.events.sunsetAzimuthDegrees?.let { "%.2f".format(it) + "°" },
+                    )
+                    DetailRow(stringResource(R.string.label_tower_bearing), "%.2f".format(prediction.bearingToTowerDegrees) + "°")
+                    DetailRow(
+                        stringResource(R.string.label_alignment_offset),
+                        prediction.alignmentOffsetDegrees?.let { "%+.3f".format(it) + "°" },
+                    )
+                    DetailRow(stringResource(R.string.label_distance_to_tower), "%.2f km".format(prediction.distanceToTowerMeters / 1000.0))
+                    DetailRow("主塔角寬 (可容忍誤差)", "%.4f".format(prediction.towerAngularWidthDegrees) + "°")
+                }
             }
 
-            HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
-            ScoreSection(scored.score)
-
-            HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
-            DetailSection("日落事件") {
-                DetailRow(stringResource(R.string.label_sunset_time), prediction.events.sunset?.format(F))
-                DetailRow("日出", prediction.events.sunrise?.format(F))
-                DetailRow("正午", prediction.events.solarNoon?.format(F))
-                DetailRow("黃金時刻", "${prediction.events.goldenHourEveningStart?.format(F).orEmpty()} → ${prediction.events.goldenHourEveningEnd?.format(F).orEmpty()}")
-                DetailRow("藍調時刻", "${prediction.events.blueHourEveningStart?.format(F).orEmpty()} → ${prediction.events.blueHourEveningEnd?.format(F).orEmpty()}")
-            }
-
-            DetailSection("與主塔的關係") {
-                DetailRow(
-                    stringResource(R.string.label_sun_azimuth),
-                    prediction.events.sunsetAzimuthDegrees?.let { "%.2f".format(it) + "°" },
-                )
-                DetailRow(stringResource(R.string.label_tower_bearing), "%.2f".format(prediction.bearingToTowerDegrees) + "°")
-                DetailRow(
-                    stringResource(R.string.label_alignment_offset),
-                    prediction.alignmentOffsetDegrees?.let { "%+.3f".format(it) + "°" },
-                )
-                DetailRow(stringResource(R.string.label_distance_to_tower), "%.2f km".format(prediction.distanceToTowerMeters / 1000.0))
-                DetailRow("主塔角寬 (可容忍誤差)", "%.4f".format(prediction.towerAngularWidthDegrees) + "°")
-            }
+            DetailScrollBar(
+                scrollValue = scrollState.value,
+                maxScrollValue = scrollState.maxValue,
+                viewportHeightPx = viewportHeightPx,
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .padding(end = 4.dp)
+                    .width(4.dp)
+                    .height(160.dp),
+            )
         }
     }
 }
@@ -155,10 +190,58 @@ private fun DetailSection(title: String, content: @Composable () -> Unit) {
 private fun DetailRow(label: String, value: String?) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text(label, color = MaterialTheme.colorScheme.outline, style = MaterialTheme.typography.bodyMedium)
-        Text(value ?: "—", style = MaterialTheme.typography.bodyMedium)
+        Text(
+            label,
+            color = MaterialTheme.colorScheme.outline,
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            value ?: "—",
+            style = MaterialTheme.typography.bodyMedium,
+            textAlign = TextAlign.End,
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+@Composable
+private fun DetailScrollBar(
+    scrollValue: Int,
+    maxScrollValue: Int,
+    viewportHeightPx: Int,
+    modifier: Modifier = Modifier,
+) {
+    if (maxScrollValue <= 0 || viewportHeightPx <= 0) return
+
+    val totalContentHeightPx = viewportHeightPx + maxScrollValue
+    val thumbHeightFraction = (viewportHeightPx.toFloat() / totalContentHeightPx)
+        .coerceIn(0.12f, 1f)
+    val thumbTopFraction = (scrollValue.toFloat() / maxScrollValue)
+        .coerceIn(0f, 1f) * (1f - thumbHeightFraction)
+    val trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
+    val thumbColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+
+    Canvas(modifier = modifier) {
+        val x = size.width / 2f
+        drawLine(
+            color = trackColor,
+            start = Offset(x, 0f),
+            end = Offset(x, size.height),
+            strokeWidth = size.width,
+            cap = StrokeCap.Round,
+        )
+        val thumbTop = size.height * thumbTopFraction
+        val thumbBottom = thumbTop + size.height * thumbHeightFraction
+        drawLine(
+            color = thumbColor,
+            start = Offset(x, thumbTop),
+            end = Offset(x, thumbBottom),
+            strokeWidth = size.width,
+            cap = StrokeCap.Round,
+        )
     }
 }
 

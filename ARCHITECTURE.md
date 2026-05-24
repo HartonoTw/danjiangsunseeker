@@ -81,7 +81,6 @@
 ├─────────────────────────────────────────────────────────┤
 │  data/                                                  │
 │  ├─ astro/     (SunCalcDataSource — commons-suncalc 包) │
-│  ├─ weather/   (CwaApi + WeatherRepository + WxCode)   │
 │  ├─ sensors/   (DeviceOrientationProvider, Location)   │
 │  ├─ hotspot/   (CustomHotspotStore — DataStore)        │
 │  ├─ notifications/ (NotificationHelper, DailyScoreWorker) │

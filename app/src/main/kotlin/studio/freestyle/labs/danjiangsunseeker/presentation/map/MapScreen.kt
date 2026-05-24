@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -184,13 +185,16 @@ private fun SunSummaryCard(state: MapUiState) {
         modifier = Modifier.fillMaxWidth().shadow(2.dp, RoundedCornerShape(14.dp)),
         shape = RoundedCornerShape(14.dp),
     ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-            Text("${state.selectedDate} 日落資訊", style = MaterialTheme.typography.titleSmall)
-            Spacer(Modifier.height(6.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("日落方位 (從主塔看): ${az?.let { "%.2f°".format(it) } ?: "—"}")
-                Text("黃金射線: ${bearing?.let { "%.2f°".format(it) } ?: "—"}")
-            }
+        Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+            Text(
+                "日落方位 (從主塔看): ${az?.let { "%.2f°".format(it) } ?: "—"}",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                "黃金射線: ${bearing?.let { "%.2f°".format(it) } ?: "—"}",
+                style = MaterialTheme.typography.bodyMedium,
+            )
             Spacer(Modifier.height(4.dp))
             Text(
                 "點地圖上任一點，APP 會告訴你「站在這拍夕陽穿塔會差幾度」",
@@ -215,27 +219,30 @@ private fun TapAnalysisCard(tap: TapAnalysis, onClose: () -> Unit) {
         modifier = Modifier.fillMaxWidth().shadow(2.dp, RoundedCornerShape(14.dp)),
         shape = RoundedCornerShape(14.dp),
     ) {
-        Column(modifier = Modifier.padding(14.dp)) {
+        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("選定座標", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-                IconButton(onClick = onClose) {
-                    Icon(Icons.Outlined.Close, contentDescription = "關閉")
+                Text("選定座標", style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
+                IconButton(onClick = onClose, modifier = Modifier.size(32.dp)) {
+                    Icon(Icons.Outlined.Close, contentDescription = "關閉", modifier = Modifier.size(18.dp))
                 }
             }
             Text(
                 "${"%.5f".format(tap.point.latitude)}°N, ${"%.5f".format(tap.point.longitude)}°E",
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.outline,
             )
-            Spacer(Modifier.height(8.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("距主塔: ${"%.2f km".format(tap.distanceToTowerMeters / 1000.0)}")
-                Text("主塔方位: ${"%.2f°".format(tap.bearingToTowerDegrees)}")
-            }
             Spacer(Modifier.height(4.dp))
-            Text("日落方位偏差: ${tap.alignmentOffsetDegrees?.let { "%+.2f°".format(it) } ?: "—"}")
-            Spacer(Modifier.height(8.dp))
-            Text(verdict, color = verdictColor, style = MaterialTheme.typography.bodyMedium)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("距主塔: ${"%.2f km".format(tap.distanceToTowerMeters / 1000.0)}", style = MaterialTheme.typography.bodySmall)
+                Text("主塔方位: ${"%.2f°".format(tap.bearingToTowerDegrees)}", style = MaterialTheme.typography.bodySmall)
+            }
+            Spacer(Modifier.height(2.dp))
+            Text(
+                "日落方位偏差: ${tap.alignmentOffsetDegrees?.let { "%+.2f°".format(it) } ?: "—"}",
+                style = MaterialTheme.typography.bodySmall,
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(verdict, color = verdictColor, style = MaterialTheme.typography.bodySmall)
         }
     }
 }
