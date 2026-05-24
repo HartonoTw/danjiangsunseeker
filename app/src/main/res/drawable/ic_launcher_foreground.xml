@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Stylized bridge tower + setting sun. 後期請以正式 Logo 取代。 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 太陽 -->
+    <path
+        android:fillColor="#FFD66B"
+        android:pathData="M54,42 m-14,0 a14,14 0 1,0 28,0 a14,14 0 1,0 -28,0" />
+
+    <!-- 主塔 (細長三角形 + 直立柱) -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M53,28 L55,28 L58,70 L50,70 Z" />
+
+    <!-- 斜張橋面索 -->
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="0.8"
+        android:pathData="M54,32 L34,72 M54,32 L74,72 M54,40 L40,72 M54,40 L68,72" />
+
+    <!-- 海平線 -->
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="1.5"
+        android:pathData="M22,76 L86,76" />
+</vector>

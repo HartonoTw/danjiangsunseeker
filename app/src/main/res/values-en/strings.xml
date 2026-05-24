@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Danjiang SunSeeker</string>
+    <string name="tab_hotspots">Hotspots</string>
+    <string name="tab_map">Map</string>
+    <string name="tab_simulator">Focal</string>
+    <string name="tab_ar">AR</string>
+    <string name="tab_calendar">Calendar</string>
+
+    <string name="hotspot_sand_dune">Shalun Beach</string>
+    <string name="hotspot_bali">Bali Left Bank Park</string>
+    <string name="hotspot_datun">Mt. Datun Navigation Station</string>
+    <string name="hotspot_tamsui_ferry">Tamsui Ferry Pier</string>
+    <string name="hotspot_bali_ferry">Bali Ferry Pier</string>
+    <string name="hotspot_starbucks">Riverside Starbucks (Tamsui)</string>
+    <string name="hotspot_customs_wharf">Tamsui Customs Wharf</string>
+
+    <string name="label_sunset_time">Sunset</string>
+    <string name="label_sun_azimuth">Sun azimuth</string>
+    <string name="label_sun_altitude">Sun altitude</string>
+    <string name="label_tower_bearing">Tower bearing</string>
+    <string name="label_alignment_offset">Offset from tower</string>
+    <string name="label_distance_to_tower">Distance to tower</string>
+    <string name="unit_degree">°</string>
+    <string name="unit_km">km</string>
+
+    <string name="empty_loading">Computing…</string>
+    <string name="error_generic">Something went wrong, please try again</string>
+
+    <string name="alignment_perfect">Near-perfect sun-through-tower today!</string>
+    <string name="alignment_near">Close (±2°)</string>
+    <string name="alignment_far">Sun is offset from tower today</string>
+</resources>

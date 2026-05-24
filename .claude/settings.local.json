@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:www.e-architect.com)",
+      "WebFetch(domain:www.peri.com)",
+      "WebFetch(domain:zh.wikipedia.org)",
+      "WebFetch(domain:www.dezeen.com)",
+      "WebFetch(domain:www.zaha-hadid.com)",
+      "WebFetch(domain:www.mageba-group.com)",
+      "Bash(./gradlew.bat :app:compileDebugKotlin)",
+      "PowerShell($env:JAVA_HOME)",
+      "PowerShell($env:JAVA_HOME = \"C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr\"; cd 'D:\\\\AI\\\\android_app2'; .\\\\gradlew.bat :app:compileDebugKotlin --offline 2>&1 | Select-Object -Last 30)",
+      "Bash(Get-ChildItem -Path \"D:\\\\AI\\\\android_app2\" -Recurse)",
+      "Bash(Select-Object FullName)",
+      "Bash(powershell *)",
+      "Bash(adb shell *)"
+    ]
+  }
+}

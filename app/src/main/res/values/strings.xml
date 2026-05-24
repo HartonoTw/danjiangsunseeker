@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">淡江夕照通</string>
+    <string name="tab_hotspots">熱點</string>
+    <string name="tab_map">地圖</string>
+    <string name="tab_simulator">焦段</string>
+    <string name="tab_ar">AR</string>
+    <string name="tab_calendar">日曆</string>
+
+    <string name="hotspot_sand_dune">沙崙海灘</string>
+    <string name="hotspot_bali">八里左岸公園</string>
+    <string name="hotspot_datun">大屯山助航站觀景台</string>
+    <string name="hotspot_tamsui_ferry">淡水渡船頭</string>
+    <string name="hotspot_bali_ferry">八里渡船頭</string>
+    <string name="hotspot_starbucks">淡水河岸星巴克</string>
+    <string name="hotspot_customs_wharf">海關碼頭</string>
+
+    <string name="label_sunset_time">日落時間</string>
+    <string name="label_sun_azimuth">日落方位</string>
+    <string name="label_sun_altitude">日落仰角</string>
+    <string name="label_tower_bearing">主塔相對方位</string>
+    <string name="label_alignment_offset">與主塔夾角</string>
+    <string name="label_distance_to_tower">距主塔距離</string>
+    <string name="unit_degree">°</string>
+    <string name="unit_km">km</string>
+
+    <string name="empty_loading">計算中…</string>
+    <string name="error_generic">發生錯誤，請稍後再試</string>
+
+    <string name="alignment_perfect">幾乎完美穿塔，今天就出門！</string>
+    <string name="alignment_near">接近穿塔（±2°）</string>
+    <string name="alignment_far">今日太陽偏離主塔</string>
+</resources>

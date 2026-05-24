@@ -1,0 +1,8 @@
+# 將此檔複製為 local.properties，並填入實際金鑰。local.properties 已被 .gitignore 排除。
+sdk.dir=C\:\\Users\\<YOU>\\AppData\\Local\\Android\\Sdk
+
+# 中央氣象署 CWA OpenData 金鑰: https://opendata.cwa.gov.tw/userLogin
+CWA_API_KEY=
+
+# Google Maps / Elevation / Directions / ARCore 金鑰
+GOOGLE_MAPS_API_KEY=
