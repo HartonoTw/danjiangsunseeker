@@ -17,12 +17,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.navigation.NavType
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import studio.freestyle.labs.danjiangsunseeker.R
 import studio.freestyle.labs.danjiangsunseeker.presentation.ar.ARScreen
 import studio.freestyle.labs.danjiangsunseeker.presentation.calendar.GoldenCalendarScreen
@@ -57,11 +59,18 @@ fun DanjiangApp() {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
 
+    // 跳轉模式：從熱點縮圖或日曆帶參數跳到焦距頁時，hotspotId 不為空。
+    // 此模式下其他 tab 全部 disabled（灰掉），只能按返回鍵離開。
+    val isSimulatorJumpMode = currentRoute?.startsWith(TopLevelDestination.Simulator.route) == true &&
+        backStackEntry?.arguments?.getString("hotspotId").orEmpty().isNotEmpty()
+
     Scaffold(
         bottomBar = {
             NavigationBar {
                 TopLevelDestinations.forEach { dest ->
                     val selected = currentRoute?.startsWith(dest.route) == true
+                    // 跳轉模式下只有「焦距」tab 本身可互動（已選中，點也沒用）；其餘全灰
+                    val enabled = !isSimulatorJumpMode || dest == TopLevelDestination.Simulator
                     NavigationBarItem(
                         selected = selected,
                         onClick = {
@@ -71,6 +80,7 @@ fun DanjiangApp() {
                                 restoreState = true
                             }
                         },
+                        enabled = enabled,
                         icon = { Icon(dest.icon, contentDescription = null) },
                         label = { Text(stringResource(dest.titleRes)) },
                     )
@@ -84,18 +94,38 @@ fun DanjiangApp() {
             modifier = Modifier.padding(padding),
         ) {
             composable(TopLevelDestination.Hotspots.route) {
-                HotspotListScreen(onHotspotClick = { id ->
-                    navController.navigate("hotspot_detail/$id")
-                })
+                HotspotListScreen(
+                    onHotspotClick = { id -> navController.navigate("hotspot_detail/$id") },
+                    onGoToSimulator = { hotspotId, date, towerTarget ->
+                        navController.navigate(
+                            "simulator?hotspotId=$hotspotId&date=$date&towerTarget=${towerTarget.name}"
+                        )
+                    },
+                )
             }
             composable("hotspot_detail/{id}") { entry ->
                 val id = entry.arguments?.getString("id").orEmpty()
                 HotspotDetailScreen(hotspotId = id, onBack = { navController.popBackStack() })
             }
             composable(TopLevelDestination.Map.route) { MapScreen() }
-            composable(TopLevelDestination.Simulator.route) { FocalSimulatorScreen() }
+            composable(
+                route = "${TopLevelDestination.Simulator.route}?hotspotId={hotspotId}&date={date}&towerTarget={towerTarget}",
+                arguments = listOf(
+                    navArgument("hotspotId") { defaultValue = ""; type = NavType.StringType },
+                    navArgument("date")      { defaultValue = ""; type = NavType.StringType },
+                    navArgument("towerTarget") { defaultValue = ""; type = NavType.StringType },
+                ),
+            ) { FocalSimulatorScreen() }
             composable(TopLevelDestination.Ar.route) { ARScreen() }
-            composable(TopLevelDestination.Calendar.route) { GoldenCalendarScreen() }
+            composable(TopLevelDestination.Calendar.route) {
+                GoldenCalendarScreen(
+                    onGoToSimulator = { hotspotId, date, towerTarget ->
+                        navController.navigate(
+                            "simulator?hotspotId=$hotspotId&date=$date&towerTarget=${towerTarget.name}"
+                        )
+                    },
+                )
+            }
         }
     }
 }

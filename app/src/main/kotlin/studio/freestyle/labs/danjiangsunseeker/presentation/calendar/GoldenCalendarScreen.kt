@@ -2,6 +2,7 @@
 
 import android.content.ActivityNotFoundException
 import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,14 +36,19 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import studio.freestyle.labs.danjiangsunseeker.domain.model.TowerTarget
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.GoldenDate
 import studio.freestyle.labs.danjiangsunseeker.presentation.common.TowerTargetSelector
+import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun GoldenCalendarScreen(vm: GoldenCalendarViewModel = hiltViewModel()) {
+fun GoldenCalendarScreen(
+    onGoToSimulator: (hotspotId: String, date: LocalDate, towerTarget: TowerTarget) -> Unit = { _, _, _ -> },
+    vm: GoldenCalendarViewModel = hiltViewModel(),
+) {
     val state by vm.state.collectAsState()
     val ctx = LocalContext.current
 
@@ -107,13 +113,19 @@ fun GoldenCalendarScreen(vm: GoldenCalendarViewModel = hiltViewModel()) {
 
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(state.dates, key = { "${it.date}-${it.hotspot.id}" }) { golden ->
-                GoldenDateRow(golden, onAddToCalendar = {
-                    runCatching {
-                        ctx.startActivity(AddToCalendarHelper.buildIntent(ctx, golden))
-                    }.onFailure {
-                        Toast.makeText(ctx, "找不到行事曆 App", Toast.LENGTH_SHORT).show()
-                    }
-                })
+                GoldenDateRow(
+                    golden,
+                    onAddToCalendar = {
+                        runCatching {
+                            ctx.startActivity(AddToCalendarHelper.buildIntent(ctx, golden))
+                        }.onFailure {
+                            Toast.makeText(ctx, "找不到行事曆 App", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    onGoToSimulator = {
+                        onGoToSimulator(golden.hotspot.id, golden.date, golden.towerTarget)
+                    },
+                )
             }
         }
     }
@@ -123,10 +135,15 @@ fun GoldenCalendarScreen(vm: GoldenCalendarViewModel = hiltViewModel()) {
 private fun GoldenDateRow(
     golden: GoldenDate,
     onAddToCalendar: () -> Unit,
+    onGoToSimulator: () -> Unit = {},
 ) {
     val name = golden.hotspot.nameRes?.let { stringResource(it) }
         ?: golden.hotspot.customName.orEmpty()
-    Card(shape = RoundedCornerShape(12.dp)) {
+    // 點整列 → 帶日期 + 地點 + 塔頂/塔基跳到焦距模擬；「加入」按鈕獨立消費不觸發跳轉
+    Card(
+        onClick = onGoToSimulator,
+        shape = RoundedCornerShape(12.dp),
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(14.dp),
             verticalAlignment = Alignment.CenterVertically,

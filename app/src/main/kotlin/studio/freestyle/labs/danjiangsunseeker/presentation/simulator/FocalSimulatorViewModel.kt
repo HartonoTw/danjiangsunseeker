@@ -1,5 +1,6 @@
 ﻿package studio.freestyle.labs.danjiangsunseeker.presentation.simulator
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import studio.freestyle.labs.danjiangsunseeker.data.astro.SunCalcDataSource
@@ -46,6 +47,7 @@ class FocalSimulatorViewModel @Inject constructor(
     private val customHotspotStore: CustomHotspotStore,
     private val towerTargetStore: TowerTargetStore,
     private val targetSunResolver: TowerTargetSunResolver,
+    savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(FocalSimulatorState())
@@ -53,23 +55,58 @@ class FocalSimulatorViewModel @Inject constructor(
 
     private var customHotspots: List<Hotspot> = emptyList()
 
+    // ── 從熱點縮圖 / 日曆跳轉過來的初始參數（空字串表示無跳轉）──────────────
+    private val jumpHotspotId: String = savedStateHandle["hotspotId"] ?: ""
+    private val jumpDate: LocalDate? = (savedStateHandle.get<String>("date") ?: "")
+        .takeIf { it.isNotEmpty() }
+        ?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+    private val jumpTarget: TowerTarget? = (savedStateHandle.get<String>("towerTarget") ?: "")
+        .takeIf { it.isNotEmpty() }
+        ?.let { runCatching { TowerTarget.valueOf(it) }.getOrNull() }
+
+    private val hasJumpArgs = jumpHotspotId.isNotEmpty() || jumpDate != null || jumpTarget != null
+    private var jumpHotspotApplied = false
+
     init {
+        // 若有跳轉日期，立刻覆蓋預設日期
+        if (jumpDate != null) {
+            _state.value = _state.value.copy(date = jumpDate)
+        }
+
         // 監聽自訂熱點，更新選單清單
         customHotspotStore.hotspots
             .onEach { customs ->
                 customHotspots = customs
-                _state.value = _state.value.copy(mergedHotspots = mergedHotspots())
+                val merged = mergedHotspots()
+                // 第一次載入且有跳轉熱點 → 套用
+                if (!jumpHotspotApplied && jumpHotspotId.isNotEmpty()) {
+                    jumpHotspotApplied = true
+                    val jumpHotspot = merged.find { it.id == jumpHotspotId }
+                    if (jumpHotspot != null) {
+                        _state.value = _state.value.copy(
+                            mergedHotspots = merged,
+                            hotspot = jumpHotspot,
+                            observer = jumpHotspot.position,
+                        )
+                        viewModelScope.launch { resetTimeToSunset() }
+                        return@onEach
+                    }
+                }
+                _state.value = _state.value.copy(mergedHotspots = merged)
             }
             .launchIn(viewModelScope)
+
         towerTargetStore.target
-            .onEach { target ->
+            .onEach { storeTarget ->
+                // 跳轉參數優先；沒有跳轉才用 store 的值
+                val target = jumpTarget ?: storeTarget
                 _state.value = _state.value.copy(towerTarget = target)
                 viewModelScope.launch { resetTimeToSunset() }
             }
             .launchIn(viewModelScope)
 
-        // 自動嘗試取一次 GPS（若權限已授過會成功；沒授過會靜默失敗，後續由 [loadGps] 觸發重試）
-        loadGps(autoSelect = true)
+        // 有跳轉熱點時不自動切到 GPS，避免覆蓋跳轉的地點
+        loadGps(autoSelect = !hasJumpArgs)
         viewModelScope.launch { resetTimeToSunset() }
     }
 

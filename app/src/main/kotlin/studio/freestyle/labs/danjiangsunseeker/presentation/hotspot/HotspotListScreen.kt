@@ -63,6 +63,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import studio.freestyle.labs.danjiangsunseeker.domain.model.BridgeTower
 import studio.freestyle.labs.danjiangsunseeker.domain.model.SunTrailPoint
+import studio.freestyle.labs.danjiangsunseeker.domain.model.TowerTarget
 import studio.freestyle.labs.danjiangsunseeker.presentation.map.ComposeMapLibre
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -105,6 +106,7 @@ import kotlin.math.atan
 @Composable
 fun HotspotListScreen(
     onHotspotClick: (String) -> Unit,
+    onGoToSimulator: (hotspotId: String, date: LocalDate, towerTarget: TowerTarget) -> Unit = { _, _, _ -> },
     vm: HotspotListViewModel = hiltViewModel(),
 ) {
     val state by vm.state.collectAsState()
@@ -194,6 +196,13 @@ fun HotspotListScreen(
                                     p.prediction.hotspot.position.longitude,
                                     p.prediction.hotspot.nameRes?.let { ctx.getString(it) }
                                         ?: p.prediction.hotspot.customName.orEmpty(),
+                                )
+                            },
+                            onGoToSimulator = {
+                                onGoToSimulator(
+                                    p.prediction.hotspot.id,
+                                    state.date,
+                                    state.towerTarget,
                                 )
                             },
                         )
@@ -321,6 +330,7 @@ private fun HotspotRow(
     onClick: () -> Unit,
     onEdit: () -> Unit,
     onNavigate: () -> Unit,
+    onGoToSimulator: () -> Unit = {},
 ) {
     val name = p.prediction.hotspot.nameRes?.let { stringResource(it) }
         ?: p.prediction.hotspot.customName.orEmpty()
@@ -350,6 +360,7 @@ private fun HotspotRow(
             Spacer(Modifier.width(8.dp))
 
             // ── 日落前一小時太陽軌跡縮圖（TOO_FAR 或無軌跡時顯示空白佔位）
+            // 點縮圖 → 帶日期 + 地點 + 塔頂/塔基跳到焦距模擬頁
             HotspotThumbnail(
                 trail = p.prediction.lastHourSunTrail,
                 towerBearing = p.prediction.bearingToTowerDegrees,
@@ -358,7 +369,8 @@ private fun HotspotRow(
                 modifier = Modifier
                     .width(72.dp)
                     .height(48.dp)
-                    .clip(RoundedCornerShape(6.dp)),
+                    .clip(RoundedCornerShape(6.dp))
+                    .clickable(onClick = onGoToSimulator),
             )
             Spacer(Modifier.width(8.dp))
 
