@@ -6,15 +6,15 @@
 
 ## 1. 專案目標
 
-淡江大橋為世界最大單塔不對稱斜張橋（主塔高 211m）。所謂「夕陽穿塔」、「大橋落日」等構圖機會每年僅數天、每天僅數分鐘出現，需要精準的天文 × 地理 × 氣象 × 鏡頭物理運算。
+淡江大橋為世界最大單塔不對稱斜張橋（主塔高 211m）。所謂「夕陽穿塔」、「大橋落日」等構圖機會每年僅數天、每天僅數分鐘出現，需要精準的天文 × 地理 × 鏡頭物理運算。
 
 本 APP 提供：
 
 | 功能 | 用途 |
 |---|---|
-| 熱點分數預測 | 12+ 個觀景點，每日依「對齊度 + 雲量 + 降雨」評分 0-100 |
+| 熱點分數預測 | 5 個觀景點，每日依「對齊度」評分 0-100 |
 | 互動地圖 + 黃金拍攝帶 | 任一日期 → 主塔朝日落方位的射線；點地圖任處查詢角差 |
-| 焦段構圖模擬器 | 14-800mm 拖動 + 時間 slider，模擬主塔與太陽在畫面中的相對位置 |
+| 焦段構圖模擬器 | 14-800mm 拖動 + 時間 slider；塔頂 / 塔基兩種對焦高度 |
 | 365 天黃金日曆 | 整年「夕陽穿塔」可能日，一鍵加入手機行事曆 |
 | AR 實境勘景 | 無金鑰：CameraX + GPS + 磁力計 + 加速度計疊加虛擬主塔/太陽軌跡 |
 | AR 太陽校正 | 對準太陽自動修正磁力計偏差，誤差降至 < 0.5° |
@@ -41,18 +41,18 @@
 | `org.shredzone.commons:commons-suncalc` | 3.11 | 太陽位置計算 (NOAA SPA 演算法) |
 | `org.maplibre.gl:android-sdk` | 11.5.2 | 開源地圖渲染 |
 | `androidx.camera:camera-*` | 1.4.1 | AR 相機預覽 + FOV 讀取 |
-| `androidx.datastore:datastore-preferences` | 1.1.1 | 自訂熱點 / 評分結果持久化 |
+| `androidx.datastore:datastore-preferences` | 1.1.1 | 自訂熱點 / 塔目標 / 評分結果持久化 |
 | `com.google.android.gms:play-services-location` | 21.3.0 | FusedLocationProviderClient |
 | `androidx.work:work-runtime-ktx` | 2.10.0 | 每日掃描 WorkManager |
-| `androidx.room:room-*` | 2.6.1 | （已加入，目前未啟用，預留未來擴充）|
-| `com.squareup.retrofit2` + `okhttp` | 2.11 / 4.12 | CWA OpenData HTTP 客戶端 |
+| `androidx.room:room-*` | 2.6.1 | 已加入，目前未啟用，預留未來擴充 |
+| `com.squareup.retrofit2` + `okhttp` | 2.11 / 4.12 | 保留 legacy 依賴，目前未啟用（CWA API 停用後不再使用） |
 
 ### 外部 API / 服務
 
-| 服務 | 金鑰 | 用途 | 失敗時行為 |
+| 服務 | 金鑰 | 用途 | 現況 |
 |---|---|---|---|
-| **CWA OpenData (F-C0032-001)** | 必須 (免費) | 新北市天氣預報 → 雲量、降雨機率 | 無金鑰時 weather 分數略過，只用對齊度評分 |
-| **OpenFreeMap** | 不需 | OSM 風格地圖底圖 | — |
+| **OpenFreeMap** | 不需 | OSM 風格地圖底圖 | 使用中 |
+| **CWA OpenData (F-C0032-001)** | 免費金鑰 | 新北市天氣預報 | **已停用**（CWA API 停用）— 天氣評分維度移除，目前僅用對齊度評分 |
 | Google Cloud / ARCore Geospatial | **不使用** | — | 改用自建 GPS+磁力計方案 |
 
 ---
@@ -62,30 +62,35 @@
 ### Clean Architecture 三層
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│  presentation/                                          │
-│  ├─ hotspot/   (HotspotListScreen + ViewModel)         │
-│  ├─ map/       (MapScreen + ComposeMapLibre + Layers)  │
-│  ├─ simulator/ (FocalSimulator + 太陽軌跡視覺化)        │
-│  ├─ ar/        (ARScreen + Camera + 感測器 + 校正)      │
-│  ├─ calendar/  (GoldenCalendar + 行事曆 Intent)        │
-│  ├─ theme/                                              │
-│  └─ app/       (DanjiangApp Compose root + NavHost)    │
-├─────────────────────────────────────────────────────────┤
-│  domain/                                                │
-│  ├─ model/     (BridgeTower, Hotspot, GeoPoint, ...)   │
-│  ├─ physics/   (Geodesy, AtmosphericRefraction, ...)   │
-│  └─ usecase/   (PredictHotspots, ComputeSunsetScore,   │
-│                 ComputeGoldenLine, SimulateFocalLength,│
-│                 ScanGoldenCalendar)                    │
-├─────────────────────────────────────────────────────────┤
-│  data/                                                  │
-│  ├─ astro/     (SunCalcDataSource — commons-suncalc 包) │
-│  ├─ sensors/   (DeviceOrientationProvider, Location)   │
-│  ├─ hotspot/   (CustomHotspotStore — DataStore)        │
-│  ├─ notifications/ (NotificationHelper, DailyScoreWorker) │
-│  └─ di/        (NetworkModule — Hilt providers)        │
-└─────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│  presentation/                                              │
+│  ├─ hotspot/   (HotspotListScreen + HotspotDetailScreen     │
+│  │              + ViewModel)                                │
+│  ├─ map/       (MapScreen + ComposeMapLibre + Layers)       │
+│  ├─ simulator/ (FocalSimulator + 太陽軌跡視覺化)             │
+│  ├─ ar/        (ARScreen + Camera + 感測器 + 校正)           │
+│  ├─ calendar/  (GoldenCalendar + 行事曆 Intent)             │
+│  ├─ common/    (TowerTargetSelector — 共用 FilterChip 元件) │
+│  ├─ theme/                                                  │
+│  └─ app/       (DanjiangApp Compose root + NavHost)         │
+├─────────────────────────────────────────────────────────────┤
+│  domain/                                                    │
+│  ├─ model/     (BridgeTower, TowerTarget, Hotspot,          │
+│  │              GeoPoint, GoldenLine, ...)                  │
+│  ├─ physics/   (Geodesy, AtmosphericRefraction, ...)        │
+│  └─ usecase/   (PredictHotspots, ComputeSunsetScore,        │
+│                 ComputeGoldenLine, SimulateFocalLength,      │
+│                 ScanGoldenCalendar,                         │
+│                 TowerTargetSunResolver)                     │
+├─────────────────────────────────────────────────────────────┤
+│  data/                                                      │
+│  ├─ astro/     (SunCalcDataSource — commons-suncalc 包)     │
+│  ├─ sensors/   (DeviceOrientationProvider, Location)        │
+│  ├─ hotspot/   (CustomHotspotStore — DataStore)             │
+│  ├─ settings/  (TowerTargetStore — DataStore)               │
+│  ├─ notifications/ (NotificationHelper, DailyScoreWorker)   │
+│  └─ di/        (NetworkModule — Hilt providers)             │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ### 依賴方向（嚴格）
@@ -94,7 +99,7 @@
 presentation  ──▶  domain  ──▶  data
         └────────────────────────▲
                                  │ (data 也被 presentation 直接讀取，
-                                    例 WeatherForecast model；可重構)
+                                    例 TowerTargetStore；可重構)
 ```
 
 ---
@@ -107,12 +112,34 @@ presentation  ──▶  domain  ──▶  data
 object BridgeTower {
     const val LATITUDE = 25.17531        // WGS-84
     const val LONGITUDE = 121.41778
-    const val BASE_ELEVATION_M = 5.0     // 海平面以上
-    const val TOWER_HEIGHT_M = 211.0     // 主塔高
-    const val TOWER_TIP_ELEVATION_M = 216.0
-    const val TOWER_WIDTH_M = 12.0       // 平均水平寬，用於算可接受對齊容差
+    const val BASE_ELEVATION_M = 5.0     // 海平面以上（繪圖用近似值）
+    const val BASE_TRUE_ELEVATION_M = -11.4  // 真實塔基（水下）
+    const val TOWER_TIP_ELEVATION_M = 200.0  // 塔頂海拔
+    const val TOWER_HEIGHT_M = 211.0         // 總高（水下塔基到塔頂）
+    const val DECK_ELEVATION_M = 20.0        // 橋面（甲板）海拔
+    const val A_FRAME_JOIN_ELEVATION_M = 72.0 // A 字兩柱「合體點」海拔
+    const val TOWER_WIDTH_M = 12.0           // 水平寬估算，用於對齊容差
+    const val MAIN_SPAN_M = 450.0            // 主跨（朝八里端）
+    const val SIDE_SPAN_M = 175.0            // 側跨（朝淡水端）
+    const val BALI_BEARING_DEG = 241.0       // 塔朝八里方位角
 }
 ```
+
+**注意**：`TOWER_TIP_ELEVATION_M = 200.0`（塔頂海拔 200m），`TOWER_HEIGHT_M = 211.0`（從水下塔基 EL -11.4m 到塔頂，總高 211m）。兩者不同，不可混淆。
+
+### `TowerTarget` (對焦高度選擇)
+
+```kotlin
+enum class TowerTarget(
+    val displayName: String,
+    val elevationMeters: Double,
+) {
+    UpperY("塔頂", BridgeTower.TOWER_TIP_ELEVATION_M),  // 200m
+    LowerY("塔基", BridgeTower.BASE_ELEVATION_M),        // 5m
+}
+```
+
+使用者可選擇「塔頂」或「塔基」作為對焦目標，影響 `TowerTargetSunResolver` 計算太陽需達到的仰角，以及日曆掃描的精確時刻。
 
 ### `GeoPoint` (WGS-84 座標)
 
@@ -128,7 +155,7 @@ data class GeoPoint(
 
 ```kotlin
 data class Hotspot(
-    val id: String,             // 預設用 "sand_dune"，自訂用 "custom_<timestamp>"
+    val id: String,             // 預設用 "starbucks"，自訂用 "custom_<timestamp>"
     val nameRes: Int?,          // 預設熱點用 R.string 資源；null 代表自訂
     val customName: String?,    // nameRes 為 null 時使用
     val position: GeoPoint,
@@ -139,19 +166,21 @@ data class Hotspot(
 }
 ```
 
-預設熱點 9 個（座標已驗證距主塔 ≤ 25km、主塔方位與夕陽方位 < 90° 可同框）：
+### `DefaultHotspots.ALL` — 目前 5 個內建熱點
 
-| 熱點 | 主塔方位 | 對齊機會 |
-|---|---|---|
-| 大屯山助航站 | 270° | 春分 / 秋分 |
-| 海關碼頭 | 274° | 4 月初 / 9 月中 |
-| 嘉士洋行倉庫 | 279° | 4 月中 / 9 月初 |
-| 淡水渡船頭 | 289° | 5 月底 / 7 月底 |
-| 淡水河岸星巴克 | 295° | 夏至前後 |
-| 八里渡船頭 | 307° | 夏至最近 (差 9°) |
-| 八里左岸公園 | 311° | 夏至最近 (差 13°) |
-| 沙崙海灘 | 157° | 永遠不穿塔 (廣角同框) |
-| 石頭廣場 | 3° | 永遠不穿塔 (廣角同框) |
+台灣日落方位全年在 ~243°-298° 擺盪；主塔方位超出此範圍 90° 以上的觀景點（主塔必然無法與夕陽同框）已移除。
+
+| id | 熱點名稱 | 主塔方位 | 對齊機會 |
+|---|---|---|---|
+| `starbucks` | 淡水河岸星巴克 | ~283° | 夏至前後 |
+| `customs_wharf` | 海關碼頭 | ~274° | 約 4 月初 / 9 月中 |
+| `tamsui_ferry` | 淡水渡船頭 | ~286° | 5 月底 / 7 月底 |
+| `bali` | 八里左岸公園 | ~323° | 夏至前後（廣角同框） |
+| `bali_ferry` | 八里渡船頭 | ~317° | 夏至前後（廣角同框） |
+
+**移出 ALL 但保留為測試參考點：**
+- `SAND_DUNE`（沙崙海灘）：主塔方位 ~185°，永遠不穿塔，為「不可對齊」固定參考點
+- `DATUN`（大屯山助航站）：海拔 1077m、距主塔 10.2km，為 `GeodesyTest` 遠距+高海拔參考點
 
 ---
 
@@ -224,22 +253,19 @@ FOV_h = 2 × atan(sensorWidth / (2 × focalLength))
 
 ## 6. 評分系統 (ComputeSunsetScoreUseCase)
 
-三維度組合 0-100 分：
+**CWA API 停用後，目前僅使用對齊度單一維度評分（0-100 分）。**
 
-| 維度 | 計算 | 權重 |
+| 維度 | 計算 | 備註 |
 |---|---|---|
-| **alignmentScore** | 0° offset → 100；±2° → 70；±10° → 30；±30°+ → 5 | 60% (對齊 ≥30 時) |
-| **photogenicScore** | 雲量 20-50% (火燒雲區間) → 100；全晴/全陰扣分 | 20% |
-| **rainSafeScore** | 100 − 降雨機率% | 20% |
+| **alignmentScore** | 0° offset → 100；±2° → 70；±10° → 30；±30°+ → 5 | 目前唯一有效維度 |
+| **photogenicScore** | 雲量 20-50% (火燒雲區間) → 100 | 已停用（CWA API 停用） |
+| **rainSafeScore** | 100 − 降雨機率% | 已停用（CWA API 停用） |
 
-**整合邏輯**：
-- 對齊 < 30 → 整體分數主要由對齊決定 (alignment × 85% + weather × 15%)，再好的天氣救不了不對齊
-- 對齊 ≥ 30 → alignment × 60% + weather × 40%
-- 無 CWA 金鑰 → 僅用 alignment
+**現行邏輯**：無 CWA 金鑰（即目前所有情境）→ 僅用 alignment 分數作為整體分數。
 
-### Wx 代碼 → 雲量 (data/weather/WxCode.kt)
-
-CWA 用 1-23 表示天氣（晴/多雲/陰/雨/雷雨）。本 APP 對應到 0.05–1.00 的「雲量比例」，再轉換成 photogenic 子分。
+> 三維度整合邏輯保留在代碼中以備日後接入其他天氣來源時恢復：
+> - 對齊 < 30 → alignment × 85% + weather × 15%
+> - 對齊 ≥ 30 → alignment × 60% + weather × 40%
 
 ---
 
@@ -247,11 +273,23 @@ CWA 用 1-23 表示天氣（晴/多雲/陰/雨/雷雨）。本 APP 對應到 0.0
 
 | Use Case | 輸入 | 輸出 |
 |---|---|---|
-| `PredictHotspotsUseCase` | 日期, 熱點清單 | `List<HotspotPrediction>` (sunset 事件 + 距離 + 對齊偏差)；> 25km 自動標 `TOO_FAR` |
+| `PredictHotspotsUseCase` | 日期, 熱點清單, TowerTarget | `List<HotspotPrediction>` (目標事件 + 距離 + 對齊偏差 + 太陽軌跡)；> 25km 自動標 `TOO_FAR` |
 | `ComputeGoldenLineUseCase` | 日期 | `GoldenLine`：主塔朝 (日落方位 + 180°) 的測地射線採樣 |
 | `SimulateFocalLengthUseCase` | 觀察者、焦距、感光元件 | `FocalSimulationResult`：FOV、塔/太陽畫面佔比 |
-| `ScanGoldenCalendarUseCase` | 起始日, 天數, 容差 | `List<GoldenDate>`：未來 N 天滿足對齊條件的日期 |
-| `ComputeSunsetScoreUseCase` | 對齊偏差, 天氣 | `SunsetScore` (overall, alignment, photogenic, rainSafe, verdict) |
+| `ScanGoldenCalendarUseCase` | 起始日, 天數, 容差, TowerTarget | `List<GoldenDate>`：未來 N 天滿足對齊條件的日期 |
+| `ComputeSunsetScoreUseCase` | 對齊偏差, 天氣（可選） | `SunsetScore` (overall, alignment, photogenic, rainSafe, verdict) |
+| `TowerTargetSunResolver` | 日期, 觀察者位置, TowerTarget | `TowerTargetSunEvent`：太陽仰角等於塔目標仰角的時刻（二分搜尋） |
+
+### `TowerTargetSunResolver` 細節
+
+計算「太陽降到目標仰角」的精確時刻：
+
+1. 從觀察者位置與 `TowerTarget.elevationMeters` 計算出「太陽需達到的幾何仰角」：
+   ```
+   targetAlt = atan((target.elevationMeters - observer.elevationMeters) / distance)
+   ```
+2. 在 `[sunset - 180min, sunset + 30min]` 區間內執行 **22 次二分搜尋**，找到太陽視仰角 = `targetAlt` 的時刻（精度 < 1 秒）。
+3. 若 `targetAlt` 不在區間仰角範圍內（如觀察者與塔等高），回傳日落時間作為 fallback。
 
 ---
 
@@ -259,10 +297,10 @@ CWA 用 1-23 表示天氣（晴/多雲/陰/雨/雷雨）。本 APP 對應到 0.0
 
 ### 8.1 不需要的東西
 
-- ❌ Google Cloud Project
-- ❌ ARCore Geospatial API
-- ❌ Mapbox / Lightship / 8th Wall
-- ❌ Sceneform / Filament
+- Google Cloud Project
+- ARCore Geospatial API
+- Mapbox / Lightship / 8th Wall
+- Sceneform / Filament
 
 ### 8.2 用到的元件 (全部 Android SDK 內建)
 
@@ -351,8 +389,8 @@ JSON 格式：
 {
   "version": 1,
   "hotspots": [
-    {"id": "sand_dune", "name": "沙崙海灘", "lat": 25.196, "lon": 121.408,
-     "elev": 2.0, "description": "..."}
+    {"id": "starbucks", "name": "淡水河岸星巴克", "lat": 25.17145, "lon": 121.43702,
+     "elev": 6.0, "description": "..."}
   ]
 }
 ```
@@ -369,7 +407,7 @@ PeriodicWorkRequest (1 day, ExistingPolicy.KEEP)
     ↓ 觸發於凌晨 3:00 (NetworkType.CONNECTED 限制)
     ↓
 ScanGoldenCalendarUseCase(today, days=7, maxOffset=5°)
-    ↓ 每天最佳熱點 + WeatherForecast → 整體分數
+    ↓ 每天最佳熱點 → 對齊分數
     ↓ score ≥ 85
 NotificationHelper.postGoldenDate(...)
     ↓ NotificationCompat.BigTextStyle 通知
@@ -384,30 +422,81 @@ NotificationHelper.postGoldenDate(...)
 ```
 DanjiangApp (Compose root)
 └─ NavHost
-    ├─ "hotspots"          熱點清單 (含日期選擇、FAB 新增、匯入匯出)
-    ├─ "hotspot_detail/{id}" 熱點詳情 (含拍攝品質分項)
-    ├─ "map"               地圖 + 黃金射線 + 點擊查詢
-    ├─ "simulator"         焦段模擬 + 時間 slider + 太陽軌跡
-    ├─ "ar"                AR 實境勘景 + 校正
-    └─ "calendar"          365 天黃金日曆
+    ├─ "hotspots"                        熱點清單 (含日期選擇、TowerTarget 選擇、FAB 新增、匯入匯出)
+    ├─ "hotspot_detail/{id}"             熱點詳情 (含拍攝品質分項 + 日落事件 + 與主塔關係)
+    ├─ "map"                             地圖 + 黃金射線 + 點擊查詢
+    ├─ "simulator?hotspotId=...&date=...&towerTarget=..."
+    │                                   焦段模擬 + 時間 slider + TowerTarget 選擇 + 太陽軌跡
+    ├─ "ar"                              AR 實境勘景 + 校正
+    └─ "calendar"                        365 天黃金日曆 (含 TowerTarget + 容差選擇)
 ```
 
-底部 NavigationBar 5 個 tab（map 與 hotspot_detail 不在底部，但屬同一個 NavHost）。
+底部 NavigationBar 5 個 tab（hotspot_detail 不在底部，但屬同一個 NavHost）。
+
+### 跳轉模式 (Jump Mode)
+
+當使用者從**熱點縮圖**點擊或從**日曆列**點擊時，攜帶 `hotspotId`、`date`、`towerTarget` 三個 query argument 跳轉到 simulator 路由。
+
+進入跳轉模式後：
+- 底部 NavigationBar 中除「焦段模擬器」之外的所有 tab 以 `enabled = false` 灰掉
+- 使用者只能按返回鍵離開跳轉模式，回到上一個畫面
+- 判斷條件：`currentRoute.startsWith("simulator") && backStackEntry.arguments.getString("hotspotId").isNotEmpty()`
 
 ---
 
-## 12. 設定檔與環境
+## 12. 設定層 (data/settings)
+
+### `TowerTargetStore`
+
+DataStore preferences，持久化使用者選擇的 `TowerTarget`（塔頂 / 塔基）：
+
+```kotlin
+@Singleton
+class TowerTargetStore @Inject constructor(
+    @ApplicationContext context: Context,
+) {
+    val target: Flow<TowerTarget>           // 預設 TowerTarget.UpperY
+    suspend fun setTarget(target: TowerTarget)
+}
+```
+
+- 使用 `stringPreferencesKey("tower_target")` 儲存 enum name
+- 無效值或缺值時 fallback 到 `TowerTarget.UpperY`
+- 由 `HotspotListViewModel`、`GoldenCalendarViewModel`、`FocalSimulatorViewModel` 各自收集
+
+### `TowerTargetSelector` (presentation/common)
+
+共用 Composable，以 `FilterChip` 排列 `TowerTarget.entries`，供熱點清單、日曆、焦段模擬器頁面重複使用：
+
+```kotlin
+@Composable
+fun TowerTargetSelector(
+    selected: TowerTarget,
+    onSelect: (TowerTarget) -> Unit,
+    modifier: Modifier = Modifier,
+)
+```
+
+---
+
+## 13. 設定檔與環境
 
 ### `local.properties`（不入版控）
 
 ```properties
 sdk.dir=C:\\Users\\<USER>\\AppData\\Local\\Android\\Sdk
 
-# 中央氣象署免費金鑰：https://opendata.cwa.gov.tw/userLogin
-CWA_API_KEY=CWA-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+# CWA API 已停用，此金鑰不再必要，保留供日後恢復使用
+# CWA_API_KEY=CWA-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
 
 # 目前未使用 (預留)
 GOOGLE_MAPS_API_KEY=
+```
+
+### Package Path
+
+```
+app/src/main/kotlin/studio/freestyle/labs/danjiangsunseeker/
 ```
 
 ### Gradle Wrapper
@@ -418,13 +507,13 @@ GOOGLE_MAPS_API_KEY=
 
 ```powershell
 .\gradlew.bat :app:compileDebugKotlin   # 純編譯
-.\gradlew.bat :app:testDebugUnitTest    # 27 個單元測試
-.\gradlew.bat :app:assembleDebug        # debug APK (~66 MB)
+.\gradlew.bat :app:testDebugUnitTest    # 單元測試
+.\gradlew.bat :app:assembleDebug        # debug APK
 ```
 
 ---
 
-## 13. 關鍵設計決策
+## 14. 關鍵設計決策
 
 | 決策 | 理由 |
 |---|---|
@@ -432,77 +521,108 @@ GOOGLE_MAPS_API_KEY=
 | MapLibre Native (非 Google Maps) | 完全免費、不需金鑰；用 OpenFreeMap 圖磚 |
 | 自建 AR (非 ARCore Geospatial) | 不需 Google Cloud；GPS+磁力計精度 ±3-5°（校正後 < 0.5°）對淡江情境足夠 |
 | commons-suncalc | 純 JVM、可離線；NOAA SPA 演算法誤差 < 0.0003° |
-| DataStore preferences (非 Room) | 自訂熱點 / 校正紀錄資料量小，不需要 schema 變遷的彈性 |
+| DataStore preferences (非 Room) | 自訂熱點 / TowerTarget 資料量小，不需要 schema 變遷的彈性 |
 | 預設熱點以代碼常數定義 + 覆寫機制 | 預設清單演進易；使用者修改不會破壞 |
 | 25 km 距離限制 | 距離大於 25km 後角寬太小 (< 0.05°)，視覺上幾乎是一點，意義不大 |
 | 校正 in-memory only | 環境磁場每次都不同，舊校正套用反而誤導；強制重新校正 |
 | WorkManager PeriodicWork (KEEP policy) | 跨重啟保留排程；網路條件可設限 |
+| TowerTargetSunResolver 二分搜尋 | 直接逼近「太陽到達塔目標仰角」的時刻，比固定用日落時間更精確；22 次迭代精度 < 1 秒 |
+| CWA API 移除 | CWA API 停用，天氣評分維度暫移除；Retrofit/OkHttp 依賴保留備用 |
+| 跳轉模式 bottom nav disabled | 避免使用者在帶參數的 simulator 路由下誤觸其他 tab 導致參數遺失 |
 
 ---
 
-## 14. 已知限制 / 待改善
+## 15. 已知限制 / 待改善
 
 | 項目 | 現況 | 計畫 |
 |---|---|---|
 | 視線遮蔽 (Line of Sight) | LineOfSightChecker 寫好但未串高程資料 | 接 SRTM 30m 離線檔或開源 Open-Elevation |
-| 潮汐倒影評分 | 未實作 | 串 CWA F-A0021-001 潮汐預報，加為評分第 4 維度 |
+| 天氣評分 | CWA API 停用後移除 | 尋找替代天氣來源（如 Open-Meteo）後恢復 |
+| 潮汐倒影評分 | 未實作 | 串 CWA F-A0021-001 潮汐預報，加為評分維度 |
 | 月落穿塔 (Moonset Through Tower) | 未實作 | commons-suncalc 已有 MoonTimes，新增掃描 |
 | 拍攝紀錄本 | 未實作 | 使用者上傳成果照 + 反向標註 |
 | 多語系 (i18n) | 僅 zh-TW + en strings | 後續可加日文 (淡水觀光客多) |
-| 持久化校正 | 已實作後回退 (環境磁場每次不同)，留純 in-memory | 可實作「同一地點」記憶（按 GPS 群聚） |
+| 持久化校正 | 純 in-memory | 可實作「同一地點」記憶（按 GPS 群聚） |
 
 ---
 
-## 15. 檔案地圖
+## 16. 檔案地圖
 
 ```
-android_app2/
+danjiangsunseeker/
 ├─ ARCHITECTURE.md                ← 本文件
+├─ README.md
 ├─ build.gradle.kts               根 Gradle (plugin 宣告)
 ├─ settings.gradle.kts            module include
 ├─ gradle.properties              JVM / KSP 設定
 ├─ gradle/libs.versions.toml      版本目錄 (集中管理依賴)
-├─ local.properties.example       金鑰範本
 ├─ gradlew / gradlew.bat          wrapper
-├─ gradle/wrapper/                wrapper jar + properties
 └─ app/
     ├─ build.gradle.kts           module Gradle (依賴 + buildConfig)
     ├─ proguard-rules.pro
     └─ src/
         ├─ main/
         │   ├─ AndroidManifest.xml
-        │   ├─ kotlin/com/ghtinc/danjiangsunseeker/
-        │   │   ├─ DanjiangApp.kt              @HiltAndroidApp Application
-        │   │   ├─ MainActivity.kt             @AndroidEntryPoint
-        │   │   ├─ data/                       (見 §3 模組架構)
-        │   │   ├─ domain/
-        │   │   └─ presentation/
-        │   └─ res/
-        │       ├─ values/strings.xml          zh-TW (預設)
-        │       ├─ values-en/strings.xml       en
-        │       ├─ mipmap-anydpi-v26/          adaptive launcher icons
-        │       └─ drawable/ic_launcher_foreground.xml
-        └─ test/kotlin/...                     27 個 JVM 單元測試
+        │   └─ kotlin/studio/freestyle/labs/danjiangsunseeker/
+        │       ├─ DanjiangApp.kt              @HiltAndroidApp Application
+        │       ├─ MainActivity.kt             @AndroidEntryPoint
+        │       ├─ data/
+        │       │   ├─ astro/                  SunCalcDataSource
+        │       │   ├─ sensors/                DeviceOrientationProvider, LocationProvider
+        │       │   ├─ hotspot/                CustomHotspotStore
+        │       │   ├─ settings/               TowerTargetStore
+        │       │   ├─ calibration/            CalibrationStore
+        │       │   ├─ notifications/          DailyScoreWorker, NotificationHelper
+        │       │   └─ di/                     NetworkModule
+        │       ├─ domain/
+        │       │   ├─ model/                  BridgeTower, TowerTarget, Hotspot,
+        │       │   │                          DefaultHotspots, GeoPoint, GoldenLine, ...
+        │       │   ├─ physics/                Geodesy, AtmosphericRefraction,
+        │       │   │                          LineOfSightChecker
+        │       │   └─ usecase/                PredictHotspotsUseCase,
+        │       │                              ScanGoldenCalendarUseCase,
+        │       │                              TowerTargetSunResolver,
+        │       │                              ComputeSunsetScoreUseCase,
+        │       │                              ComputeGoldenLineUseCase,
+        │       │                              SimulateFocalLengthUseCase
+        │       └─ presentation/
+        │           ├─ app/                    DanjiangApp (NavHost + BottomNav)
+        │           ├─ hotspot/                HotspotListScreen, HotspotDetailScreen,
+        │           │                          HotspotListViewModel
+        │           ├─ map/                    MapScreen, MapViewModel,
+        │           │                          ComposeMapLibre, MapLayers
+        │           ├─ simulator/              FocalSimulatorScreen, FocalSimulatorViewModel
+        │           ├─ ar/                     ARScreen, ARViewModel, CameraPreview
+        │           ├─ calendar/               GoldenCalendarScreen, GoldenCalendarViewModel,
+        │           │                          AddToCalendarHelper
+        │           ├─ common/                 TowerTargetSelector
+        │           └─ theme/                  Color, Theme, Type
+        └─ test/kotlin/...
+            ├─ domain/physics/                 AtmosphericRefractionTest, GeodesyTest
+            ├─ domain/usecase/                 PredictHotspotsUseCaseTest,
+            │                                  ScanGoldenCalendarUseCaseTest,
+            │                                  ComputeSunsetScoreUseCaseTest
+            └─ data/astro/                     SunCalcDataSourceTest
 ```
 
 ---
 
-## 16. 測試覆蓋
+## 17. 測試覆蓋
 
-| 測試類別 | 數量 | 重點 |
-|---|---|---|
-| `AtmosphericRefractionTest` | 5 | Bennett 公式 vs Allen 標準大氣值 |
-| `GeodesyTest` | 6 | Vincenty 自洽性、與 Haversine 在近距離一致 |
-| `SunCalcDataSourceTest` | 4 | 對照 NOAA 春分/夏至/冬至方位、大屯山高度修正 |
-| `PredictHotspotsUseCaseTest` | 3 | 9 個熱點都產生預測；距離 / 角寬合理 |
-| `ScanGoldenCalendarUseCaseTest` | 3 | 淡水渡船頭有對齊機會；沙崙永遠無；結果按日排序 |
-| `ComputeSunsetScoreUseCaseTest` | 5 | 完美對齊 + 好天氣 → ≥ 85；爛對齊救不了；無天氣 fallback |
+| 測試類別 | 重點 |
+|---|---|
+| `AtmosphericRefractionTest` | Bennett 公式 vs Allen 標準大氣值 |
+| `GeodesyTest` | Vincenty 自洽性、與 Haversine 在近距離一致；DATUN 遠距+高海拔參考點 |
+| `SunCalcDataSourceTest` | 對照 NOAA 春分/夏至/冬至方位、大屯山高度修正 |
+| `PredictHotspotsUseCaseTest` | ALL(5 個)熱點都產生預測；TOO_FAR 分類；null sunset 處理；距離/方位合理 |
+| `ScanGoldenCalendarUseCaseTest` | 精確匹配產生黃金日；遠偏移不產生；結果按日排序；閾值寬則結果不少於窄；offset 均在閾值內；null azimuth 跳過 |
+| `ComputeSunsetScoreUseCaseTest` | 完美對齊 + 好天氣 → ≥ 85；爛對齊救不了；無天氣 fallback |
 
 執行：`.\gradlew.bat :app:testDebugUnitTest`
 
 ---
 
-## 17. 撰寫慣例
+## 18. 撰寫慣例
 
 - **註解原則**：只在「為什麼」非顯而易見時寫；不重複描述「做什麼」
 - **註解語言**：繁體中文為主（程式碼註解內），技術詞保留英文

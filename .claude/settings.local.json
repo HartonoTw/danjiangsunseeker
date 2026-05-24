@@ -14,7 +14,10 @@
       "Bash(Get-ChildItem -Path \"D:\\\\AI\\\\android_app2\" -Recurse)",
       "Bash(Select-Object FullName)",
       "Bash(powershell *)",
-      "Bash(adb shell *)"
+      "Bash(adb shell *)",
+      "PowerShell(python --version; python -c \"import reportlab; print\\('reportlab ok'\\)\" 2>$null; python -c \"import PIL; print\\('PIL ok'\\)\" 2>$null)",
+      "PowerShell(Get-Item *)",
+      "Bash(python *)"
     ]
   }
 }
