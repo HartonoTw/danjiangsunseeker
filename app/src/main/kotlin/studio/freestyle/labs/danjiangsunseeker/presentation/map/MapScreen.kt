@@ -1,6 +1,11 @@
 ﻿package studio.freestyle.labs.danjiangsunseeker.presentation.map
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.util.Log
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,19 +17,23 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.MyLocation
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
@@ -42,8 +51,10 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.maplibre.android.camera.CameraPosition
+import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.Style
@@ -59,6 +70,12 @@ fun MapScreen(vm: MapViewModel = hiltViewModel()) {
 
     val mapHolder = remember { MapHolder() }
     var showDatePicker by remember { mutableStateOf(false) }
+    val locationPermLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        if (granted) vm.flyToCurrentLocation()
+        else Toast.makeText(ctx, "未授權位置權限", Toast.LENGTH_SHORT).show()
+    }
 
     // 雙 key LaunchedEffect：
     //   styleVersion 變（地圖就緒）→ 重新同步當下的 mergedHotspots / goldenLine
@@ -86,6 +103,22 @@ fun MapScreen(vm: MapViewModel = hiltViewModel()) {
         if (mapHolder.styleVersion == 0) return@LaunchedEffect
         val style = mapHolder.style ?: return@LaunchedEffect
         MapLayers.updateTapMark(style, state.tap?.point?.latitude, state.tap?.point?.longitude)
+    }
+    LaunchedEffect(mapHolder.styleVersion, state.currentLocationFlyRequest) {
+        if (mapHolder.styleVersion == 0 || state.currentLocationFlyRequest == 0) return@LaunchedEffect
+        val map = mapHolder.map ?: return@LaunchedEffect
+        val point = state.currentLocation ?: return@LaunchedEffect
+        val zoom = map.cameraPosition.zoom.coerceAtLeast(15.5)
+        map.animateCamera(
+            CameraUpdateFactory.newLatLngZoom(LatLng(point.latitude, point.longitude), zoom),
+            900,
+        )
+    }
+    state.locationMessage?.let { message ->
+        LaunchedEffect(message) {
+            Toast.makeText(ctx, message, Toast.LENGTH_SHORT).show()
+            vm.clearLocationMessage()
+        }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -133,6 +166,35 @@ fun MapScreen(vm: MapViewModel = hiltViewModel()) {
                     label = { Text("選日期") },
                     colors = AssistChipDefaults.assistChipColors(),
                 )
+            }
+        }
+
+        Surface(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = 82.dp, end = 16.dp)
+                .size(48.dp)
+                .shadow(elevation = 4.dp, shape = CircleShape),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 3.dp,
+        ) {
+            IconButton(
+                onClick = {
+                    val granted = ContextCompat.checkSelfPermission(
+                        ctx,
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                    ) == PackageManager.PERMISSION_GRANTED
+                    if (granted) vm.flyToCurrentLocation()
+                    else locationPermLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                },
+                enabled = !state.locatingCurrentLocation,
+            ) {
+                if (state.locatingCurrentLocation) {
+                    CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
+                } else {
+                    Icon(Icons.Outlined.MyLocation, contentDescription = "飛到目前位置")
+                }
             }
         }
 

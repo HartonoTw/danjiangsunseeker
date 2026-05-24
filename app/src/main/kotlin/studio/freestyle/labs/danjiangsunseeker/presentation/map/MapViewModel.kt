@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import studio.freestyle.labs.danjiangsunseeker.data.astro.SunCalcDataSource
 import studio.freestyle.labs.danjiangsunseeker.data.hotspot.CustomHotspotStore
+import studio.freestyle.labs.danjiangsunseeker.data.sensors.LocationProvider
 import studio.freestyle.labs.danjiangsunseeker.data.settings.TowerTargetStore
 import studio.freestyle.labs.danjiangsunseeker.domain.model.BridgeTower
 import studio.freestyle.labs.danjiangsunseeker.domain.model.DefaultHotspots
@@ -20,10 +21,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import java.time.LocalDate
 import java.time.ZoneId
 import javax.inject.Inject
@@ -35,6 +38,7 @@ class MapViewModel @Inject constructor(
     private val customHotspotStore: CustomHotspotStore,
     private val towerTargetStore: TowerTargetStore,
     private val targetSunResolver: TowerTargetSunResolver,
+    private val locationProvider: LocationProvider,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MapUiState())
@@ -101,6 +105,46 @@ class MapViewModel @Inject constructor(
         _state.value = _state.value.copy(tap = null)
     }
 
+    fun flyToCurrentLocation() {
+        if (_state.value.locatingCurrentLocation) return
+        if (!locationProvider.hasPermission()) {
+            _state.value = _state.value.copy(locationMessage = "需要位置權限才能飛到目前位置")
+            return
+        }
+
+        _state.value = _state.value.copy(locatingCurrentLocation = true, locationMessage = null)
+        viewModelScope.launch {
+            runCatching {
+                withTimeout(10_000L) {
+                    withContext(Dispatchers.IO) {
+                        locationProvider.locationUpdates(intervalMillis = 1_000L).first()
+                    }
+                }
+            }.onSuccess { location ->
+                val point = GeoPoint(
+                    latitude = location.latitude,
+                    longitude = location.longitude,
+                    elevationMeters = if (location.hasAltitude()) location.altitude else 0.0,
+                )
+                _state.value = _state.value.copy(
+                    currentLocation = point,
+                    currentLocationFlyRequest = _state.value.currentLocationFlyRequest + 1,
+                    locatingCurrentLocation = false,
+                )
+            }.onFailure { err ->
+                Log.w(TAG, "flyToCurrentLocation failed", err)
+                _state.value = _state.value.copy(
+                    locatingCurrentLocation = false,
+                    locationMessage = "目前無法取得位置，請確認 GPS 已開啟",
+                )
+            }
+        }
+    }
+
+    fun clearLocationMessage() {
+        _state.value = _state.value.copy(locationMessage = null)
+    }
+
     fun setTowerTarget(target: TowerTarget) {
         viewModelScope.launch { towerTargetStore.setTarget(target) }
     }
@@ -131,6 +175,10 @@ data class MapUiState(
     val tap: TapAnalysis? = null,
     val mergedHotspots: List<Hotspot> = DefaultHotspots.ALL,
     val towerTarget: TowerTarget = TowerTarget.UpperY,
+    val currentLocation: GeoPoint? = null,
+    val currentLocationFlyRequest: Int = 0,
+    val locatingCurrentLocation: Boolean = false,
+    val locationMessage: String? = null,
 )
 
 data class TapAnalysis(
