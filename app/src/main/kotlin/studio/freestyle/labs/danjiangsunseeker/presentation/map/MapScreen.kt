@@ -241,6 +241,14 @@ private fun TapAnalysisCard(tap: TapAnalysis, onClose: () -> Unit) {
                 "日落方位偏差: ${tap.alignmentOffsetDegrees?.let { "%+.2f°".format(it) } ?: "—"}",
                 style = MaterialTheme.typography.bodySmall,
             )
+            tap.targetTime?.let {
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    "${tap.towerTarget.displayName}: %02d:%02d".format(it.hour, it.minute),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline,
+                )
+            }
             Spacer(Modifier.height(4.dp))
             Text(verdict, color = verdictColor, style = MaterialTheme.typography.bodySmall)
         }

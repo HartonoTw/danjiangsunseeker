@@ -4,10 +4,12 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import studio.freestyle.labs.danjiangsunseeker.data.hotspot.CustomHotspotStore
+import studio.freestyle.labs.danjiangsunseeker.data.settings.TowerTargetStore
 import studio.freestyle.labs.danjiangsunseeker.data.sensors.LocationProvider
 import studio.freestyle.labs.danjiangsunseeker.domain.model.DefaultHotspots
 import studio.freestyle.labs.danjiangsunseeker.domain.model.GeoPoint
 import studio.freestyle.labs.danjiangsunseeker.domain.model.Hotspot
+import studio.freestyle.labs.danjiangsunseeker.domain.model.TowerTarget
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.ComputeSunsetScoreUseCase
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.HotspotPrediction
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.PredictHotspotsUseCase
@@ -36,6 +38,7 @@ class HotspotListViewModel @Inject constructor(
     private val computeScore: ComputeSunsetScoreUseCase,
     private val customHotspotStore: CustomHotspotStore,
     private val locationProvider: LocationProvider,
+    private val towerTargetStore: TowerTargetStore,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(HotspotListState())
@@ -64,6 +67,12 @@ class HotspotListViewModel @Inject constructor(
                 loadFor(_state.value.date)
             }
             .launchIn(viewModelScope)
+        towerTargetStore.target
+            .onEach { target ->
+                _state.value = _state.value.copy(towerTarget = target)
+                loadFor(_state.value.date)
+            }
+            .launchIn(viewModelScope)
         loadFor(LocalDate.now(java.time.ZoneId.of("Asia/Taipei")))
     }
 
@@ -83,7 +92,7 @@ class HotspotListViewModel @Inject constructor(
             runCatching {
                 withContext(Dispatchers.Default) {
                     val all = mergedHotspots()
-                    val predictions = predictHotspots(date, all)
+                    val predictions = predictHotspots(date, all, _state.value.towerTarget)
                     val customIds = customHotspots.map { it.id }.toSet()
                     predictions.map { p ->
                         ScoredPrediction(
@@ -240,6 +249,10 @@ class HotspotListViewModel @Inject constructor(
     fun clearImportMessage() {
         _state.value = _state.value.copy(importMessage = null)
     }
+
+    fun setTowerTarget(target: TowerTarget) {
+        viewModelScope.launch { towerTargetStore.setTarget(target) }
+    }
 }
 
 data class HotspotListState(
@@ -249,6 +262,7 @@ data class HotspotListState(
     val error: String? = null,
     val editor: HotspotEditorState? = null,
     val importMessage: String? = null,
+    val towerTarget: TowerTarget = TowerTarget.UpperY,
 )
 
 data class HotspotEditorState(

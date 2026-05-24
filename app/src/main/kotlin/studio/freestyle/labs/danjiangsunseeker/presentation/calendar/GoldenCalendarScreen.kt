@@ -36,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.GoldenDate
+import studio.freestyle.labs.danjiangsunseeker.presentation.common.TowerTargetSelector
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -54,6 +55,11 @@ fun GoldenCalendarScreen(vm: GoldenCalendarViewModel = hiltViewModel()) {
             color = MaterialTheme.colorScheme.outline,
         )
         Spacer(Modifier.height(12.dp))
+        TowerTargetSelector(
+            selected = state.towerTarget,
+            onSelect = vm::setTowerTarget,
+        )
+        Spacer(Modifier.height(8.dp))
 
         // FlowRow：大字體下空間不足會自動換到下一行，不會被裁切
         FlowRow(
@@ -135,7 +141,7 @@ private fun GoldenDateRow(
                 Text(name, style = MaterialTheme.typography.bodyMedium)
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    "日落 ${golden.sunsetTime?.toLocalTime()?.let { "%02d:%02d".format(it.hour, it.minute) } ?: "—"}" +
+                    "${golden.towerTarget.displayName} ${golden.sunsetTime?.toLocalTime()?.let { "%02d:%02d".format(it.hour, it.minute) } ?: "—"}" +
                         " · 偏差 ${"%+.2f".format(golden.alignmentOffsetDegrees)}°",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.outline,

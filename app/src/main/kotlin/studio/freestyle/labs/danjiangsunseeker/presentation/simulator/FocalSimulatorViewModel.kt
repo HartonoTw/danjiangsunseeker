@@ -4,14 +4,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import studio.freestyle.labs.danjiangsunseeker.data.astro.SunCalcDataSource
 import studio.freestyle.labs.danjiangsunseeker.data.hotspot.CustomHotspotStore
+import studio.freestyle.labs.danjiangsunseeker.data.settings.TowerTargetStore
 import studio.freestyle.labs.danjiangsunseeker.data.sensors.LocationProvider
 import studio.freestyle.labs.danjiangsunseeker.domain.model.BridgeTower
 import studio.freestyle.labs.danjiangsunseeker.domain.model.DefaultHotspots
 import studio.freestyle.labs.danjiangsunseeker.domain.model.GeoPoint
 import studio.freestyle.labs.danjiangsunseeker.domain.model.Hotspot
+import studio.freestyle.labs.danjiangsunseeker.domain.model.TowerTarget
 import studio.freestyle.labs.danjiangsunseeker.domain.physics.Geodesy
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.SensorSpec
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.SimulateFocalLengthUseCase
+import studio.freestyle.labs.danjiangsunseeker.domain.usecase.TowerTargetSunResolver
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,6 +44,8 @@ class FocalSimulatorViewModel @Inject constructor(
     private val sunCalc: SunCalcDataSource,
     private val locationProvider: LocationProvider,
     private val customHotspotStore: CustomHotspotStore,
+    private val towerTargetStore: TowerTargetStore,
+    private val targetSunResolver: TowerTargetSunResolver,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(FocalSimulatorState())
@@ -54,6 +59,12 @@ class FocalSimulatorViewModel @Inject constructor(
             .onEach { customs ->
                 customHotspots = customs
                 _state.value = _state.value.copy(mergedHotspots = mergedHotspots())
+            }
+            .launchIn(viewModelScope)
+        towerTargetStore.target
+            .onEach { target ->
+                _state.value = _state.value.copy(towerTarget = target)
+                viewModelScope.launch { resetTimeToSunset() }
             }
             .launchIn(viewModelScope)
 
@@ -129,6 +140,10 @@ class FocalSimulatorViewModel @Inject constructor(
         viewModelScope.launch { resetTimeToSunset() }
     }
 
+    fun setTowerTarget(target: TowerTarget) {
+        viewModelScope.launch { towerTargetStore.setTarget(target) }
+    }
+
     /** 設定一天中的「分鐘 since midnight」。例如 18:30 → 1110。 */
     fun setMinuteOfDay(minute: Int) {
         _state.value = _state.value.copy(timeMinuteOfDay = minute.coerceIn(0, 24 * 60 - 1))
@@ -140,7 +155,13 @@ class FocalSimulatorViewModel @Inject constructor(
         val events = withContext(Dispatchers.Default) {
             sunCalc.dailyEvents(s.date, s.observer)
         }
-        val defaultMinute = events.sunset
+        val targetEvent = withContext(Dispatchers.Default) {
+            targetSunResolver.resolve(s.date, s.observer, s.towerTarget)
+        }
+        val defaultMinute = targetEvent.time
+            ?.toLocalTime()
+            ?.let { it.hour * 60 + it.minute }
+            ?: events.sunset
             ?.toLocalTime()
             ?.let { it.hour * 60 + it.minute }
             ?: (17 * 60 + 30)
@@ -320,6 +341,7 @@ data class FocalSimulatorState(
     val sunAltitudeDegrees: Double = 0.0,
     val sunAzimuthDegrees: Double = 0.0,
     val recommendation: String = "",
+    val towerTarget: TowerTarget = TowerTarget.UpperY,
     /** 八里端（主跨 450m）是否在畫面左側；由觀察者方位動態計算 */
     val baliIsOnLeft: Boolean = true,
     /** 八里跨度（450m）在畫面中的寬度比例；隨焦段縮放 */

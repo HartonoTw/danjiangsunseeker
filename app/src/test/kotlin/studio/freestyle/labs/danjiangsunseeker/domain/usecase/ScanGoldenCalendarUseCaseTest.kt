@@ -19,6 +19,7 @@ import kotlin.math.abs
 class ScanGoldenCalendarUseCaseTest {
 
     private val sunCalc: SunCalcDataSource = mockk()
+    private val targetSunResolver: TowerTargetSunResolver = mockk()
     private lateinit var useCase: ScanGoldenCalendarUseCase
 
     private val fromDate = LocalDate.of(2025, 1, 1)
@@ -42,7 +43,16 @@ class ScanGoldenCalendarUseCaseTest {
 
     @Before
     fun setUp() {
-        useCase = ScanGoldenCalendarUseCase(sunCalc)
+        useCase = ScanGoldenCalendarUseCase(sunCalc, targetSunResolver)
+    }
+
+    private fun stubTarget(date: LocalDate, observer: GeoPoint, azimuth: Double?) {
+        every { targetSunResolver.resolve(date, observer, any()) } returns TowerTargetSunEvent(
+            time = date.atTime(18, 0).atZone(tz),
+            azimuthDegrees = azimuth,
+            altitudeDegrees = 1.0,
+            targetAltitudeDegrees = 1.0,
+        )
     }
 
     @Test
@@ -52,6 +62,7 @@ class ScanGoldenCalendarUseCaseTest {
             val date = fromDate.plusDays(d.toLong())
             every { sunCalc.dailyEvents(date, hotspot.position) } returns
                 fakeEvents(date, hotspot.position, 200.0) // far from any tower bearing
+            stubTarget(date, hotspot.position, 200.0)
         }
 
         val results = useCase(fromDate, days = 7, hotspots = listOf(hotspot))
@@ -69,6 +80,7 @@ class ScanGoldenCalendarUseCaseTest {
             val azimuth = if (d == 0) towerBearing else towerBearing + 15.0
             every { sunCalc.dailyEvents(date, hotspot.position) } returns
                 fakeEvents(date, hotspot.position, azimuth)
+            stubTarget(date, hotspot.position, azimuth)
         }
 
         val results = useCase(fromDate, days = 3, maxOffsetDegrees = 2.0, hotspots = listOf(hotspot))
@@ -87,6 +99,7 @@ class ScanGoldenCalendarUseCaseTest {
             val azimuth = if (d % 3 == 0) towerBearing else towerBearing + 20.0
             every { sunCalc.dailyEvents(date, hotspot.position) } returns
                 fakeEvents(date, hotspot.position, azimuth)
+            stubTarget(date, hotspot.position, azimuth)
         }
 
         val results = useCase(fromDate, days = 10, hotspots = listOf(hotspot))
@@ -108,6 +121,7 @@ class ScanGoldenCalendarUseCaseTest {
             val date = fromDate.plusDays(d.toLong())
             every { sunCalc.dailyEvents(date, hotspot.position) } returns
                 fakeEvents(date, hotspot.position, towerBearing + d.toDouble())
+            stubTarget(date, hotspot.position, towerBearing + d.toDouble())
         }
 
         val narrow = useCase(fromDate, days = 10, maxOffsetDegrees = 1.0, hotspots = listOf(hotspot))
@@ -127,6 +141,7 @@ class ScanGoldenCalendarUseCaseTest {
             val azimuth = if (d == 2) towerBearing + 1.5 else towerBearing + 20.0
             every { sunCalc.dailyEvents(date, hotspot.position) } returns
                 fakeEvents(date, hotspot.position, azimuth)
+            stubTarget(date, hotspot.position, azimuth)
         }
 
         val results = useCase(fromDate, days = 5, maxOffsetDegrees = threshold, hotspots = listOf(hotspot))
@@ -149,6 +164,7 @@ class ScanGoldenCalendarUseCaseTest {
             // All days have null azimuth (polar night scenario)
             every { sunCalc.dailyEvents(date, hotspot.position) } returns
                 fakeEvents(date, hotspot.position, null)
+            stubTarget(date, hotspot.position, null)
         }
 
         val results = useCase(fromDate, days = 3, maxOffsetDegrees = towerBearing, hotspots = listOf(hotspot))

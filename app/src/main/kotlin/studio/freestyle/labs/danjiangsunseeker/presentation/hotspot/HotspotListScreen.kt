@@ -92,6 +92,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import studio.freestyle.labs.danjiangsunseeker.R
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.AlignmentClass
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.SunsetScore
+import studio.freestyle.labs.danjiangsunseeker.presentation.common.TowerTargetSelector
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
@@ -166,6 +167,10 @@ fun HotspotListScreen(
                 today = today,
                 onPickQuick = { vm.loadFor(it) },
                 onOpenPicker = { showDatePicker = true },
+            )
+            TowerTargetSelector(
+                selected = state.towerTarget,
+                onSelect = vm::setTowerTarget,
             )
             Spacer(Modifier.height(8.dp))
 
@@ -319,7 +324,7 @@ private fun HotspotRow(
 ) {
     val name = p.prediction.hotspot.nameRes?.let { stringResource(it) }
         ?: p.prediction.hotspot.customName.orEmpty()
-    val sunsetTime = p.prediction.events.sunset?.format(DateTimeFormatter.ofPattern("HH:mm:ss"))
+    val targetTime = p.prediction.targetTime?.format(DateTimeFormatter.ofPattern("HH:mm:ss"))
     val offset = p.prediction.alignmentOffsetDegrees
     val isOverride = p.isOverride
     val isPureCustom = p.prediction.hotspot.isCustom && p.prediction.hotspot.id.startsWith("custom_")
@@ -391,7 +396,7 @@ private fun HotspotRow(
                 } else {
                     // 日落時間與偏差各佔一行，避免放在同一 Row 時大字體溢出
                     Text(
-                        "${stringResource(R.string.label_sunset_time)} $sunsetTime",
+                        "${p.prediction.towerTarget.displayName} $targetTime",
                         style = MaterialTheme.typography.bodySmall,
                     )
                     offset?.let {

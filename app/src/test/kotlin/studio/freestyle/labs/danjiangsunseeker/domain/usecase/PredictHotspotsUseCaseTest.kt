@@ -19,6 +19,7 @@ import java.time.ZoneId
 class PredictHotspotsUseCaseTest {
 
     private val sunCalc: SunCalcDataSource = mockk()
+    private val targetSunResolver: TowerTargetSunResolver = mockk()
     private lateinit var useCase: PredictHotspotsUseCase
 
     private val testDate = LocalDate.of(2025, 6, 21)
@@ -54,9 +55,18 @@ class PredictHotspotsUseCaseTest {
 
     @Before
     fun setUp() {
-        useCase = PredictHotspotsUseCase(sunCalc)
+        useCase = PredictHotspotsUseCase(sunCalc, targetSunResolver)
         // positionAt is called for sun trail computation
         every { sunCalc.positionAt(any(), any()) } returns fakeSunPosition
+    }
+
+    private fun stubTarget(observer: GeoPoint, azimuth: Double? = 285.0) {
+        every { targetSunResolver.resolve(testDate, observer, any()) } returns TowerTargetSunEvent(
+            time = testDate.atTime(18, 45).atZone(tz),
+            azimuthDegrees = azimuth,
+            altitudeDegrees = 1.0,
+            targetAltitudeDegrees = 1.0,
+        )
     }
 
     @Test
@@ -64,6 +74,7 @@ class PredictHotspotsUseCaseTest {
         DefaultHotspots.ALL.forEach { hotspot ->
             every { sunCalc.dailyEvents(testDate, hotspot.position) } returns
                 fakeSunEvents(hotspot.position)
+            stubTarget(hotspot.position)
         }
         val predictions = useCase(testDate)
         assertEquals(DefaultHotspots.ALL.size, predictions.size)
@@ -74,6 +85,7 @@ class PredictHotspotsUseCaseTest {
         DefaultHotspots.ALL.forEach { hotspot ->
             every { sunCalc.dailyEvents(testDate, hotspot.position) } returns
                 fakeSunEvents(hotspot.position)
+            stubTarget(hotspot.position)
         }
         val predictions = useCase(testDate)
         predictions.forEach { assertNotNull(it.hotspot) }
@@ -102,6 +114,7 @@ class PredictHotspotsUseCaseTest {
         val hotspot = DefaultHotspots.ALL.first()
         every { sunCalc.dailyEvents(testDate, hotspot.position) } returns
             fakeSunEvents(hotspot.position, sunsetAzimuth = null)
+        stubTarget(hotspot.position, azimuth = null)
 
         val predictions = useCase(testDate, listOf(hotspot))
 
@@ -113,6 +126,12 @@ class PredictHotspotsUseCaseTest {
         val hotspot = DefaultHotspots.ALL.first()
         every { sunCalc.dailyEvents(testDate, hotspot.position) } returns
             fakeSunEvents(hotspot.position).copy(sunset = null, sunsetAzimuthDegrees = null)
+        every { targetSunResolver.resolve(testDate, hotspot.position, any()) } returns TowerTargetSunEvent(
+            time = null,
+            azimuthDegrees = null,
+            altitudeDegrees = null,
+            targetAltitudeDegrees = 1.0,
+        )
 
         val predictions = useCase(testDate, listOf(hotspot))
 
@@ -124,6 +143,7 @@ class PredictHotspotsUseCaseTest {
         DefaultHotspots.ALL.forEach { hotspot ->
             every { sunCalc.dailyEvents(testDate, hotspot.position) } returns
                 fakeSunEvents(hotspot.position)
+            stubTarget(hotspot.position)
         }
         useCase(testDate).forEach { prediction ->
             assertTrue(
@@ -138,6 +158,7 @@ class PredictHotspotsUseCaseTest {
         DefaultHotspots.ALL.forEach { hotspot ->
             every { sunCalc.dailyEvents(testDate, hotspot.position) } returns
                 fakeSunEvents(hotspot.position)
+            stubTarget(hotspot.position)
         }
         useCase(testDate).forEach { prediction ->
             assertTrue(

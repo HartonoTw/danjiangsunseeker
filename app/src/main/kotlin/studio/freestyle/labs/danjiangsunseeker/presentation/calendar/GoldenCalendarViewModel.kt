@@ -3,8 +3,10 @@
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import studio.freestyle.labs.danjiangsunseeker.data.hotspot.CustomHotspotStore
+import studio.freestyle.labs.danjiangsunseeker.data.settings.TowerTargetStore
 import studio.freestyle.labs.danjiangsunseeker.domain.model.DefaultHotspots
 import studio.freestyle.labs.danjiangsunseeker.domain.model.Hotspot
+import studio.freestyle.labs.danjiangsunseeker.domain.model.TowerTarget
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.GoldenDate
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.ScanGoldenCalendarUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -24,6 +26,7 @@ import javax.inject.Inject
 class GoldenCalendarViewModel @Inject constructor(
     private val scanCalendar: ScanGoldenCalendarUseCase,
     private val customHotspotStore: CustomHotspotStore,
+    private val towerTargetStore: TowerTargetStore,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(GoldenCalendarState())
@@ -38,10 +41,20 @@ class GoldenCalendarViewModel @Inject constructor(
                 scan(_state.value.toleranceDegrees)
             }
             .launchIn(viewModelScope)
+        towerTargetStore.target
+            .onEach { target ->
+                _state.value = _state.value.copy(towerTarget = target)
+                scan(_state.value.toleranceDegrees)
+            }
+            .launchIn(viewModelScope)
     }
 
     fun setTolerance(toleranceDeg: Double) {
         scan(toleranceDeg)
+    }
+
+    fun setTowerTarget(target: TowerTarget) {
+        viewModelScope.launch { towerTargetStore.setTarget(target) }
     }
 
     private fun mergedHotspots(): List<Hotspot> {
@@ -62,6 +75,7 @@ class GoldenCalendarViewModel @Inject constructor(
                     days = 365,
                     maxOffsetDegrees = toleranceDeg,
                     hotspots = hotspots,
+                    target = _state.value.towerTarget,
                 )
             }
             _state.value = _state.value.copy(
@@ -77,4 +91,5 @@ data class GoldenCalendarState(
     val loading: Boolean = true,
     val toleranceDegrees: Double = 2.0,
     val dates: List<GoldenDate> = emptyList(),
+    val towerTarget: TowerTarget = TowerTarget.UpperY,
 )

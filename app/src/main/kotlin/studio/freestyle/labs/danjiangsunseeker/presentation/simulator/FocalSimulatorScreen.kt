@@ -50,6 +50,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import studio.freestyle.labs.danjiangsunseeker.domain.model.BridgeTower
 import studio.freestyle.labs.danjiangsunseeker.domain.model.Hotspot
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.SensorSpec
+import studio.freestyle.labs.danjiangsunseeker.presentation.common.TowerTargetSelector
 import java.time.Instant
 import java.time.ZoneId
 
@@ -94,6 +95,11 @@ fun FocalSimulatorScreen(vm: FocalSimulatorViewModel = hiltViewModel()) {
                 label = { Text(state.date.toString()) },
             )
         }
+
+        TowerTargetSelector(
+            selected = state.towerTarget,
+            onSelect = vm::setTowerTarget,
+        )
 
         SensorPicker(currentName = state.sensorName, onPick = vm::setSensor)
 

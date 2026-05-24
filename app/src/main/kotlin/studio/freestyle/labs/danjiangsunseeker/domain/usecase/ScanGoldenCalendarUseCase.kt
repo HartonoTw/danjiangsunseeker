@@ -4,6 +4,7 @@ import studio.freestyle.labs.danjiangsunseeker.data.astro.SunCalcDataSource
 import studio.freestyle.labs.danjiangsunseeker.domain.model.BridgeTower
 import studio.freestyle.labs.danjiangsunseeker.domain.model.DefaultHotspots
 import studio.freestyle.labs.danjiangsunseeker.domain.model.Hotspot
+import studio.freestyle.labs.danjiangsunseeker.domain.model.TowerTarget
 import studio.freestyle.labs.danjiangsunseeker.domain.physics.Geodesy
 import java.time.LocalDate
 import java.time.ZonedDateTime
@@ -23,6 +24,7 @@ import kotlin.math.abs
  */
 class ScanGoldenCalendarUseCase @Inject constructor(
     private val sunCalc: SunCalcDataSource,
+    private val targetSunResolver: TowerTargetSunResolver,
 ) {
 
     /**
@@ -36,6 +38,7 @@ class ScanGoldenCalendarUseCase @Inject constructor(
         days: Int = 365,
         maxOffsetDegrees: Double = 2.0,
         hotspots: List<Hotspot> = DefaultHotspots.ALL,
+        target: TowerTarget = TowerTarget.UpperY,
     ): List<GoldenDate> {
         val result = mutableListOf<GoldenDate>()
         val hotspotBearings = hotspots.associateWith { hotspot ->
@@ -45,18 +48,19 @@ class ScanGoldenCalendarUseCase @Inject constructor(
         for (d in 0 until days) {
             val date = fromDate.plusDays(d.toLong())
             for (hotspot in hotspots) {
-                val events = sunCalc.dailyEvents(date, hotspot.position)
-                val sunsetAz = events.sunsetAzimuthDegrees ?: continue
+                val targetEvent = targetSunResolver.resolve(date, hotspot.position, target)
+                val sunsetAz = targetEvent.azimuthDegrees ?: continue
                 val towerBearing = hotspotBearings.getValue(hotspot)
                 val offset = Geodesy.signedAzimuthDelta(sunsetAz, towerBearing)
                 if (abs(offset) <= maxOffsetDegrees) {
                     result += GoldenDate(
                         date = date,
                         hotspot = hotspot,
-                        sunsetTime = events.sunset,
+                        sunsetTime = targetEvent.time,
                         sunsetAzimuthDegrees = sunsetAz,
                         towerBearingDegrees = towerBearing,
                         alignmentOffsetDegrees = offset,
+                        towerTarget = target,
                     )
                 }
             }
@@ -72,4 +76,5 @@ data class GoldenDate(
     val sunsetAzimuthDegrees: Double,
     val towerBearingDegrees: Double,
     val alignmentOffsetDegrees: Double,
+    val towerTarget: TowerTarget = TowerTarget.UpperY,
 )

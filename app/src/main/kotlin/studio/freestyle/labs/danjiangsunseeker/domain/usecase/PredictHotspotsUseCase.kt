@@ -6,8 +6,10 @@ import studio.freestyle.labs.danjiangsunseeker.domain.model.DailySunEvents
 import studio.freestyle.labs.danjiangsunseeker.domain.model.DefaultHotspots
 import studio.freestyle.labs.danjiangsunseeker.domain.model.Hotspot
 import studio.freestyle.labs.danjiangsunseeker.domain.model.SunTrailPoint
+import studio.freestyle.labs.danjiangsunseeker.domain.model.TowerTarget
 import studio.freestyle.labs.danjiangsunseeker.domain.physics.Geodesy
 import java.time.LocalDate
+import java.time.ZonedDateTime
 import javax.inject.Inject
 import kotlin.math.abs
 import kotlin.math.atan
@@ -24,8 +26,13 @@ import kotlin.math.max
  */
 class PredictHotspotsUseCase @Inject constructor(
     private val sunCalc: SunCalcDataSource,
+    private val targetSunResolver: TowerTargetSunResolver,
 ) {
-    operator fun invoke(date: LocalDate, hotspots: List<Hotspot> = DefaultHotspots.ALL): List<HotspotPrediction> =
+    operator fun invoke(
+        date: LocalDate,
+        hotspots: List<Hotspot> = DefaultHotspots.ALL,
+        target: TowerTarget = TowerTarget.UpperY,
+    ): List<HotspotPrediction> =
         hotspots.map { hotspot ->
             val geodesic = Geodesy.inverse(hotspot.position, BridgeTower.position)
 
@@ -42,11 +49,15 @@ class PredictHotspotsUseCase @Inject constructor(
                     towerAngularWidthDegrees = 0.0,
                     classification = AlignmentClass.TOO_FAR,
                     lastHourSunTrail = emptyList(),
+                    targetTime = null,
+                    targetAzimuthDegrees = null,
+                    towerTarget = target,
                 )
             }
 
             val events = sunCalc.dailyEvents(date, hotspot.position)
-            val sunAzimuth = events.sunsetAzimuthDegrees
+            val targetEvent = targetSunResolver.resolve(date, hotspot.position, target)
+            val sunAzimuth = targetEvent.azimuthDegrees
             val alignmentOffset = sunAzimuth?.let {
                 Geodesy.signedAzimuthDelta(it, geodesic.initialBearingDegrees)
             }
@@ -58,10 +69,10 @@ class PredictHotspotsUseCase @Inject constructor(
                 else -> AlignmentClass.FAR
             }
             // 日落前 60 分鐘到日落瞬間，每 5 分鐘一個取樣點（共 13 點）。用於 UI 縮圖。
-            val sunset = events.sunset
-            val trail = if (sunset != null) {
+            val targetTime = targetEvent.time ?: events.sunset
+            val trail = if (targetTime != null) {
                 (0..TRAIL_MINUTES step TRAIL_INTERVAL_MIN).map { minutesBefore ->
-                    val t = sunset.minusMinutes(minutesBefore.toLong())
+                    val t = targetTime.minusMinutes(minutesBefore.toLong())
                     val pos = sunCalc.positionAt(t, hotspot.position)
                     SunTrailPoint(
                         minutesBeforeSunset = minutesBefore,
@@ -79,6 +90,9 @@ class PredictHotspotsUseCase @Inject constructor(
                 towerAngularWidthDegrees = angularWidth,
                 classification = classification,
                 lastHourSunTrail = trail,
+                targetTime = targetTime,
+                targetAzimuthDegrees = sunAzimuth,
+                towerTarget = target,
             )
         }
 
@@ -107,6 +121,9 @@ data class HotspotPrediction(
     val classification: AlignmentClass,
     /** 日落前 60 分鐘到日落瞬間的太陽軌跡取樣點。TOO_FAR 或無日落時為空。 */
     val lastHourSunTrail: List<SunTrailPoint> = emptyList(),
+    val targetTime: ZonedDateTime? = null,
+    val targetAzimuthDegrees: Double? = null,
+    val towerTarget: TowerTarget = TowerTarget.UpperY,
 )
 
 enum class AlignmentClass { PERFECT, NEAR, FAR, UNKNOWN, TOO_FAR }
