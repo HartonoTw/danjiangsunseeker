@@ -1,9 +1,10 @@
-﻿package studio.freestyle.labs.danjiangsunseeker.presentation.app
+package studio.freestyle.labs.danjiangsunseeker.presentation.app
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.CameraAlt
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.Tune
@@ -26,6 +27,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import studio.freestyle.labs.danjiangsunseeker.R
+import studio.freestyle.labs.danjiangsunseeker.presentation.about.AboutScreen
+import studio.freestyle.labs.danjiangsunseeker.presentation.about.LicenseDetailScreen
 import studio.freestyle.labs.danjiangsunseeker.presentation.ar.ARScreen
 import studio.freestyle.labs.danjiangsunseeker.presentation.calendar.GoldenCalendarScreen
 import studio.freestyle.labs.danjiangsunseeker.presentation.hotspot.HotspotDetailScreen
@@ -85,6 +88,19 @@ fun DanjiangApp() {
                         label = { Text(stringResource(dest.titleRes)) },
                     )
                 }
+                // ── About：放在「日曆」右邊 ──────────────────────────────
+                NavigationBarItem(
+                    selected = currentRoute?.startsWith("about") == true,
+                    onClick = { navController.navigate("about") },
+                    enabled = !isSimulatorJumpMode,
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Outlined.Info,
+                            contentDescription = null,
+                        )
+                    },
+                    label = { Text(stringResource(R.string.about_title)) },
+                )
             }
         },
     ) { padding ->
@@ -125,6 +141,16 @@ fun DanjiangApp() {
                         )
                     },
                 )
+            }
+            // ── About pages ───────────────────────────────────────────────
+            composable("about") {
+                AboutScreen(
+                    onBack = { navController.popBackStack() },
+                    onShowLicenses = { navController.navigate("license_detail") },
+                )
+            }
+            composable("license_detail") {
+                LicenseDetailScreen(onBack = { navController.popBackStack() })
             }
         }
     }

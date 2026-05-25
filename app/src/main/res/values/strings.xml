@@ -30,4 +30,20 @@
     <string name="alignment_perfect">幾乎完美穿塔，今天就出門！</string>
     <string name="alignment_near">接近穿塔（±2°）</string>
     <string name="alignment_far">今日太陽偏離主塔</string>
+
+    <!-- About page -->
+    <string name="about_title">關於</string>
+    <string name="about_version_label">版本 %s</string>
+    <string name="about_description">淡江夕照通是一款預測觀賞淡江大橋主塔夕照最佳時機與地點的工具程式，結合天文計算、地理資訊與 AR 導覽功能，幫助攝影愛好者掌握「黃金夕照」。</string>
+    <string name="about_open_source_licenses">開放原始碼授權</string>
+    <string name="about_copyright">© 2024–2026 Freestyle Labs</string>
+    <string name="navigate_back">返回</string>
+
+    <!-- License detail page -->
+    <string name="license_title">開放原始碼授權</string>
+    <string name="license_intro">本應用程式使用了以下第三方開放原始碼函式庫。標示「需保留著作權聲明」者（BSD 2-Clause）依授權條款必須保留原始著作權聲明；其餘多數採 Apache 2.0 授權。</string>
+    <string name="license_version_label">版本：%s</string>
+    <string name="license_badge_bsd2">BSD 2-Clause</string>
+    <string name="license_badge_apache2">Apache 2.0</string>
+    <string name="license_note_attribution_required">需保留著作權聲明</string>
 </resources>

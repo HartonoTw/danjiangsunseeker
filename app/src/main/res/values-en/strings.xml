@@ -30,4 +30,20 @@
     <string name="alignment_perfect">Near-perfect sun-through-tower today!</string>
     <string name="alignment_near">Close (±2°)</string>
     <string name="alignment_far">Sun is offset from tower today</string>
+
+    <!-- About page -->
+    <string name="about_title">About</string>
+    <string name="about_version_label">Version %s</string>
+    <string name="about_description">Danjiang SunSeeker predicts the best time and location to photograph the sunset through Danjiang Bridge\'s main tower, combining astronomical calculations, GIS data, and AR guidance for golden-hour photography.</string>
+    <string name="about_open_source_licenses">Open Source Licenses</string>
+    <string name="about_copyright">© 2024–2026 Freestyle Labs</string>
+    <string name="navigate_back">Back</string>
+
+    <!-- License detail page -->
+    <string name="license_title">Open Source Licenses</string>
+    <string name="license_intro">This app uses the following third-party open-source libraries. Items marked \"Attribution required\" (BSD 2-Clause) must retain the original copyright notice per their license terms; the majority are under Apache 2.0.</string>
+    <string name="license_version_label">Version: %s</string>
+    <string name="license_badge_bsd2">BSD 2-Clause</string>
+    <string name="license_badge_apache2">Apache 2.0</string>
+    <string name="license_note_attribution_required">Attribution required</string>
 </resources>
