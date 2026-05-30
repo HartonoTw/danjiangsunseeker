@@ -42,6 +42,7 @@ import studio.freestyle.labs.danjiangsunseeker.R
 fun AboutScreen(
     onBack: () -> Unit,
     onShowLicenses: () -> Unit,
+    onShowChangelog: () -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -118,6 +119,13 @@ fun AboutScreen(
             )
 
             Spacer(Modifier.height(16.dp))
+
+            // ── Changelog ─────────────────────────────────────────────────
+            FilledTonalButton(
+                onClick = onShowChangelog,
+            ) {
+                Text(stringResource(R.string.about_changelog))
+            }
 
             // ── Open-source licenses ──────────────────────────────────────
             FilledTonalButton(

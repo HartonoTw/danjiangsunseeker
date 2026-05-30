@@ -36,8 +36,12 @@
     <string name="about_version_label">版本 %s</string>
     <string name="about_description">淡江夕照通是一款預測觀賞淡江大橋主塔夕照最佳時機與地點的工具程式，結合天文計算、地理資訊與 AR 導覽功能，幫助攝影愛好者掌握「黃金夕照」。</string>
     <string name="about_open_source_licenses">開放原始碼授權</string>
+    <string name="about_changelog">更新日誌</string>
     <string name="about_copyright">© 2024–2026 Freestyle Labs</string>
     <string name="navigate_back">返回</string>
+
+    <!-- Changelog page -->
+    <string name="changelog_title">更新日誌</string>
 
     <!-- License detail page -->
     <string name="license_title">開放原始碼授權</string>

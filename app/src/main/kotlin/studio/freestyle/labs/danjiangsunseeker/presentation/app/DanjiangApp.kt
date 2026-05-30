@@ -28,6 +28,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import studio.freestyle.labs.danjiangsunseeker.R
 import studio.freestyle.labs.danjiangsunseeker.presentation.about.AboutScreen
+import studio.freestyle.labs.danjiangsunseeker.presentation.about.ChangelogScreen
 import studio.freestyle.labs.danjiangsunseeker.presentation.about.LicenseDetailScreen
 import studio.freestyle.labs.danjiangsunseeker.presentation.ar.ARScreen
 import studio.freestyle.labs.danjiangsunseeker.presentation.calendar.GoldenCalendarScreen
@@ -147,10 +148,14 @@ fun DanjiangApp() {
                 AboutScreen(
                     onBack = { navController.popBackStack() },
                     onShowLicenses = { navController.navigate("license_detail") },
+                    onShowChangelog = { navController.navigate("changelog") },
                 )
             }
             composable("license_detail") {
                 LicenseDetailScreen(onBack = { navController.popBackStack() })
+            }
+            composable("changelog") {
+                ChangelogScreen(onBack = { navController.popBackStack() })
             }
         }
     }
