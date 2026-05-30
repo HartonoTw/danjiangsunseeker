@@ -21,6 +21,8 @@
 
 # commons-suncalc has no required keep rules; keep public APIs for safety
 -keep class org.shredzone.commons.suncalc.** { *; }
+# commons-suncalc references FindBugs annotations that aren't on the runtime classpath
+-dontwarn edu.umd.cs.findbugs.annotations.**
 
 # MapLibre
 -keep class org.maplibre.android.** { *; }

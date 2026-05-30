@@ -40,6 +40,19 @@
             </intent-filter>
         </activity>
 
+        <!-- WorkManager 採用 on-demand 初始化 (DanjiangApp 實作 Configuration.Provider)，
+             需移除 androidx.startup 的預設 WorkManagerInitializer，否則會重複初始化。 -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
+
         <!-- ARCore：標示為可選；舊裝置會自動降級 -->
         <meta-data android:name="com.google.ar.core" android:value="optional" />
 
