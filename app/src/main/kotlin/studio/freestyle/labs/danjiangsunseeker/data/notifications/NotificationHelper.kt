@@ -29,10 +29,10 @@ object NotificationHelper {
         if (mgr.getNotificationChannel(CHANNEL_GOLDEN_SUNSET) != null) return
         val channel = NotificationChannel(
             CHANNEL_GOLDEN_SUNSET,
-            "頂級拍攝日提醒",
+            context.getString(R.string.notif_channel_name),
             NotificationManager.IMPORTANCE_DEFAULT,
         ).apply {
-            description = "當未來幾天有「夕陽穿塔」黃金機會時推播提醒"
+            description = context.getString(R.string.notif_channel_desc)
         }
         mgr.createNotificationChannel(channel)
     }
@@ -44,9 +44,10 @@ object NotificationHelper {
 
         val name = golden.hotspot.nameRes?.let { context.getString(it) }
             ?: golden.hotspot.customName.orEmpty()
-        val dateStr = golden.date.format(DateTimeFormatter.ofPattern("M/d (E)", Locale.TAIWAN))
+        val dateStr = golden.date.format(DateTimeFormatter.ofPattern("M/d (E)", Locale.getDefault()))
         val timeStr = golden.sunsetTime?.toLocalTime()
-            ?.let { "%02d:%02d".format(it.hour, it.minute) } ?: "—"
+            ?.let { "%02d:%02d".format(it.hour, it.minute) } ?: context.getString(R.string.value_none)
+        val offsetStr = "%+.2f".format(golden.alignmentOffsetDegrees)
 
         val intent = Intent(context, MainActivity::class.java)
             .apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK }
@@ -59,12 +60,11 @@ object NotificationHelper {
 
         val notif = NotificationCompat.Builder(context, CHANNEL_GOLDEN_SUNSET)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("$dateStr 夕陽穿塔機會")
-            .setContentText("$name · 日落 $timeStr · 偏差 ${"%+.2f".format(golden.alignmentOffsetDegrees)}°")
+            .setContentTitle(context.getString(R.string.notif_title, dateStr))
+            .setContentText(context.getString(R.string.notif_text, name, timeStr, offsetStr))
             .setStyle(
                 NotificationCompat.BigTextStyle().bigText(
-                    "預測 $dateStr $timeStr 在 $name 可拍到「夕陽穿塔」。\n" +
-                        "對齊偏差 ${"%+.2f".format(golden.alignmentOffsetDegrees)}°"
+                    context.getString(R.string.notif_big_text, dateStr, timeStr, name, offsetStr)
                 )
             )
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)

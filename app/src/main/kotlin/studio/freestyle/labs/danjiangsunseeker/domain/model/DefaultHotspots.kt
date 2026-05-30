@@ -16,8 +16,7 @@ object DefaultHotspots {
         nameRes = R.string.hotspot_starbucks,
         customName = null,
         position = GeoPoint(25.17145379252861, 121.4370207680405, elevationMeters = 6.0),
-        description = "淡水河岸星巴克，玻璃窗景觀，距主塔約 2.0 km，主塔在西北西方向 (約 283°)，" +
-            "**夏至前後最有機會看到夕陽穿塔**。閒適視角，等不到完美對齊時最舒服的退路。",
+        descriptionRes = R.string.hotspot_desc_starbucks,
     )
 
     val CUSTOMS_WHARF = Hotspot(
@@ -25,9 +24,7 @@ object DefaultHotspots {
         nameRes = R.string.hotspot_customs_wharf,
         customName = null,
         position = GeoPoint(25.174439762352144, 121.43177818353163, elevationMeters = 3.0),
-        description = "海關碼頭歷史古蹟，距主塔約 1.4 km。主塔位於正西方 (~274°)，" +
-            "**每年兩個對齊窗口：約 4 月初與 9 月中**（春分後 / 秋分前太陽方位通過 274°）。" +
-            "古蹟磚牆 + 大橋日落構圖極具歷史感。",
+        descriptionRes = R.string.hotspot_desc_customs_wharf,
     )
 
     val MACKAY_LANDING = Hotspot(
@@ -35,8 +32,7 @@ object DefaultHotspots {
         nameRes = R.string.hotspot_mackay_landing,
         customName = null,
         position = GeoPoint(25.171056, 121.437405, elevationMeters = 20.6),
-        description = "馬偕上岸處，距主塔約 2.0 km。主塔位於 WNW (~283°)，" +
-            "與淡水河岸其他點同屬**夏至前後（5 月底、7 月底）**的高方位對齊窗口。",
+        descriptionRes = R.string.hotspot_desc_mackay_landing,
     )
 
     val TAMSUI_FERRY = Hotspot(
@@ -44,8 +40,7 @@ object DefaultHotspots {
         nameRes = R.string.hotspot_tamsui_ferry,
         customName = null,
         position = GeoPoint(25.17000726568226, 121.43877415755742, elevationMeters = 3.0),
-        description = "淡水老街碼頭，距主塔約 2.2 km。主塔位於 WNW (約 286°)，" +
-            "**5 月底與 7 月底兩個對齊窗口**（接近夏至高方位）。",
+        descriptionRes = R.string.hotspot_desc_tamsui_ferry,
     )
 
     val RIVERSIDE_PARK_2 = Hotspot(
@@ -53,8 +48,7 @@ object DefaultHotspots {
         nameRes = R.string.hotspot_riverside_park_2,
         customName = null,
         position = GeoPoint(25.168501, 121.441928, elevationMeters = 22.8),
-        description = "水岸公園 2，距主塔約 2.5 km。主塔位於 WNW (~287°)，" +
-            "**夏至前後**高方位對齊窗口。",
+        descriptionRes = R.string.hotspot_desc_riverside_park_2,
     )
 
     val RIVERSIDE_PARK_1 = Hotspot(
@@ -62,8 +56,7 @@ object DefaultHotspots {
         nameRes = R.string.hotspot_riverside_park_1,
         customName = null,
         position = GeoPoint(25.167795, 121.442745, elevationMeters = 14.166),
-        description = "水岸公園 1，距主塔約 2.7 km。主塔位於 WNW (~288°)，" +
-            "**夏至前後**太陽接近此方位時最易拍到夕陽穿塔。",
+        descriptionRes = R.string.hotspot_desc_riverside_park_1,
     )
 
     val TAMSUI_MRT = Hotspot(
@@ -71,8 +64,7 @@ object DefaultHotspots {
         nameRes = R.string.hotspot_tamsui_mrt,
         customName = null,
         position = GeoPoint(25.167099, 121.444855, elevationMeters = 21.8),
-        description = "淡水捷運站河岸，距主塔約 2.9 km。主塔位於 WNW (~288°)，" +
-            "**夏至前後**最接近，交通便利、適合臨時前往。",
+        descriptionRes = R.string.hotspot_desc_tamsui_mrt,
     )
 
     // ============== 南岸 (八里側) — 由西到東 ==============
@@ -82,8 +74,7 @@ object DefaultHotspots {
         nameRes = R.string.hotspot_bali,
         customName = null,
         position = GeoPoint(25.161664183921225, 121.42931778723609, elevationMeters = 3.0),
-        description = "八里左岸公園，距主塔約 1.9 km。主塔位於 NW (~323°)，超出太陽方位範圍 25°；" +
-            "**夏至前後**太陽達 298° 時最接近，廣角可同框拍主塔加夕陽。",
+        descriptionRes = R.string.hotspot_desc_bali,
     )
 
     val BALI_FERRY = Hotspot(
@@ -91,8 +82,7 @@ object DefaultHotspots {
         nameRes = R.string.hotspot_bali_ferry,
         customName = null,
         position = GeoPoint(25.161529542702116, 121.43176695471796, elevationMeters = 3.0),
-        description = "八里渡船頭，距主塔約 2.1 km。主塔位於 NW (~317°)，超出太陽方位範圍 19°；" +
-            "**夏至前後**最接近。對岸淡水老街天際線可入鏡。",
+        descriptionRes = R.string.hotspot_desc_bali_ferry,
     )
 
     val ALL: List<Hotspot> = listOf(

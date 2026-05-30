@@ -1,5 +1,6 @@
 ﻿package studio.freestyle.labs.danjiangsunseeker.presentation.map
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -17,6 +18,8 @@ import studio.freestyle.labs.danjiangsunseeker.domain.physics.Geodesy
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.ComputeGoldenLineUseCase
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.TowerTargetSunResolver
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import studio.freestyle.labs.danjiangsunseeker.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,6 +37,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MapViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val computeGoldenLine: ComputeGoldenLineUseCase,
     private val sunCalc: SunCalcDataSource,
     private val customHotspotStore: CustomHotspotStore,
@@ -161,7 +165,7 @@ class MapViewModel @Inject constructor(
         val elev = draft.elevation.toDoubleOrNull() ?: 0.0
         if (draft.name.isBlank() || lat == null || lon == null) {
             _state.value = _state.value.copy(
-                hotspotDraft = draft.copy(error = "請輸入名稱，並確認座標正確"),
+                hotspotDraft = draft.copy(error = context.getString(R.string.msg_enter_name_valid_coords)),
             )
             return
         }
@@ -177,13 +181,13 @@ class MapViewModel @Inject constructor(
                 .onSuccess {
                     _state.value = _state.value.copy(
                         hotspotDraft = null,
-                        locationMessage = "已新增熱點",
+                        locationMessage = context.getString(R.string.msg_hotspot_added),
                     )
                 }
                 .onFailure { e ->
                     val current = _state.value.hotspotDraft
                     _state.value = _state.value.copy(
-                        hotspotDraft = current?.copy(error = "新增熱點失敗: ${e.message}"),
+                        hotspotDraft = current?.copy(error = context.getString(R.string.msg_hotspot_add_failed, e.message ?: "")),
                     )
                 }
         }
@@ -192,7 +196,7 @@ class MapViewModel @Inject constructor(
     fun flyToCurrentLocation() {
         if (_state.value.locatingCurrentLocation) return
         if (!locationProvider.hasPermission()) {
-            _state.value = _state.value.copy(locationMessage = "需要位置權限才能飛到目前位置")
+            _state.value = _state.value.copy(locationMessage = context.getString(R.string.msg_need_location_permission))
             return
         }
 
@@ -219,7 +223,7 @@ class MapViewModel @Inject constructor(
                 Log.w(TAG, "flyToCurrentLocation failed", err)
                 _state.value = _state.value.copy(
                     locatingCurrentLocation = false,
-                    locationMessage = "目前無法取得位置，請確認 GPS 已開啟",
+                    locationMessage = context.getString(R.string.msg_location_unavailable),
                 )
             }
         }

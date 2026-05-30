@@ -9,7 +9,10 @@ import studio.freestyle.labs.danjiangsunseeker.data.sensors.LocationProvider
 import studio.freestyle.labs.danjiangsunseeker.domain.model.BridgeTower
 import studio.freestyle.labs.danjiangsunseeker.domain.model.GeoPoint
 import studio.freestyle.labs.danjiangsunseeker.domain.physics.Geodesy
+import studio.freestyle.labs.danjiangsunseeker.R
+import android.content.Context
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -29,6 +32,7 @@ import kotlin.math.atan
 
 @HiltViewModel
 class ARViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val orientationProvider: DeviceOrientationProvider,
     private val locationProvider: LocationProvider,
     private val sunCalc: SunCalcDataSource,
@@ -74,7 +78,7 @@ class ARViewModel @Inject constructor(
                 .catch { e -> _state.value = _state.value.copy(errorMessage = e.message) }
                 .launchIn(viewModelScope)
         } else {
-            _state.value = _state.value.copy(errorMessage = "需要位置權限")
+            _state.value = _state.value.copy(errorMessage = context.getString(R.string.ar_err_location_permission))
         }
 
         // 結合 orientation + observer 計算螢幕投影
@@ -116,7 +120,7 @@ class ARViewModel @Inject constructor(
     fun confirmCalibration() {
         val snapshot = _state.value
         val observer = snapshot.observer ?: run {
-            _state.value = snapshot.copy(calibrating = false, errorMessage = "校正失敗：尚未取得 GPS")
+            _state.value = snapshot.copy(calibrating = false, errorMessage = context.getString(R.string.ar_err_calibration_no_gps))
             return
         }
         val now = ZonedDateTime.now(ZoneId.of("Asia/Taipei"))

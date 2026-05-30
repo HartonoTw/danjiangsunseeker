@@ -22,7 +22,9 @@
       "Bash(Select-Object Name, FullName)",
       "Bash(xargs grep -l \"Settings\\\\|About\")",
       "Bash(./gradlew compileDebugKotlin --no-daemon)",
-      "Bash(./gradlew :app:compileDebugKotlin -q)"
+      "Bash(./gradlew :app:compileDebugKotlin -q)",
+      "Bash(./gradlew :app:compileDebugUnitTestKotlin :app:assembleDebug -q)",
+      "Bash(./gradlew :app:assembleDebug -q)"
     ]
   }
 }

@@ -26,6 +26,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.DanjiangSunSeeker"
         android:usesCleartextTraffic="false"
+        android:localeConfig="@xml/locales_config"
         tools:targetApi="33">
 
         <activity

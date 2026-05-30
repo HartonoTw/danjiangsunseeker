@@ -28,6 +28,14 @@ class ComputeSunsetScoreUseCase @Inject constructor() {
         )
     }
 
+    private fun verdictFor(score: Double): VerdictLevel = when {
+        score >= 85 -> VerdictLevel.TOP
+        score >= 70 -> VerdictLevel.GOOD
+        score >= 50 -> VerdictLevel.MEDIUM
+        score >= 30 -> VerdictLevel.FAIR
+        else        -> VerdictLevel.POOR
+    }
+
     /**
      * 對齊角度 → 子分數 (100 分制)。分段線性，銜接點處連續。
      */
@@ -45,17 +53,13 @@ class ComputeSunsetScoreUseCase @Inject constructor() {
         }.coerceIn(0.0, 100.0)
     }
 
-    private fun verdictFor(score: Double): String = when {
-        score >= 85 -> "頂級拍攝日"
-        score >= 70 -> "良好"
-        score >= 50 -> "中等"
-        score >= 30 -> "普通"
-        else        -> "不建議"
-    }
 }
+
+/** 拍攝品質評語等級；UI 端對應到本地化字串。 */
+enum class VerdictLevel { TOP, GOOD, MEDIUM, FAIR, POOR }
 
 data class SunsetScore(
     val overall   : Double,
     val alignment : Double,
-    val verdict   : String,
+    val verdict   : VerdictLevel,
 )

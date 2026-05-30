@@ -17,6 +17,17 @@
     <string name="hotspot_riverside_park_2">水岸公園2</string>
     <string name="hotspot_tamsui_mrt">淡水捷運</string>
 
+    <!-- Hotspot descriptions -->
+    <string name="hotspot_desc_starbucks">淡水河岸星巴克，玻璃窗景觀，距主塔約 2.0 km，主塔在西北西方向 (約 283°)，**夏至前後最有機會看到夕陽穿塔**。閒適視角，等不到完美對齊時最舒服的退路。</string>
+    <string name="hotspot_desc_customs_wharf">海關碼頭歷史古蹟，距主塔約 1.4 km。主塔位於正西方 (~274°)，**每年兩個對齊窗口：約 4 月初與 9 月中**（春分後 / 秋分前太陽方位通過 274°）。古蹟磚牆 + 大橋日落構圖極具歷史感。</string>
+    <string name="hotspot_desc_mackay_landing">馬偕上岸處，距主塔約 2.0 km。主塔位於 WNW (~283°)，與淡水河岸其他點同屬**夏至前後（5 月底、7 月底）**的高方位對齊窗口。</string>
+    <string name="hotspot_desc_tamsui_ferry">淡水老街碼頭，距主塔約 2.2 km。主塔位於 WNW (約 286°)，**5 月底與 7 月底兩個對齊窗口**（接近夏至高方位）。</string>
+    <string name="hotspot_desc_riverside_park_2">水岸公園 2，距主塔約 2.5 km。主塔位於 WNW (~287°)，**夏至前後**高方位對齊窗口。</string>
+    <string name="hotspot_desc_riverside_park_1">水岸公園 1，距主塔約 2.7 km。主塔位於 WNW (~288°)，**夏至前後**太陽接近此方位時最易拍到夕陽穿塔。</string>
+    <string name="hotspot_desc_tamsui_mrt">淡水捷運站河岸，距主塔約 2.9 km。主塔位於 WNW (~288°)，**夏至前後**最接近，交通便利、適合臨時前往。</string>
+    <string name="hotspot_desc_bali">八里左岸公園，距主塔約 1.9 km。主塔位於 NW (~323°)，超出太陽方位範圍 25°；**夏至前後**太陽達 298° 時最接近，廣角可同框拍主塔加夕陽。</string>
+    <string name="hotspot_desc_bali_ferry">八里渡船頭，距主塔約 2.1 km。主塔位於 NW (~317°)，超出太陽方位範圍 19°；**夏至前後**最接近。對岸淡水老街天際線可入鏡。</string>
+
     <string name="label_sunset_time">日落時間</string>
     <string name="label_sun_azimuth">日落方位</string>
     <string name="label_sun_altitude">日落仰角</string>
@@ -33,6 +44,203 @@
     <string name="alignment_near">接近穿塔（±2°）</string>
     <string name="alignment_far">今日太陽偏離主塔</string>
 
+    <!-- Common actions / fields -->
+    <string name="action_confirm">確定</string>
+    <string name="action_cancel">取消</string>
+    <string name="action_save">儲存</string>
+    <string name="action_delete">刪除</string>
+    <string name="action_reset">重置</string>
+    <string name="action_grant_permission">授予權限</string>
+    <string name="field_name">名稱</string>
+    <string name="field_latitude">緯度</string>
+    <string name="field_longitude">經度</string>
+    <string name="field_elevation">海拔高度 (m)</string>
+    <string name="field_description_optional">描述 (選填)</string>
+    <string name="hotspot_add_title">新增熱點</string>
+    <string name="hotspot_edit_title">編輯熱點</string>
+    <string name="cd_close">關閉</string>
+    <string name="cd_fly_to_current_location">飛到目前位置</string>
+    <string name="toast_location_permission_denied">未授權位置權限</string>
+    <string name="tower_target_upper">塔頂</string>
+    <string name="tower_target_lower">塔基</string>
+
+    <!-- Map page -->
+    <string name="map_pick_date">選日期</string>
+    <string name="cd_step_prev_continuous">連續往前</string>
+    <string name="cd_step_prev_day">前一天</string>
+    <string name="cd_step_next_day">後一天</string>
+    <string name="cd_step_next_continuous">連續往後</string>
+    <string name="map_sunset_azimuth_from_tower">日落方位 (從主塔看): %1$s</string>
+    <string name="map_golden_line_base">黃金線 塔基: %1$s</string>
+    <string name="map_golden_line_top">黃金線 塔頂: %1$s</string>
+    <string name="map_tap_hint">點地圖上任一點，APP 會告訴你「站在這拍夕陽穿塔會差幾度」</string>
+    <string name="map_verdict_perfect">幾乎完美對齊主塔，這就是黃金拍攝點！</string>
+    <string name="map_verdict_near">接近黃金拍攝帶 (±%1$s°)</string>
+    <string name="map_verdict_far">日落方位偏移 %1$s°，建議沿橘色射線移動</string>
+    <string name="map_selected_coords">選定座標</string>
+    <string name="map_distance_to_tower">距主塔: %1$s km</string>
+    <string name="map_tower_bearing">主塔方位: %1$s°</string>
+    <string name="map_lower_offset">塔基偏差: %1$s · %2$s</string>
+    <string name="map_upper_offset">塔頂偏差: %1$s · %2$s</string>
+    <string name="map_time_value">時間 %1$s</string>
+    <string name="value_none">—</string>
+    <string name="coords_lat_lon">%1$s°N, %2$s°E</string>
+
+    <!-- Verdict levels -->
+    <string name="verdict_top">頂級拍攝日</string>
+    <string name="verdict_good">良好</string>
+    <string name="verdict_medium">中等</string>
+    <string name="verdict_fair">普通</string>
+    <string name="verdict_poor">不建議</string>
+
+    <!-- Sensors -->
+    <string name="sensor_full_frame">全片幅 35mm</string>
+    <string name="sensor_aps_c">APS-C</string>
+    <string name="sensor_m43">M4/3</string>
+    <string name="sensor_one_inch">1 吋</string>
+    <string name="sensor_phone_main">手機主鏡頭 (1/1.3\")</string>
+
+    <!-- Focal advice -->
+    <string name="focal_advice_too_wide">主塔過大，建議改用更廣角鏡頭</string>
+    <string name="focal_advice_too_tele">主塔太小，建議改用更長焦鏡頭 (200mm+)</string>
+    <string name="focal_advice_ok">構圖比例合理</string>
+
+    <!-- Focal simulator page -->
+    <string name="focal_title">焦段構圖模擬</string>
+    <string name="focal_focal_length">焦距: %1$d mm</string>
+    <string name="focal_time">時間: %1$s</string>
+    <string name="focal_sunset_label">日落 %1$s</string>
+    <string name="focal_geometry">距主塔 %1$s km · 水平視角 %2$s° · 垂直視角 %3$s°</string>
+    <string name="focal_sun_info">太陽: 方位 %1$s° · 仰角 %2$s°</string>
+    <string name="focal_sensor_label">感光元件</string>
+    <string name="focal_tower_height_label">塔高 211m</string>
+    <string name="bridge_label_bali">八里</string>
+    <string name="bridge_label_tamsui">淡水</string>
+    <string name="gps_hotspot_name">📍 目前位置</string>
+    <string name="gps_hotspot_enable">📍 目前位置 (點此啟用)</string>
+
+    <!-- Hotspot list page -->
+    <string name="cd_import">匯入</string>
+    <string name="cd_export">匯出</string>
+    <string name="cd_edit">編輯</string>
+    <string name="cd_navigate">Google Maps 導航</string>
+    <string name="toast_export_done">匯出完成</string>
+    <string name="date_today">今天</string>
+    <string name="date_tomorrow">明天</string>
+    <string name="date_day_after">後天</string>
+    <string name="date_weekend">週末</string>
+    <string name="header_today">今日</string>
+    <string name="header_tomorrow">明日</string>
+    <string name="header_day_after">後日</string>
+    <string name="header_in_days">%1$d 天後</string>
+    <string name="header_days_ago">%1$d 天前</string>
+    <string name="hotspot_tag_custom">(自訂)</string>
+    <string name="hotspot_tag_modified">(已修改)</string>
+    <string name="hotspot_too_far">太遠 — 距主塔 %1$s km，超過 25 km 限制</string>
+    <string name="hotspot_target_time">%1$s %2$s</string>
+    <string name="hotspot_alignment_offset">對齊偏差 %1$s°</string>
+    <string name="hotspot_distance_verdict">距主塔 %1$s km · %2$s</string>
+    <string name="badge_too_far">遠</string>
+    <string name="editor_pick_on_map">在地圖上選取座標</string>
+    <string name="editor_default_hint">編輯預設熱點：你的修改會保存為覆寫；按「重置」可回復預設值。</string>
+    <string name="editor_tip">提示：可在「地圖」分頁點選位置看座標，再回來填入</string>
+    <string name="picker_tap_to_select">點選地圖選取位置</string>
+    <string name="picker_not_selected">尚未選取（點擊地圖）</string>
+
+    <!-- Hotspot detail page -->
+    <string name="detail_sunset_events">日落事件</string>
+    <string name="detail_sunrise">日出</string>
+    <string name="detail_solar_noon">正午</string>
+    <string name="detail_golden_hour">黃金時刻</string>
+    <string name="detail_blue_hour">藍調時刻</string>
+    <string name="detail_relation_to_tower">與主塔的關係</string>
+    <string name="detail_tower_angular_width">主塔角寬 (可容忍誤差)</string>
+    <string name="detail_quality">拍攝品質</string>
+    <string name="detail_score_value">%1$d / 100  %2$s</string>
+    <string name="detail_alignment">對齊度</string>
+
+    <!-- Golden calendar page -->
+    <string name="calendar_title">365 天黃金日曆</string>
+    <string name="calendar_subtitle">未來一年內，太陽日落方位與主塔方位接近對齊的日子</string>
+    <string name="calendar_none_found">在 ±%1$s° 容差下，未來一年沒有完美對齊的日子；試試放寬到 ±5°。</string>
+    <string name="calendar_found_count">共找到 %1$d 個機會</string>
+    <string name="calendar_add">加入</string>
+    <string name="calendar_row_detail">%1$s %2$s · 偏差 %3$s°</string>
+    <string name="toast_no_calendar_app">找不到行事曆 App</string>
+
+    <!-- AR page -->
+    <string name="ar_permission_title">AR 實境勘景需要相機與位置權限</string>
+    <string name="ar_permission_body">用相機畫面 + GPS + 磁力計 + 加速度計 (全部裝置內建感測器；不需任何雲端服務或 API 金鑰)，在現場即時疊加虛擬主塔與太陽軌跡。</string>
+    <string name="cd_calibrate">校正</string>
+    <string name="cd_clear_calibration">清除校正</string>
+    <string name="ar_safety_title">安全警告</string>
+    <string name="ar_safety_body">請勿透過任何鏡頭長時間直視太陽。\n永久性視網膜傷害可能在數秒內發生。\n螢幕已自動降低曝光值，但建議在 %1$d 秒內完成校正。</string>
+    <string name="ar_calib_aim_title">將中央十字對準太陽中心</string>
+    <string name="ar_calib_aim_body">對準後按下「確認」，APP 會用實際太陽方位修正磁力計偏移。</string>
+    <string name="ar_calib_confirm">確認對準</string>
+    <string name="ar_calib_timeout_warning">⚠ 已超過建議的 5 秒，請立即移開視線</string>
+    <string name="ar_hud_searching_location">尋找位置…</string>
+    <string name="ar_hud_accuracy">精度 ±%1$dm  磁偏 %2$s°</string>
+    <string name="ar_hud_orientation">🧭 %1$s° / 仰角 %2$s°</string>
+    <string name="ar_hud_tower">主塔: %1$s km · 方位 %2$s°</string>
+    <string name="ar_hud_sun">太陽: 方位 %1$s° · 仰角 %2$s°</string>
+    <string name="ar_hud_calibrated">✓ 已校正  方位 %1$s° · 仰角 %2$s°</string>
+    <string name="ar_waiting_gps">等待 GPS 鎖定…\n(室內訊號弱請靠近窗戶或到戶外)</string>
+    <string name="ar_waiting_fov">讀取相機 FOV…</string>
+    <string name="ar_computing">計算中…</string>
+    <string name="ar_turn_right">向右轉 %1$s°</string>
+    <string name="ar_turn_left">向左轉 %1$s°</string>
+    <string name="ar_facing">正對方向</string>
+    <string name="ar_sunset_azimuth_hint">(日落方位 %1$s°)</string>
+    <string name="ar_find_sun_trail">%1$s %2$s 找太陽軌跡</string>
+    <string name="ar_almost_aligned">幾乎完美對齊 (%1$s°)</string>
+    <string name="ar_near_golden">接近黃金 (%1$s°)</string>
+    <string name="ar_sun_off_minor">太陽偏離 %1$s°</string>
+    <string name="ar_sun_off_major">今日太陽方位偏離 %1$s°</string>
+
+    <!-- AR view-model messages -->
+    <string name="ar_err_location_permission">需要位置權限</string>
+    <string name="ar_err_calibration_no_gps">校正失敗：尚未取得 GPS</string>
+
+    <!-- Map view-model messages -->
+    <string name="msg_enter_name_valid_coords">請輸入名稱，並確認座標正確</string>
+    <string name="msg_hotspot_added">已新增熱點</string>
+    <string name="msg_hotspot_add_failed">新增熱點失敗: %1$s</string>
+    <string name="msg_need_location_permission">需要位置權限才能飛到目前位置</string>
+    <string name="msg_location_unavailable">目前無法取得位置，請確認 GPS 已開啟</string>
+
+    <!-- Hotspot editor / import messages -->
+    <string name="msg_invalid_name_coords">請填正確的名稱、緯度 (-90..90)、經度 (-180..180)</string>
+    <string name="msg_updated">已更新</string>
+    <string name="msg_added">已新增</string>
+    <string name="msg_save_failed">儲存失敗: %1$s</string>
+    <string name="msg_reset_to_default">已回復預設值</string>
+    <string name="msg_deleted">已刪除</string>
+    <string name="msg_import_success">匯入成功 (%1$d 個熱點)</string>
+    <string name="msg_import_failed">匯入失敗: %1$s</string>
+
+    <!-- Calendar event -->
+    <string name="calendar_event_title">淡江大橋夕陽穿塔 · %1$s</string>
+    <string name="calendar_event_observer">觀察點: %1$s</string>
+    <string name="calendar_event_sunset_time">日落時間: %1$s</string>
+    <string name="calendar_event_sunset_az">日落方位: %1$s°</string>
+    <string name="calendar_event_tower_bearing">主塔方位: %1$s°</string>
+    <string name="calendar_event_offset">對齊偏差: %1$s°</string>
+    <string name="calendar_event_footer">由 淡江夕照通 (Danjiang SunSeeker) 預測</string>
+
+    <!-- Notifications -->
+    <string name="notif_channel_name">頂級拍攝日提醒</string>
+    <string name="notif_channel_desc">當未來幾天有「夕陽穿塔」黃金機會時推播提醒</string>
+    <string name="notif_title">%1$s 夕陽穿塔機會</string>
+    <string name="notif_text">%1$s · 日落 %2$s · 偏差 %3$s°</string>
+    <string name="notif_big_text">預測 %1$s %2$s 在 %3$s 可拍到「夕陽穿塔」。\n對齊偏差 %4$s°</string>
+
+    <!-- Language -->
+    <string name="settings_language">語言</string>
+    <string name="language_system">跟隨系統</string>
+    <string name="language_chinese">中文</string>
+    <string name="language_english">English</string>
+
     <!-- About page -->
     <string name="about_title">關於</string>
     <string name="about_version_label">版本 %s</string>
@@ -44,6 +252,13 @@
 
     <!-- Changelog page -->
     <string name="changelog_title">更新日誌</string>
+    <string-array name="changelog_0_10">
+        <item>地圖：日期列新增播放控制鈕。「&lt;」「&gt;」可單日往前／往後跳；「&lt;&lt;」「&gt;&gt;」連續播放，每點一次切換速度（0.5 秒 → 0.1 秒 → 0.05 秒 → 停止），以箭頭數量顯示目前速度。</item>
+        <item>焦段模擬：時間軸改為 12:00 起、終點動態為「日落 + 10 分鐘」。</item>
+        <item>焦段模擬：時間軸採三段非線性刻度，越接近日落越精細（日落前 90 分鐘進入細調、前 10 分鐘進入超細調），並在時間軸上標出日落點。</item>
+        <item>熱點修正。</item>
+        <item>新增英文語系支援，並可在「關於」頁切換語言（跟隨系統／中文／English）。</item>
+    </string-array>
 
     <!-- License detail page -->
     <string name="license_title">開放原始碼授權</string>

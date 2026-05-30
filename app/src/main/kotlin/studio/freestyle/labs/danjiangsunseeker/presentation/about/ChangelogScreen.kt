@@ -23,6 +23,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -33,7 +34,8 @@ import studio.freestyle.labs.danjiangsunseeker.R
 private data class ChangelogEntry(
     val version: String,
     val date: String,
-    val changes: List<String>,
+    /** 變更項目的本地化字串陣列資源。 */
+    val changesRes: Int,
 )
 
 /** 由新到舊排列；最新版本在最上方。 */
@@ -41,15 +43,7 @@ private val changelog: List<ChangelogEntry> = listOf(
     ChangelogEntry(
         version = "0.10",
         date = "2026-05-30",
-        changes = listOf(
-            "地圖：日期列新增播放控制鈕。「<」「>」可單日往前／往後跳；" +
-                "「<<」「>>」連續播放，每點一次切換速度（0.5 秒 → 0.1 秒 → 0.05 秒 → 停止），" +
-                "以箭頭數量顯示目前速度。",
-            "焦段模擬：時間軸改為 12:00 起、終點動態為「日落 + 10 分鐘」。",
-            "焦段模擬：時間軸採三段非線性刻度，越接近日落越精細" +
-                "（日落前 90 分鐘進入細調、前 10 分鐘進入超細調），並在時間軸上標出日落點。",
-            "熱點修正。",
-        ),
+        changesRes = R.array.changelog_0_10,
     ),
 )
 
@@ -125,7 +119,7 @@ private fun ChangelogCard(entry: ChangelogEntry) {
             }
 
             // 變更項目（條列）
-            entry.changes.forEach { change ->
+            stringArrayResource(entry.changesRes).forEach { change ->
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
                         text = "•",

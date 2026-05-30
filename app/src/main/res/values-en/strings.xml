@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Danjiang SunSeeker</string>
-    <string name="tab_hotspots">Hotspots</string>
+    <string name="tab_hotspots">Spots</string>
     <string name="tab_map">Map</string>
     <string name="tab_simulator">Focal</string>
     <string name="tab_ar">AR</string>
-    <string name="tab_calendar">Calendar</string>
+    <string name="tab_calendar">Dates</string>
 
     <string name="hotspot_bali">Bali Left Bank Park</string>
     <string name="hotspot_tamsui_ferry">Tamsui Ferry Pier</string>
@@ -16,6 +16,17 @@
     <string name="hotspot_riverside_park_1">Riverside Park 1</string>
     <string name="hotspot_riverside_park_2">Riverside Park 2</string>
     <string name="hotspot_tamsui_mrt">Tamsui MRT</string>
+
+    <!-- Hotspot descriptions -->
+    <string name="hotspot_desc_starbucks">Riverside Starbucks in Tamsui, with glass-window views, ~2.0 km from the tower (WNW, ~283°). **The best chance to catch the sun through the tower is around the summer solstice.** A relaxed vantage point — the comfiest fallback when perfect alignment isn\'t in season.</string>
+    <string name="hotspot_desc_customs_wharf">The historic Customs Wharf, ~1.4 km from the tower (due west, ~274°). **Two alignment windows a year: early April and mid-September** (the sun passes 274° just after the spring equinox / before the autumn equinox). Heritage brick walls plus the bridge sunset make for a rich, historical composition.</string>
+    <string name="hotspot_desc_mackay_landing">Mackay Landing, ~2.0 km from the tower (WNW, ~283°). Like the other Tamsui-bank spots, its high-azimuth alignment window is **around the summer solstice (late May, late July).**</string>
+    <string name="hotspot_desc_tamsui_ferry">Tamsui Old Street pier, ~2.2 km from the tower (WNW, ~286°). **Two windows, late May and late July** (near the summer-solstice high azimuth).</string>
+    <string name="hotspot_desc_riverside_park_2">Riverside Park 2, ~2.5 km from the tower (WNW, ~287°). High-azimuth alignment window **around the summer solstice.**</string>
+    <string name="hotspot_desc_riverside_park_1">Riverside Park 1, ~2.7 km from the tower (WNW, ~288°). Best chance to catch the sun through the tower when the sun nears this bearing **around the summer solstice.**</string>
+    <string name="hotspot_desc_tamsui_mrt">Riverside by Tamsui MRT station, ~2.9 km from the tower (WNW, ~288°). Closest **around the summer solstice**; easy to reach, good for a spur-of-the-moment trip.</string>
+    <string name="hotspot_desc_bali">Bali Left Bank Park, ~1.9 km from the tower (NW, ~323°), 25° beyond the sun\'s azimuth range. Closest **around the summer solstice** when the sun reaches 298°; a wide lens can frame the tower and sunset together.</string>
+    <string name="hotspot_desc_bali_ferry">Bali Ferry Pier, ~2.1 km from the tower (NW, ~317°), 19° beyond the sun\'s azimuth range. Closest **around the summer solstice.** The Tamsui Old Street skyline across the river can enter the frame.</string>
 
     <string name="label_sunset_time">Sunset</string>
     <string name="label_sun_azimuth">Sun azimuth</string>
@@ -33,6 +44,203 @@
     <string name="alignment_near">Close (±2°)</string>
     <string name="alignment_far">Sun is offset from tower today</string>
 
+    <!-- Common actions / fields -->
+    <string name="action_confirm">OK</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_save">Save</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_reset">Reset</string>
+    <string name="action_grant_permission">Grant permission</string>
+    <string name="field_name">Name</string>
+    <string name="field_latitude">Latitude</string>
+    <string name="field_longitude">Longitude</string>
+    <string name="field_elevation">Elevation (m)</string>
+    <string name="field_description_optional">Description (optional)</string>
+    <string name="hotspot_add_title">Add hotspot</string>
+    <string name="hotspot_edit_title">Edit hotspot</string>
+    <string name="cd_close">Close</string>
+    <string name="cd_fly_to_current_location">Fly to current location</string>
+    <string name="toast_location_permission_denied">Location permission denied</string>
+    <string name="tower_target_upper">Tower top</string>
+    <string name="tower_target_lower">Tower base</string>
+
+    <!-- Map page -->
+    <string name="map_pick_date">Pick date</string>
+    <string name="cd_step_prev_continuous">Play backward</string>
+    <string name="cd_step_prev_day">Previous day</string>
+    <string name="cd_step_next_day">Next day</string>
+    <string name="cd_step_next_continuous">Play forward</string>
+    <string name="map_sunset_azimuth_from_tower">Sunset azimuth (from tower): %1$s</string>
+    <string name="map_golden_line_base">Golden line · base: %1$s</string>
+    <string name="map_golden_line_top">Golden line · top: %1$s</string>
+    <string name="map_tap_hint">Tap anywhere on the map and the app tells you how many degrees off the sunset-through-tower shot would be.</string>
+    <string name="map_verdict_perfect">Almost perfectly aligned with the tower — this is the golden spot!</string>
+    <string name="map_verdict_near">Near the golden band (±%1$s°)</string>
+    <string name="map_verdict_far">Sunset bearing off by %1$s°; move along the orange ray</string>
+    <string name="map_selected_coords">Selected point</string>
+    <string name="map_distance_to_tower">To tower: %1$s km</string>
+    <string name="map_tower_bearing">Tower bearing: %1$s°</string>
+    <string name="map_lower_offset">Base offset: %1$s · %2$s</string>
+    <string name="map_upper_offset">Top offset: %1$s · %2$s</string>
+    <string name="map_time_value">Time %1$s</string>
+    <string name="value_none">—</string>
+    <string name="coords_lat_lon">%1$s°N, %2$s°E</string>
+
+    <!-- Verdict levels -->
+    <string name="verdict_top">Prime shooting day</string>
+    <string name="verdict_good">Good</string>
+    <string name="verdict_medium">Fair</string>
+    <string name="verdict_fair">So-so</string>
+    <string name="verdict_poor">Not recommended</string>
+
+    <!-- Sensors -->
+    <string name="sensor_full_frame">Full-frame 35mm</string>
+    <string name="sensor_aps_c">APS-C</string>
+    <string name="sensor_m43">M4/3</string>
+    <string name="sensor_one_inch">1-inch</string>
+    <string name="sensor_phone_main">Phone main (1/1.3\")</string>
+
+    <!-- Focal advice -->
+    <string name="focal_advice_too_wide">Tower too large — use a wider lens</string>
+    <string name="focal_advice_too_tele">Tower too small — use a longer lens (200mm+)</string>
+    <string name="focal_advice_ok">Composition looks balanced</string>
+
+    <!-- Focal simulator page -->
+    <string name="focal_title">Focal-length composition</string>
+    <string name="focal_focal_length">Focal length: %1$d mm</string>
+    <string name="focal_time">Time: %1$s</string>
+    <string name="focal_sunset_label">Sunset %1$s</string>
+    <string name="focal_geometry">To tower %1$s km · H-FOV %2$s° · V-FOV %3$s°</string>
+    <string name="focal_sun_info">Sun: az %1$s° · alt %2$s°</string>
+    <string name="focal_sensor_label">Sensor</string>
+    <string name="focal_tower_height_label">Tower 211m</string>
+    <string name="bridge_label_bali">Bali</string>
+    <string name="bridge_label_tamsui">Tamsui</string>
+    <string name="gps_hotspot_name">📍 Current location</string>
+    <string name="gps_hotspot_enable">📍 Current location (tap to enable)</string>
+
+    <!-- Hotspot list page -->
+    <string name="cd_import">Import</string>
+    <string name="cd_export">Export</string>
+    <string name="cd_edit">Edit</string>
+    <string name="cd_navigate">Navigate in Google Maps</string>
+    <string name="toast_export_done">Export complete</string>
+    <string name="date_today">Today</string>
+    <string name="date_tomorrow">Tomorrow</string>
+    <string name="date_day_after">Day after</string>
+    <string name="date_weekend">Weekend</string>
+    <string name="header_today">Today</string>
+    <string name="header_tomorrow">Tomorrow</string>
+    <string name="header_day_after">In 2 days</string>
+    <string name="header_in_days">In %1$d days</string>
+    <string name="header_days_ago">%1$d days ago</string>
+    <string name="hotspot_tag_custom">(Custom)</string>
+    <string name="hotspot_tag_modified">(Modified)</string>
+    <string name="hotspot_too_far">Too far — %1$s km from tower, beyond the 25 km limit</string>
+    <string name="hotspot_target_time">%1$s %2$s</string>
+    <string name="hotspot_alignment_offset">Offset %1$s°</string>
+    <string name="hotspot_distance_verdict">%1$s km from tower · %2$s</string>
+    <string name="badge_too_far">Far</string>
+    <string name="editor_pick_on_map">Pick coordinates on map</string>
+    <string name="editor_default_hint">Editing a default hotspot: your changes are saved as an override; tap Reset to restore defaults.</string>
+    <string name="editor_tip">Tip: pick a spot on the Map tab to read its coordinates, then come back and fill them in.</string>
+    <string name="picker_tap_to_select">Tap the map to select a location</string>
+    <string name="picker_not_selected">Not selected (tap the map)</string>
+
+    <!-- Hotspot detail page -->
+    <string name="detail_sunset_events">Sunset events</string>
+    <string name="detail_sunrise">Sunrise</string>
+    <string name="detail_solar_noon">Solar noon</string>
+    <string name="detail_golden_hour">Golden hour</string>
+    <string name="detail_blue_hour">Blue hour</string>
+    <string name="detail_relation_to_tower">Relation to tower</string>
+    <string name="detail_tower_angular_width">Tower angular width (tolerance)</string>
+    <string name="detail_quality">Shooting quality</string>
+    <string name="detail_score_value">%1$d / 100  %2$s</string>
+    <string name="detail_alignment">Alignment</string>
+
+    <!-- Golden calendar page -->
+    <string name="calendar_title">365-day golden calendar</string>
+    <string name="calendar_subtitle">Days in the coming year when the sunset bearing nearly aligns with the tower</string>
+    <string name="calendar_none_found">No aligned days within ±%1$s° in the coming year; try widening to ±5°.</string>
+    <string name="calendar_found_count">Found %1$d opportunities</string>
+    <string name="calendar_add">Add</string>
+    <string name="calendar_row_detail">%1$s %2$s · offset %3$s°</string>
+    <string name="toast_no_calendar_app">No calendar app found</string>
+
+    <!-- AR page -->
+    <string name="ar_permission_title">AR scouting needs camera and location permissions</string>
+    <string name="ar_permission_body">Using the camera feed + GPS + magnetometer + accelerometer (all on-device sensors; no cloud service or API key needed), it overlays a virtual tower and sun trajectory live on site.</string>
+    <string name="cd_calibrate">Calibrate</string>
+    <string name="cd_clear_calibration">Clear calibration</string>
+    <string name="ar_safety_title">Safety warning</string>
+    <string name="ar_safety_body">Never look directly at the sun through any lens for long.\nPermanent retinal damage can occur within seconds.\nThe screen has auto-lowered exposure, but finish calibration within %1$d seconds.</string>
+    <string name="ar_calib_aim_title">Aim the center crosshair at the sun\'s center</string>
+    <string name="ar_calib_aim_body">Once aimed, tap Confirm and the app corrects the magnetometer offset using the actual sun bearing.</string>
+    <string name="ar_calib_confirm">Confirm aim</string>
+    <string name="ar_calib_timeout_warning">⚠ Past the recommended 5 seconds — look away now</string>
+    <string name="ar_hud_searching_location">Finding location…</string>
+    <string name="ar_hud_accuracy">Accuracy ±%1$dm  declination %2$s°</string>
+    <string name="ar_hud_orientation">🧭 %1$s° / pitch %2$s°</string>
+    <string name="ar_hud_tower">Tower: %1$s km · bearing %2$s°</string>
+    <string name="ar_hud_sun">Sun: az %1$s° · alt %2$s°</string>
+    <string name="ar_hud_calibrated">✓ Calibrated  az %1$s° · pitch %2$s°</string>
+    <string name="ar_waiting_gps">Waiting for GPS lock…\n(weak indoors — move near a window or go outside)</string>
+    <string name="ar_waiting_fov">Reading camera FOV…</string>
+    <string name="ar_computing">Computing…</string>
+    <string name="ar_turn_right">Turn right %1$s°</string>
+    <string name="ar_turn_left">Turn left %1$s°</string>
+    <string name="ar_facing">Facing the right way</string>
+    <string name="ar_sunset_azimuth_hint">(sunset bearing %1$s°)</string>
+    <string name="ar_find_sun_trail">%1$s %2$s to find the sun trail</string>
+    <string name="ar_almost_aligned">Almost perfectly aligned (%1$s°)</string>
+    <string name="ar_near_golden">Near golden (%1$s°)</string>
+    <string name="ar_sun_off_minor">Sun off by %1$s°</string>
+    <string name="ar_sun_off_major">Sun bearing off by %1$s° today</string>
+
+    <!-- AR view-model messages -->
+    <string name="ar_err_location_permission">Location permission required</string>
+    <string name="ar_err_calibration_no_gps">Calibration failed: no GPS yet</string>
+
+    <!-- Map view-model messages -->
+    <string name="msg_enter_name_valid_coords">Enter a name and confirm the coordinates</string>
+    <string name="msg_hotspot_added">Hotspot added</string>
+    <string name="msg_hotspot_add_failed">Failed to add hotspot: %1$s</string>
+    <string name="msg_need_location_permission">Location permission is needed to fly to your location</string>
+    <string name="msg_location_unavailable">Can\'t get your location — make sure GPS is on</string>
+
+    <!-- Hotspot editor / import messages -->
+    <string name="msg_invalid_name_coords">Enter a valid name, latitude (-90..90) and longitude (-180..180)</string>
+    <string name="msg_updated">Updated</string>
+    <string name="msg_added">Added</string>
+    <string name="msg_save_failed">Save failed: %1$s</string>
+    <string name="msg_reset_to_default">Restored to default</string>
+    <string name="msg_deleted">Deleted</string>
+    <string name="msg_import_success">Imported %1$d hotspots</string>
+    <string name="msg_import_failed">Import failed: %1$s</string>
+
+    <!-- Calendar event -->
+    <string name="calendar_event_title">Danjiang Bridge sun-through-tower · %1$s</string>
+    <string name="calendar_event_observer">Spot: %1$s</string>
+    <string name="calendar_event_sunset_time">Sunset: %1$s</string>
+    <string name="calendar_event_sunset_az">Sunset bearing: %1$s°</string>
+    <string name="calendar_event_tower_bearing">Tower bearing: %1$s°</string>
+    <string name="calendar_event_offset">Offset: %1$s°</string>
+    <string name="calendar_event_footer">Predicted by Danjiang SunSeeker</string>
+
+    <!-- Notifications -->
+    <string name="notif_channel_name">Prime shooting-day alerts</string>
+    <string name="notif_channel_desc">Notifies you when a golden sun-through-tower chance is coming up</string>
+    <string name="notif_title">%1$s sun-through-tower chance</string>
+    <string name="notif_text">%1$s · sunset %2$s · offset %3$s°</string>
+    <string name="notif_big_text">Predicted: on %1$s at %2$s you can shoot the sun through the tower at %3$s.\nAlignment offset %4$s°</string>
+
+    <!-- Language -->
+    <string name="settings_language">Language</string>
+    <string name="language_system">System default</string>
+    <string name="language_chinese">中文</string>
+    <string name="language_english">English</string>
+
     <!-- About page -->
     <string name="about_title">About</string>
     <string name="about_version_label">Version %s</string>
@@ -44,6 +252,13 @@
 
     <!-- Changelog page -->
     <string name="changelog_title">Changelog</string>
+    <string-array name="changelog_0_10">
+        <item>Map: new playback controls on the date row. “&lt;”/“&gt;” step one day back/forward; “&lt;&lt;”/“&gt;&gt;” play continuously — each tap cycles the speed (0.5s → 0.1s → 0.05s → stop), shown by the number of arrows.</item>
+        <item>Focal simulator: the time axis now starts at 12:00 with a dynamic end of sunset + 10 minutes.</item>
+        <item>Focal simulator: three-tier non-linear time scale, finer the closer to sunset (fine within 90 min before sunset, ultra-fine within 10 min), with the sunset point marked on the axis.</item>
+        <item>Hotspot fixes.</item>
+        <item>Added English language support, switchable on the About page (System / 中文 / English).</item>
+    </string-array>
 
     <!-- License detail page -->
     <string name="license_title">Open Source Licenses</string>

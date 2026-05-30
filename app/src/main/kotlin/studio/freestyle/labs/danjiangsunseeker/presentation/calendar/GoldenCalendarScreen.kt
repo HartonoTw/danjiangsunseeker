@@ -37,8 +37,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import studio.freestyle.labs.danjiangsunseeker.domain.model.TowerTarget
+import studio.freestyle.labs.danjiangsunseeker.R
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.GoldenDate
 import studio.freestyle.labs.danjiangsunseeker.presentation.common.TowerTargetSelector
+import studio.freestyle.labs.danjiangsunseeker.presentation.common.towerTargetLabel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -53,10 +55,10 @@ fun GoldenCalendarScreen(
     val ctx = LocalContext.current
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Text("365 天黃金日曆", style = MaterialTheme.typography.headlineMedium)
+        Text(stringResource(R.string.calendar_title), style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(8.dp))
         Text(
-            "未來一年內，太陽日落方位與主塔方位接近對齊的日子",
+            stringResource(R.string.calendar_subtitle),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.outline,
         )
@@ -98,14 +100,14 @@ fun GoldenCalendarScreen(
 
         if (state.dates.isEmpty()) {
             Text(
-                "在 ±${state.toleranceDegrees}° 容差下，未來一年沒有完美對齊的日子；試試放寬到 ±5°。",
+                stringResource(R.string.calendar_none_found, state.toleranceDegrees.toString()),
                 color = MaterialTheme.colorScheme.outline,
             )
             return@Column
         }
 
         Text(
-            "共找到 ${state.dates.size} 個機會",
+            stringResource(R.string.calendar_found_count, state.dates.size),
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.primary,
         )
@@ -119,7 +121,7 @@ fun GoldenCalendarScreen(
                         runCatching {
                             ctx.startActivity(AddToCalendarHelper.buildIntent(ctx, golden))
                         }.onFailure {
-                            Toast.makeText(ctx, "找不到行事曆 App", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(ctx, ctx.getString(R.string.toast_no_calendar_app), Toast.LENGTH_SHORT).show()
                         }
                     },
                     onGoToSimulator = {
@@ -158,8 +160,12 @@ private fun GoldenDateRow(
                 Text(name, style = MaterialTheme.typography.bodyMedium)
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    "${golden.towerTarget.displayName} ${golden.sunsetTime?.toLocalTime()?.let { "%02d:%02d".format(it.hour, it.minute) } ?: "—"}" +
-                        " · 偏差 ${"%+.2f".format(golden.alignmentOffsetDegrees)}°",
+                    stringResource(
+                        R.string.calendar_row_detail,
+                        towerTargetLabel(golden.towerTarget),
+                        golden.sunsetTime?.toLocalTime()?.let { "%02d:%02d".format(it.hour, it.minute) } ?: stringResource(R.string.value_none),
+                        "%+.2f".format(golden.alignmentOffsetDegrees),
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.outline,
                 )
@@ -167,10 +173,10 @@ private fun GoldenDateRow(
             TextButton(onClick = onAddToCalendar) {
                 Icon(Icons.Outlined.CalendarMonth, contentDescription = null)
                 Spacer(Modifier.height(0.dp))
-                Text("加入")
+                Text(stringResource(R.string.calendar_add))
             }
         }
     }
 }
 
-private val DATE_FMT: DateTimeFormatter = DateTimeFormatter.ofPattern("M/d (E)", Locale.TAIWAN)
+private val DATE_FMT: DateTimeFormatter = DateTimeFormatter.ofPattern("M/d (E)", Locale.getDefault())

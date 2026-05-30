@@ -60,7 +60,9 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import studio.freestyle.labs.danjiangsunseeker.R
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.maplibre.android.camera.CameraPosition
@@ -117,7 +119,7 @@ fun MapScreen(vm: MapViewModel = hiltViewModel()) {
         ActivityResultContracts.RequestPermission(),
     ) { granted ->
         if (granted) vm.flyToCurrentLocation()
-        else Toast.makeText(ctx, "未授權位置權限", Toast.LENGTH_SHORT).show()
+        else Toast.makeText(ctx, ctx.getString(R.string.toast_location_permission_denied), Toast.LENGTH_SHORT).show()
     }
 
     // 雙 key LaunchedEffect：
@@ -210,7 +212,7 @@ fun MapScreen(vm: MapViewModel = hiltViewModel()) {
                 // < 往前一天
                 DateStepButton(
                     icon = Icons.Outlined.NavigateBefore,
-                    contentDescription = "前一天",
+                    contentDescription = stringResource(R.string.cd_step_prev_day),
                     active = false,
                     onClick = {
                         playDirection = 0
@@ -225,7 +227,7 @@ fun MapScreen(vm: MapViewModel = hiltViewModel()) {
                 // > 往後一天
                 DateStepButton(
                     icon = Icons.Outlined.NavigateNext,
-                    contentDescription = "後一天",
+                    contentDescription = stringResource(R.string.cd_step_next_day),
                     active = false,
                     onClick = {
                         playDirection = 0
@@ -242,7 +244,7 @@ fun MapScreen(vm: MapViewModel = hiltViewModel()) {
                 Spacer(Modifier.width(4.dp))
                 AssistChip(
                     onClick = { showDatePicker = true },
-                    label = { Text("選日期") },
+                    label = { Text(stringResource(R.string.map_pick_date)) },
                     colors = AssistChipDefaults.assistChipColors(),
                 )
             }
@@ -272,7 +274,7 @@ fun MapScreen(vm: MapViewModel = hiltViewModel()) {
                 if (state.locatingCurrentLocation) {
                     CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
                 } else {
-                    Icon(Icons.Outlined.MyLocation, contentDescription = "飛到目前位置")
+                    Icon(Icons.Outlined.MyLocation, contentDescription = stringResource(R.string.cd_fly_to_current_location))
                 }
             }
         }
@@ -313,10 +315,10 @@ fun MapScreen(vm: MapViewModel = hiltViewModel()) {
                         vm.setDate(date)
                     }
                     showDatePicker = false
-                }) { Text("確定") }
+                }) { Text(stringResource(R.string.action_confirm)) }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("取消") }
+                TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.action_cancel)) }
             },
         ) {
             DatePicker(state = pickerState)
@@ -343,24 +345,25 @@ private fun SunSummaryCard(state: MapUiState) {
         shape = RoundedCornerShape(14.dp),
     ) {
         Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+            val none = stringResource(R.string.value_none)
             Text(
-                "日落方位 (從主塔看): ${az?.let { "%.2f°".format(it) } ?: "—"}",
+                stringResource(R.string.map_sunset_azimuth_from_tower, az?.let { "%.2f°".format(it) } ?: none),
                 style = MaterialTheme.typography.bodyMedium,
             )
             Spacer(Modifier.height(2.dp))
             Text(
-                "黃金線 塔基: ${baseBearing?.let { "%.2f°".format(it) } ?: "—"}",
+                stringResource(R.string.map_golden_line_base, baseBearing?.let { "%.2f°".format(it) } ?: none),
                 style = MaterialTheme.typography.bodyMedium,
             )
             Spacer(Modifier.height(2.dp))
             Text(
-                "黃金線 塔頂: ${topBearing?.let { "%.2f°".format(it) } ?: "—"}",
+                stringResource(R.string.map_golden_line_top, topBearing?.let { "%.2f°".format(it) } ?: none),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.primary,
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                "點地圖上任一點，APP 會告訴你「站在這拍夕陽穿塔會差幾度」",
+                stringResource(R.string.map_tap_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.outline,
             )
@@ -376,10 +379,10 @@ private fun TapAnalysisCard(
 ) {
     val offset = tap.alignmentOffsetDegrees
     val (verdict: String, verdictColor: Color) = when {
-        offset == null -> "—" to MaterialTheme.colorScheme.outline
-        abs(offset) < 0.5 -> "幾乎完美對齊主塔，這就是黃金拍攝點！" to MaterialTheme.colorScheme.primary
-        abs(offset) < 2.0 -> "接近黃金拍攝帶 (±${"%.2f".format(offset)}°)" to MaterialTheme.colorScheme.secondary
-        else -> "日落方位偏移 ${"%.1f".format(offset)}°，建議沿橘色射線移動" to MaterialTheme.colorScheme.outline
+        offset == null -> stringResource(R.string.value_none) to MaterialTheme.colorScheme.outline
+        abs(offset) < 0.5 -> stringResource(R.string.map_verdict_perfect) to MaterialTheme.colorScheme.primary
+        abs(offset) < 2.0 -> stringResource(R.string.map_verdict_near, "%.2f".format(abs(offset))) to MaterialTheme.colorScheme.secondary
+        else -> stringResource(R.string.map_verdict_far, "%.1f".format(offset)) to MaterialTheme.colorScheme.outline
     }
 
     Card(
@@ -388,34 +391,43 @@ private fun TapAnalysisCard(
     ) {
         Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("選定座標", style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
+                Text(stringResource(R.string.map_selected_coords), style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
                 IconButton(onClick = onAddHotspot, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Outlined.Add, contentDescription = "新增熱點", modifier = Modifier.size(18.dp))
+                    Icon(Icons.Outlined.Add, contentDescription = stringResource(R.string.hotspot_add_title), modifier = Modifier.size(18.dp))
                 }
                 IconButton(onClick = onClose, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Outlined.Close, contentDescription = "關閉", modifier = Modifier.size(18.dp))
+                    Icon(Icons.Outlined.Close, contentDescription = stringResource(R.string.cd_close), modifier = Modifier.size(18.dp))
                 }
             }
+            val none = stringResource(R.string.value_none)
             Text(
-                "${"%.5f".format(tap.point.latitude)}°N, ${"%.5f".format(tap.point.longitude)}°E",
+                stringResource(R.string.coords_lat_lon, "%.5f".format(tap.point.latitude), "%.5f".format(tap.point.longitude)),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.outline,
             )
             Spacer(Modifier.height(4.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("距主塔: ${"%.2f km".format(tap.distanceToTowerMeters / 1000.0)}", style = MaterialTheme.typography.bodySmall)
-                Text("主塔方位: ${"%.2f°".format(tap.bearingToTowerDegrees)}", style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(R.string.map_distance_to_tower, "%.2f".format(tap.distanceToTowerMeters / 1000.0)), style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(R.string.map_tower_bearing, "%.2f".format(tap.bearingToTowerDegrees)), style = MaterialTheme.typography.bodySmall)
             }
             Spacer(Modifier.height(2.dp))
             Text(
-                "塔基偏差: ${tap.lowerAlignmentOffsetDegrees?.let { "%+.2f°".format(it) } ?: "—"}" +
-                    " · ${tap.lowerTargetTime?.let { "時間 %02d:%02d".format(it.hour, it.minute) } ?: "時間 —"}",
+                stringResource(
+                    R.string.map_lower_offset,
+                    tap.lowerAlignmentOffsetDegrees?.let { "%+.2f°".format(it) } ?: none,
+                    tap.lowerTargetTime?.let { stringResource(R.string.map_time_value, "%02d:%02d".format(it.hour, it.minute)) }
+                        ?: stringResource(R.string.map_time_value, none),
+                ),
                 style = MaterialTheme.typography.bodySmall,
             )
             Spacer(Modifier.height(2.dp))
             Text(
-                "塔頂偏差: ${tap.upperAlignmentOffsetDegrees?.let { "%+.2f°".format(it) } ?: "—"}" +
-                    " · ${tap.upperTargetTime?.let { "時間 %02d:%02d".format(it.hour, it.minute) } ?: "時間 —"}",
+                stringResource(
+                    R.string.map_upper_offset,
+                    tap.upperAlignmentOffsetDegrees?.let { "%+.2f°".format(it) } ?: none,
+                    tap.upperTargetTime?.let { stringResource(R.string.map_time_value, "%02d:%02d".format(it.hour, it.minute)) }
+                        ?: stringResource(R.string.map_time_value, none),
+                ),
                 style = MaterialTheme.typography.bodySmall,
             )
             Spacer(Modifier.height(4.dp))
@@ -433,32 +445,32 @@ private fun AddHotspotDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("新增熱點") },
+        title = { Text(stringResource(R.string.hotspot_add_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = draft.name,
                     onValueChange = { onChange(MapHotspotDraftField.Name, it) },
-                    label = { Text("名稱") },
+                    label = { Text(stringResource(R.string.field_name)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Text(
-                    "${draft.latitude}°N, ${draft.longitude}°E",
+                    stringResource(R.string.coords_lat_lon, draft.latitude, draft.longitude),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.outline,
                 )
                 OutlinedTextField(
                     value = draft.elevation,
                     onValueChange = { onChange(MapHotspotDraftField.Elevation, it) },
-                    label = { Text("海拔高度 (m)") },
+                    label = { Text(stringResource(R.string.field_elevation)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
                     value = draft.description,
                     onValueChange = { onChange(MapHotspotDraftField.Description, it) },
-                    label = { Text("描述 (選填)") },
+                    label = { Text(stringResource(R.string.field_description_optional)) },
                     minLines = 2,
                     maxLines = 4,
                     modifier = Modifier.fillMaxWidth(),
@@ -472,8 +484,8 @@ private fun AddHotspotDialog(
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onSave) { Text("儲存") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } },
+        confirmButton = { TextButton(onClick = onSave) { Text(stringResource(R.string.action_save)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
     )
 }
 
@@ -519,7 +531,9 @@ private fun DatePlayButton(
         repeat(count) {
             Icon(
                 Icons.Outlined.PlayArrow,
-                contentDescription = if (forward) "連續往後" else "連續往前",
+                contentDescription = stringResource(
+                    if (forward) R.string.cd_step_next_continuous else R.string.cd_step_prev_continuous,
+                ),
                 modifier = Modifier
                     .size(18.dp)
                     .then(if (!forward) Modifier.scale(-1f, 1f) else Modifier),

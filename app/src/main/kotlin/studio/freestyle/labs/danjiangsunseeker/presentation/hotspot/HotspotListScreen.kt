@@ -98,6 +98,8 @@ import studio.freestyle.labs.danjiangsunseeker.R
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.AlignmentClass
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.SunsetScore
 import studio.freestyle.labs.danjiangsunseeker.presentation.common.TowerTargetSelector
+import studio.freestyle.labs.danjiangsunseeker.presentation.common.towerTargetLabel
+import studio.freestyle.labs.danjiangsunseeker.presentation.common.verdictLabel
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
@@ -126,7 +128,7 @@ fun HotspotListScreen(
             scope.launch {
                 val json = vm.exportJson()
                 writeUriText(ctx, it, json)
-                Toast.makeText(ctx, "匯出完成", Toast.LENGTH_SHORT).show()
+                Toast.makeText(ctx, ctx.getString(R.string.toast_export_done), Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -142,7 +144,7 @@ fun HotspotListScreen(
         ActivityResultContracts.RequestPermission(),
     ) { granted ->
         if (granted) vm.flyEditorToCurrentLocation()
-        else Toast.makeText(ctx, "未授權位置權限", Toast.LENGTH_SHORT).show()
+        else Toast.makeText(ctx, ctx.getString(R.string.toast_location_permission_denied), Toast.LENGTH_SHORT).show()
     }
 
     state.importMessage?.let { msg ->
@@ -161,16 +163,16 @@ fun HotspotListScreen(
                     modifier = Modifier.weight(1f),
                 )
                 IconButton(onClick = { importLauncher.launch(arrayOf("application/json")) }) {
-                    Icon(Icons.Outlined.FolderOpen, contentDescription = "匯入")
+                    Icon(Icons.Outlined.FolderOpen, contentDescription = stringResource(R.string.cd_import))
                 }
                 IconButton(onClick = {
                     val fname = "hotspots_${today.format(DateTimeFormatter.ofPattern("yyyyMMdd"))}.json"
                     exportLauncher.launch(fname)
                 }) {
-                    Icon(Icons.Outlined.Upload, contentDescription = "匯出")
+                    Icon(Icons.Outlined.Upload, contentDescription = stringResource(R.string.cd_export))
                 }
                 IconButton(onClick = { vm.showEditor() }) {
-                    Icon(Icons.Outlined.Add, contentDescription = "新增熱點")
+                    Icon(Icons.Outlined.Add, contentDescription = stringResource(R.string.hotspot_add_title))
                 }
             }
             Spacer(Modifier.height(8.dp))
@@ -241,10 +243,10 @@ fun HotspotListScreen(
                         vm.loadFor(date)
                     }
                     showDatePicker = false
-                }) { Text("確定") }
+                }) { Text(stringResource(R.string.action_confirm)) }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("取消") }
+                TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.action_cancel)) }
             },
         ) { DatePicker(state = pickerState) }
     }
@@ -294,17 +296,18 @@ fun HotspotListScreen(
     }
 }
 
+@Composable
 private fun headerLabel(selectedDate: LocalDate, today: LocalDate): String {
     val diff = selectedDate.toEpochDay() - today.toEpochDay()
     val prefix = when (diff) {
-        0L -> "今日"
-        1L -> "明日"
-        2L -> "後日"
-        in 3L..30L -> "$diff 天後"
-        in -7L..-1L -> "${-diff} 天前"
+        0L -> stringResource(R.string.header_today)
+        1L -> stringResource(R.string.header_tomorrow)
+        2L -> stringResource(R.string.header_day_after)
+        in 3L..30L -> stringResource(R.string.header_in_days, diff.toInt())
+        in -7L..-1L -> stringResource(R.string.header_days_ago, (-diff).toInt())
         else -> ""
     }
-    val dateText = selectedDate.format(DateTimeFormatter.ofPattern("M/d (E)", Locale.TAIWAN))
+    val dateText = selectedDate.format(DateTimeFormatter.ofPattern("M/d (E)", Locale.getDefault()))
     return if (prefix.isNotEmpty()) "$prefix · $dateText" else dateText
 }
 
@@ -317,10 +320,10 @@ private fun DateChipRow(
     onOpenPicker: () -> Unit,
 ) {
     val quickDates = listOf(
-        "今天" to today,
-        "明天" to today.plusDays(1),
-        "後天" to today.plusDays(2),
-        "週末" to nextSaturday(today),
+        stringResource(R.string.date_today) to today,
+        stringResource(R.string.date_tomorrow) to today.plusDays(1),
+        stringResource(R.string.date_day_after) to today.plusDays(2),
+        stringResource(R.string.date_weekend) to nextSaturday(today),
     )
     // FlowRow：大字體空間不足時 chip 自動換行（跟「日曆」page 的容差 chip 一致），
     //   不再用 horizontalScroll 強迫使用者手動橫滑
@@ -414,13 +417,13 @@ private fun HotspotRow(
                 // 自訂 / 已修改 標籤放在名稱下方獨立一行
                 if (isPureCustom) {
                     Text(
-                        "(自訂)",
+                        stringResource(R.string.hotspot_tag_custom),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.outline,
                     )
                 } else if (isOverride) {
                     Text(
-                        "(已修改)",
+                        stringResource(R.string.hotspot_tag_modified),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.tertiary,
                     )
@@ -430,24 +433,28 @@ private fun HotspotRow(
 
                 if (isTooFar) {
                     Text(
-                        "太遠 — 距主塔 ${(p.prediction.distanceToTowerMeters / 1000.0).format(1)} km，超過 25 km 限制",
+                        stringResource(R.string.hotspot_too_far, (p.prediction.distanceToTowerMeters / 1000.0).format(1)),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.outline,
                     )
                 } else {
                     // 日落時間與偏差各佔一行，避免放在同一 Row 時大字體溢出
                     Text(
-                        "${p.prediction.towerTarget.displayName} $targetTime",
+                        stringResource(R.string.hotspot_target_time, towerTargetLabel(p.prediction.towerTarget), targetTime ?: stringResource(R.string.value_none)),
                         style = MaterialTheme.typography.bodySmall,
                     )
                     offset?.let {
                         Text(
-                            "對齊偏差 ${"%+.2f".format(it)}°",
+                            stringResource(R.string.hotspot_alignment_offset, "%+.2f".format(it)),
                             style = MaterialTheme.typography.bodySmall,
                         )
                     }
                     Text(
-                        "距主塔 ${(p.prediction.distanceToTowerMeters / 1000.0).format(2)} km · ${p.score.verdict}",
+                        stringResource(
+                            R.string.hotspot_distance_verdict,
+                            (p.prediction.distanceToTowerMeters / 1000.0).format(2),
+                            verdictLabel(p.score.verdict),
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.outline,
                     )
@@ -457,12 +464,12 @@ private fun HotspotRow(
             // ── 操作按鈕：垂直排列，大字體時與高 Column 並列不擠版 ────
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 IconButton(onClick = onEdit) {
-                    Icon(Icons.Outlined.Edit, contentDescription = "編輯")
+                    Icon(Icons.Outlined.Edit, contentDescription = stringResource(R.string.cd_edit))
                 }
                 IconButton(onClick = onNavigate) {
                     Icon(
                         Icons.Outlined.Directions,
-                        contentDescription = "Google Maps 導航",
+                        contentDescription = stringResource(R.string.cd_navigate),
                         tint = MaterialTheme.colorScheme.primary,
                     )
                 }
@@ -492,7 +499,7 @@ private fun TooFarBadge() {
         modifier = Modifier.size(48.dp).clip(CircleShape).background(MaterialTheme.colorScheme.outline),
         contentAlignment = Alignment.Center,
     ) {
-        Text("遠", color = Color.White, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+        Text(stringResource(R.string.badge_too_far), color = Color.White, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -518,7 +525,7 @@ private fun HotspotEditorDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                if (state.isEditing) "編輯熱點" else "新增熱點",
+                if (state.isEditing) stringResource(R.string.hotspot_edit_title) else stringResource(R.string.hotspot_add_title),
             )
         },
         text = {
@@ -526,7 +533,7 @@ private fun HotspotEditorDialog(
                 OutlinedTextField(
                     value = state.name,
                     onValueChange = { onChange(EditorField.NAME, it) },
-                    label = { Text("名稱") },
+                    label = { Text(stringResource(R.string.field_name)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -534,7 +541,7 @@ private fun HotspotEditorDialog(
                     OutlinedTextField(
                         value = state.latitude,
                         onValueChange = { onChange(EditorField.LAT, it) },
-                        label = { Text("緯度") },
+                        label = { Text(stringResource(R.string.field_latitude)) },
                         singleLine = true,
                         keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         modifier = Modifier.weight(1f),
@@ -542,7 +549,7 @@ private fun HotspotEditorDialog(
                     OutlinedTextField(
                         value = state.longitude,
                         onValueChange = { onChange(EditorField.LON, it) },
-                        label = { Text("經度") },
+                        label = { Text(stringResource(R.string.field_longitude)) },
                         singleLine = true,
                         keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         modifier = Modifier.weight(1f),
@@ -555,12 +562,12 @@ private fun HotspotEditorDialog(
                 ) {
                     Icon(Icons.Outlined.Map, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.size(6.dp))
-                    Text("在地圖上選取座標")
+                    Text(stringResource(R.string.editor_pick_on_map))
                 }
                 OutlinedTextField(
                     value = state.elevation,
                     onValueChange = { onChange(EditorField.ELEV, it) },
-                    label = { Text("海拔高度 (m)") },
+                    label = { Text(stringResource(R.string.field_elevation)) },
                     singleLine = true,
                     keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.fillMaxWidth(),
@@ -568,7 +575,7 @@ private fun HotspotEditorDialog(
                 OutlinedTextField(
                     value = state.description,
                     onValueChange = { onChange(EditorField.DESC, it) },
-                    label = { Text("描述 (選填)") },
+                    label = { Text(stringResource(R.string.field_description_optional)) },
                     minLines = 2,
                     maxLines = 4,
                     modifier = Modifier.fillMaxWidth(),
@@ -578,20 +585,20 @@ private fun HotspotEditorDialog(
                 }
                 if (state.originalIsDefault) {
                     Text(
-                        "編輯預設熱點：你的修改會保存為覆寫；按「重置」可回復預設值。",
+                        stringResource(R.string.editor_default_hint),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.tertiary,
                     )
                 } else {
                     Text(
-                        "提示：可在「地圖」分頁點選位置看座標，再回來填入",
+                        stringResource(R.string.editor_tip),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.outline,
                     )
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onSave) { Text("儲存") } },
+        confirmButton = { TextButton(onClick = onSave) { Text(stringResource(R.string.action_save)) } },
         dismissButton = {
             Row {
                 if (state.canDelete) {
@@ -599,12 +606,12 @@ private fun HotspotEditorDialog(
                         Icon(Icons.Outlined.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
                         Spacer(Modifier.size(4.dp))
                         Text(
-                            if (state.canResetToDefault) "重置" else "刪除",
+                            if (state.canResetToDefault) stringResource(R.string.action_reset) else stringResource(R.string.action_delete),
                             color = MaterialTheme.colorScheme.error,
                         )
                     }
                 }
-                TextButton(onClick = onDismiss) { Text("取消") }
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
             }
         },
     )
@@ -700,10 +707,10 @@ private fun LocationPickerOverlay(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         IconButton(onClick = onDismiss) {
-                            Icon(Icons.Outlined.Close, contentDescription = "取消")
+                            Icon(Icons.Outlined.Close, contentDescription = stringResource(R.string.action_cancel))
                         }
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("點選地圖選取位置", style = MaterialTheme.typography.titleSmall)
+                            Text(stringResource(R.string.picker_tap_to_select), style = MaterialTheme.typography.titleSmall)
                             if (pickedLat != null) {
                                 Text(
                                     "📍 ${"%.6f".format(pickedLat)}, ${"%.6f".format(pickedLon)}",
@@ -712,7 +719,7 @@ private fun LocationPickerOverlay(
                                 )
                             } else {
                                 Text(
-                                    "尚未選取（點擊地圖）",
+                                    stringResource(R.string.picker_not_selected),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.outline,
                                 )
@@ -728,7 +735,7 @@ private fun LocationPickerOverlay(
                         ) {
                             Icon(Icons.Outlined.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.size(4.dp))
-                            Text("確認")
+                            Text(stringResource(R.string.action_confirm))
                         }
                     }
                 }
@@ -749,7 +756,7 @@ private fun LocationPickerOverlay(
                         if (locatingCurrentLocation) {
                             CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
                         } else {
-                            Icon(Icons.Outlined.MyLocation, contentDescription = "飛到目前位置")
+                            Icon(Icons.Outlined.MyLocation, contentDescription = stringResource(R.string.cd_fly_to_current_location))
                         }
                     }
                 }

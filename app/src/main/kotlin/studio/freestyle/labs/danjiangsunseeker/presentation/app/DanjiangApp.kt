@@ -86,7 +86,7 @@ fun DanjiangApp() {
                         },
                         enabled = enabled,
                         icon = { Icon(dest.icon, contentDescription = null) },
-                        label = { Text(stringResource(dest.titleRes)) },
+                        label = { Text(stringResource(dest.titleRes), maxLines = 1, softWrap = false) },
                     )
                 }
                 // ── About：放在「日曆」右邊 ──────────────────────────────
@@ -100,7 +100,7 @@ fun DanjiangApp() {
                             contentDescription = null,
                         )
                     },
-                    label = { Text(stringResource(R.string.about_title)) },
+                    label = { Text(stringResource(R.string.about_title), maxLines = 1, softWrap = false) },
                 )
             }
         },

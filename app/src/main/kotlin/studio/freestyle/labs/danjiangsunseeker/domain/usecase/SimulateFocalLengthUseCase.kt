@@ -1,5 +1,6 @@
 ﻿package studio.freestyle.labs.danjiangsunseeker.domain.usecase
 
+import studio.freestyle.labs.danjiangsunseeker.R
 import studio.freestyle.labs.danjiangsunseeker.domain.model.BridgeTower
 import studio.freestyle.labs.danjiangsunseeker.domain.model.GeoPoint
 import studio.freestyle.labs.danjiangsunseeker.domain.physics.Geodesy
@@ -48,16 +49,16 @@ class SimulateFocalLengthUseCase @Inject constructor() {
             towerWidthFractionOfFrame = towerAngularWidth / fovH,
             towerHeightFractionOfFrame = towerAngularHeight / fovV,
             sunWidthFractionOfFrame = sunAngularDiameter / fovH,
-            recommendation = recommend(towerAngularWidth, fovH),
+            advice = recommend(towerAngularWidth, fovH),
         )
     }
 
-    private fun recommend(towerWidthDeg: Double, fovH: Double): String {
+    private fun recommend(towerWidthDeg: Double, fovH: Double): FocalAdvice {
         val frac = towerWidthDeg / fovH
         return when {
-            frac > 0.4 -> "主塔過大，建議改用更廣角鏡頭"
-            frac < 0.02 -> "主塔太小，建議改用更長焦鏡頭 (200mm+)"
-            else -> "構圖比例合理"
+            frac > 0.4 -> FocalAdvice.TOO_WIDE
+            frac < 0.02 -> FocalAdvice.TOO_TELE
+            else -> FocalAdvice.OK
         }
     }
 
@@ -74,23 +75,30 @@ data class FocalSimulationResult(
     val towerWidthFractionOfFrame: Double,
     val towerHeightFractionOfFrame: Double,
     val sunWidthFractionOfFrame: Double,
-    val recommendation: String,
+    val advice: FocalAdvice,
 )
+
+/** 焦段構圖建議；UI 端對應到本地化字串。 */
+enum class FocalAdvice { TOO_WIDE, TOO_TELE, OK }
 
 /**
  * 常見感光元件規格。
+ *
+ * @param id 穩定識別字串（不隨語系變動，用於選取/比對）。
+ * @param labelRes 顯示用的本地化字串資源。
  */
 data class SensorSpec(
-    val displayName: String,
+    val id: String,
+    val labelRes: Int,
     val widthMm: Double,
     val heightMm: Double,
 ) {
     companion object {
-        val FULL_FRAME = SensorSpec("全片幅 35mm", 36.0, 24.0)
-        val APS_C = SensorSpec("APS-C", 23.5, 15.6)
-        val MICRO_FOUR_THIRDS = SensorSpec("M4/3", 17.3, 13.0)
-        val ONE_INCH = SensorSpec("1 吋", 13.2, 8.8)
-        val PHONE_MAIN = SensorSpec("手機主鏡頭 (1/1.3\")", 9.8, 7.3)
+        val FULL_FRAME = SensorSpec("full_frame", R.string.sensor_full_frame, 36.0, 24.0)
+        val APS_C = SensorSpec("aps_c", R.string.sensor_aps_c, 23.5, 15.6)
+        val MICRO_FOUR_THIRDS = SensorSpec("m43", R.string.sensor_m43, 17.3, 13.0)
+        val ONE_INCH = SensorSpec("one_inch", R.string.sensor_one_inch, 13.2, 8.8)
+        val PHONE_MAIN = SensorSpec("phone_main", R.string.sensor_phone_main, 9.8, 7.3)
 
         val ALL = listOf(FULL_FRAME, APS_C, MICRO_FOUR_THIRDS, ONE_INCH, PHONE_MAIN)
     }

@@ -12,6 +12,10 @@ data class Hotspot(
     val position: GeoPoint,
     val description: String = "",
     val accessNote: String = "",
+    /** 預設熱點的本地化描述資源；自訂熱點為 null，改用 [description]。 */
+    val descriptionRes: Int? = null,
+    /** 預設熱點的本地化交通/通行備註資源；無則為 null。 */
+    val accessNoteRes: Int? = null,
 ) {
     val isCustom: Boolean get() = nameRes == null
 }

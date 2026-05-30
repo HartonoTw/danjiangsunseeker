@@ -3,6 +3,7 @@
 import android.content.Context
 import android.content.Intent
 import android.provider.CalendarContract
+import studio.freestyle.labs.danjiangsunseeker.R
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.GoldenDate
 import java.time.ZoneId
 
@@ -25,14 +26,14 @@ object AddToCalendarHelper {
 
         val name = golden.hotspot.nameRes?.let { context.getString(it) }
             ?: golden.hotspot.customName.orEmpty()
-        val title = "淡江大橋夕陽穿塔 · $name"
+        val title = context.getString(R.string.calendar_event_title, name)
         val description = buildString {
-            appendLine("觀察點: $name")
-            appendLine("日落時間: ${sunset.toLocalTime()}")
-            appendLine("日落方位: ${"%.2f".format(golden.sunsetAzimuthDegrees)}°")
-            appendLine("主塔方位: ${"%.2f".format(golden.towerBearingDegrees)}°")
-            appendLine("對齊偏差: ${"%+.2f".format(golden.alignmentOffsetDegrees)}°")
-            append("由 淡江夕照通 (Danjiang SunSeeker) 預測")
+            appendLine(context.getString(R.string.calendar_event_observer, name))
+            appendLine(context.getString(R.string.calendar_event_sunset_time, sunset.toLocalTime().toString()))
+            appendLine(context.getString(R.string.calendar_event_sunset_az, "%.2f".format(golden.sunsetAzimuthDegrees)))
+            appendLine(context.getString(R.string.calendar_event_tower_bearing, "%.2f".format(golden.towerBearingDegrees)))
+            appendLine(context.getString(R.string.calendar_event_offset, "%+.2f".format(golden.alignmentOffsetDegrees)))
+            append(context.getString(R.string.calendar_event_footer))
         }
 
         return Intent(Intent.ACTION_INSERT).apply {

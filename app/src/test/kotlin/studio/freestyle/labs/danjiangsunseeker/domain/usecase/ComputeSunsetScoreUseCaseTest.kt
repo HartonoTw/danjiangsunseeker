@@ -18,7 +18,7 @@ class ComputeSunsetScoreUseCaseTest {
     fun `perfect alignment gives score 100`() {
         val score = useCase(0.0)
         assertEquals(100.0, score.overall, 0.1)
-        assertEquals("頂級拍攝日", score.verdict)
+        assertEquals(VerdictLevel.TOP, score.verdict)
     }
 
     @Test
@@ -78,13 +78,13 @@ class ComputeSunsetScoreUseCaseTest {
     @Test
     fun `verdict for high score is top rating`() {
         val score = useCase(0.0)
-        assertEquals("頂級拍攝日", score.verdict)
+        assertEquals(VerdictLevel.TOP, score.verdict)
     }
 
     @Test
     fun `verdict for medium score is medium`() {
         val score = useCase(25.0)
-        assertEquals("中等", score.verdict)
+        assertEquals(VerdictLevel.MEDIUM, score.verdict)
     }
 
     @Test

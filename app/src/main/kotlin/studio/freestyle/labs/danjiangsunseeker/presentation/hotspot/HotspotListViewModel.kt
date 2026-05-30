@@ -1,6 +1,7 @@
 ﻿package studio.freestyle.labs.danjiangsunseeker.presentation.hotspot
 
 import android.content.Context
+import studio.freestyle.labs.danjiangsunseeker.R
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import studio.freestyle.labs.danjiangsunseeker.data.hotspot.CustomHotspotStore
@@ -161,7 +162,7 @@ class HotspotListViewModel @Inject constructor(
         if (ed.locatingCurrentLocation) return
         if (!locationProvider.hasPermission()) {
             _state.value = _state.value.copy(
-                editor = ed.copy(locationMessage = "需要位置權限才能飛到目前位置"),
+                editor = ed.copy(locationMessage = context.getString(R.string.msg_need_location_permission)),
             )
             return
         }
@@ -197,7 +198,7 @@ class HotspotListViewModel @Inject constructor(
                 _state.value = _state.value.copy(
                     editor = current.copy(
                         locatingCurrentLocation = false,
-                        locationMessage = "目前無法取得位置，請確認 GPS 已開啟",
+                        locationMessage = context.getString(R.string.msg_location_unavailable),
                     ),
                 )
             }
@@ -231,7 +232,7 @@ class HotspotListViewModel @Inject constructor(
             lat !in -90.0..90.0 || lon !in -180.0..180.0
         ) {
             _state.value = _state.value.copy(
-                editor = ed.copy(error = "請填正確的名稱、緯度 (-90..90)、經度 (-180..180)"),
+                editor = ed.copy(error = context.getString(R.string.msg_invalid_name_coords)),
             )
             return
         }
@@ -249,12 +250,12 @@ class HotspotListViewModel @Inject constructor(
                 .onSuccess {
                     _state.value = _state.value.copy(
                         editor = null,
-                        importMessage = if (ed.isEditing) "已更新" else "已新增",
+                        importMessage = if (ed.isEditing) context.getString(R.string.msg_updated) else context.getString(R.string.msg_added),
                     )
                 }
                 .onFailure { e ->
                     _state.value = _state.value.copy(
-                        editor = ed.copy(error = "儲存失敗: ${e.message}"),
+                        editor = ed.copy(error = context.getString(R.string.msg_save_failed, e.message ?: "")),
                     )
                 }
         }
@@ -268,7 +269,7 @@ class HotspotListViewModel @Inject constructor(
             customHotspotStore.remove(id)
             _state.value = _state.value.copy(
                 editor = null,
-                importMessage = if (ed.canResetToDefault) "已回復預設值" else "已刪除",
+                importMessage = if (ed.canResetToDefault) context.getString(R.string.msg_reset_to_default) else context.getString(R.string.msg_deleted),
             )
         }
     }
@@ -292,10 +293,10 @@ class HotspotListViewModel @Inject constructor(
                 incoming.forEach { current[it.id] = it }
                 customHotspotStore.replaceAll(current.values.toList())
                 _state.value = _state.value.copy(
-                    importMessage = "匯入成功 (${incoming.size} 個熱點)",
+                    importMessage = context.getString(R.string.msg_import_success, incoming.size),
                 )
             }.onFailure {
-                _state.value = _state.value.copy(importMessage = "匯入失敗: ${it.message}")
+                _state.value = _state.value.copy(importMessage = context.getString(R.string.msg_import_failed, it.message ?: ""))
             }
         }
     }

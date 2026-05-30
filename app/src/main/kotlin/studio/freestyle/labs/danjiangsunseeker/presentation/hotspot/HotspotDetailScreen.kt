@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import studio.freestyle.labs.danjiangsunseeker.R
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.SunsetScore
+import studio.freestyle.labs.danjiangsunseeker.presentation.common.verdictLabel
 import java.time.format.DateTimeFormatter
 
 @Composable
@@ -91,10 +92,14 @@ fun HotspotDetailScreen(
                     .padding(end = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Text(prediction.hotspot.description, style = MaterialTheme.typography.bodyLarge)
-                if (prediction.hotspot.accessNote.isNotEmpty()) {
+                val description = prediction.hotspot.descriptionRes?.let { stringResource(it) }
+                    ?: prediction.hotspot.description
+                Text(description, style = MaterialTheme.typography.bodyLarge)
+                val accessNote = prediction.hotspot.accessNoteRes?.let { stringResource(it) }
+                    ?: prediction.hotspot.accessNote.takeIf { it.isNotEmpty() }
+                if (accessNote != null) {
                     Text(
-                        prediction.hotspot.accessNote,
+                        accessNote,
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall,
                     )
@@ -104,15 +109,15 @@ fun HotspotDetailScreen(
                 ScoreSection(scored.score)
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
-                DetailSection("日落事件") {
+                DetailSection(stringResource(R.string.detail_sunset_events)) {
                     DetailRow(stringResource(R.string.label_sunset_time), prediction.events.sunset?.format(F))
-                    DetailRow("日出", prediction.events.sunrise?.format(F))
-                    DetailRow("正午", prediction.events.solarNoon?.format(F))
-                    DetailRow("黃金時刻", "${prediction.events.goldenHourEveningStart?.format(F).orEmpty()} → ${prediction.events.goldenHourEveningEnd?.format(F).orEmpty()}")
-                    DetailRow("藍調時刻", "${prediction.events.blueHourEveningStart?.format(F).orEmpty()} → ${prediction.events.blueHourEveningEnd?.format(F).orEmpty()}")
+                    DetailRow(stringResource(R.string.detail_sunrise), prediction.events.sunrise?.format(F))
+                    DetailRow(stringResource(R.string.detail_solar_noon), prediction.events.solarNoon?.format(F))
+                    DetailRow(stringResource(R.string.detail_golden_hour), "${prediction.events.goldenHourEveningStart?.format(F).orEmpty()} → ${prediction.events.goldenHourEveningEnd?.format(F).orEmpty()}")
+                    DetailRow(stringResource(R.string.detail_blue_hour), "${prediction.events.blueHourEveningStart?.format(F).orEmpty()} → ${prediction.events.blueHourEveningEnd?.format(F).orEmpty()}")
                 }
 
-                DetailSection("與主塔的關係") {
+                DetailSection(stringResource(R.string.detail_relation_to_tower)) {
                     DetailRow(
                         stringResource(R.string.label_sun_azimuth),
                         prediction.events.sunsetAzimuthDegrees?.let { "%.2f".format(it) + "°" },
@@ -123,7 +128,7 @@ fun HotspotDetailScreen(
                         prediction.alignmentOffsetDegrees?.let { "%+.3f".format(it) + "°" },
                     )
                     DetailRow(stringResource(R.string.label_distance_to_tower), "%.2f km".format(prediction.distanceToTowerMeters / 1000.0))
-                    DetailRow("主塔角寬 (可容忍誤差)", "%.4f".format(prediction.towerAngularWidthDegrees) + "°")
+                    DetailRow(stringResource(R.string.detail_tower_angular_width), "%.4f".format(prediction.towerAngularWidthDegrees) + "°")
                 }
             }
 
@@ -146,20 +151,20 @@ private fun ScoreSection(score: SunsetScore) {
     Column(Modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                "拍攝品質",
+                stringResource(R.string.detail_quality),
                 fontWeight = FontWeight.SemiBold,
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.weight(1f),
             )
             Text(
-                "${score.overall.toInt()} / 100  ${score.verdict}",
+                stringResource(R.string.detail_score_value, score.overall.toInt(), verdictLabel(score.verdict)),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.Bold,
             )
         }
         Spacer(Modifier.height(10.dp))
-        ScoreBar("對齊度", score.alignment)
+        ScoreBar(stringResource(R.string.detail_alignment), score.alignment)
     }
 }
 

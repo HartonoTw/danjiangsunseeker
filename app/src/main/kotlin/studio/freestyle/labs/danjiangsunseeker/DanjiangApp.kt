@@ -1,10 +1,12 @@
 ﻿package studio.freestyle.labs.danjiangsunseeker
 
 import android.app.Application
+import android.content.Context
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import studio.freestyle.labs.danjiangsunseeker.data.notifications.DailyScoreWorker
 import studio.freestyle.labs.danjiangsunseeker.data.notifications.NotificationHelper
+import studio.freestyle.labs.danjiangsunseeker.data.settings.LocaleManager
 import dagger.hilt.android.HiltAndroidApp
 import org.maplibre.android.MapLibre
 import org.maplibre.android.WellKnownTileServer
@@ -14,6 +16,10 @@ import javax.inject.Inject
 class DanjiangApp : Application(), Configuration.Provider {
 
     @Inject lateinit var workerFactory: HiltWorkerFactory
+
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(LocaleManager.wrap(base))
+    }
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()

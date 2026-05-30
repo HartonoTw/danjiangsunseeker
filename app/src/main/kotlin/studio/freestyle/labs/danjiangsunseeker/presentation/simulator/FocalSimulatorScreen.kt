@@ -50,11 +50,14 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
+import studio.freestyle.labs.danjiangsunseeker.R
 import studio.freestyle.labs.danjiangsunseeker.domain.model.BridgeTower
 import studio.freestyle.labs.danjiangsunseeker.domain.model.Hotspot
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.SensorSpec
 import studio.freestyle.labs.danjiangsunseeker.presentation.common.TowerTargetSelector
+import studio.freestyle.labs.danjiangsunseeker.presentation.common.focalAdviceLabel
 import java.time.Instant
 import java.time.ZoneId
 
@@ -78,7 +81,7 @@ fun FocalSimulatorScreen(vm: FocalSimulatorViewModel = hiltViewModel()) {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("焦段構圖模擬", style = MaterialTheme.typography.headlineMedium)
+        Text(stringResource(R.string.focal_title), style = MaterialTheme.typography.headlineMedium)
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             HotspotPicker(
@@ -105,9 +108,9 @@ fun FocalSimulatorScreen(vm: FocalSimulatorViewModel = hiltViewModel()) {
             onSelect = vm::setTowerTarget,
         )
 
-        SensorPicker(currentName = state.sensorName, onPick = vm::setSensor)
+        SensorPicker(current = state.sensor, onPick = vm::setSensor)
 
-        Text("焦距: ${state.focalLengthMm.toInt()} mm", style = MaterialTheme.typography.titleMedium)
+        Text(stringResource(R.string.focal_focal_length, state.focalLengthMm.toInt()), style = MaterialTheme.typography.titleMedium)
         Slider(
             value = state.focalLengthMm.toFloat().coerceAtMost(300f),
             onValueChange = { vm.setFocalLength(it.toDouble()) },
@@ -115,10 +118,10 @@ fun FocalSimulatorScreen(vm: FocalSimulatorViewModel = hiltViewModel()) {
         )
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("時間: ${state.selectedTimeLabel}", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.focal_time, state.selectedTimeLabel), style = MaterialTheme.typography.titleMedium)
             state.sunsetTime?.let {
                 Text(
-                    "日落 %02d:%02d".format(it.hour, it.minute),
+                    stringResource(R.string.focal_sunset_label, "%02d:%02d".format(it.hour, it.minute)),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.outline,
                 )
@@ -168,15 +171,24 @@ fun FocalSimulatorScreen(vm: FocalSimulatorViewModel = hiltViewModel()) {
         FrameCanvas(state)
 
         Text(
-            "距主塔 ${"%.2f".format(state.distanceKm)} km · 水平視角 ${"%.1f".format(state.horizontalFovDegrees)}° · 垂直視角 ${"%.1f".format(state.verticalFovDegrees)}°",
+            stringResource(
+                R.string.focal_geometry,
+                "%.2f".format(state.distanceKm),
+                "%.1f".format(state.horizontalFovDegrees),
+                "%.1f".format(state.verticalFovDegrees),
+            ),
             style = MaterialTheme.typography.bodyMedium,
         )
         Text(
-            "太陽: 方位 ${"%.2f°".format(state.sunAzimuthDegrees)} · 仰角 ${"%+.2f°".format(state.sunAltitudeDegrees)}",
+            stringResource(
+                R.string.focal_sun_info,
+                "%.2f".format(state.sunAzimuthDegrees),
+                "%+.2f".format(state.sunAltitudeDegrees),
+            ),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.outline,
         )
-        Text(state.recommendation, color = MaterialTheme.colorScheme.primary)
+        Text(focalAdviceLabel(state.advice), color = MaterialTheme.colorScheme.primary)
     }
 
     if (showDatePicker) {
@@ -197,10 +209,10 @@ fun FocalSimulatorScreen(vm: FocalSimulatorViewModel = hiltViewModel()) {
                         vm.setDate(date)
                     }
                     showDatePicker = false
-                }) { Text("確定") }
+                }) { Text(stringResource(R.string.action_confirm)) }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("取消") }
+                TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.action_cancel)) }
             },
         ) { DatePicker(state = pickerState) }
     }
@@ -208,6 +220,9 @@ fun FocalSimulatorScreen(vm: FocalSimulatorViewModel = hiltViewModel()) {
 
 @Composable
 private fun FrameCanvas(state: FocalSimulatorState) {
+    val baliLabel = stringResource(R.string.bridge_label_bali)
+    val tamsuiLabel = stringResource(R.string.bridge_label_tamsui)
+    val towerHeightLabel = stringResource(R.string.focal_tower_height_label)
     Canvas(
         modifier = Modifier
             .fillMaxWidth()
@@ -221,7 +236,7 @@ private fun FrameCanvas(state: FocalSimulatorState) {
         drawSunTrail(state, w, h)
         drawSun(state, w, h)
         drawOffFrameArrows(state.sun, w, h)
-        drawBridgeLabels(state, w, h)
+        drawBridgeLabels(state, w, h, baliLabel, tamsuiLabel, towerHeightLabel)
     }
 }
 
@@ -668,7 +683,14 @@ private fun projectedWaterStart(deckY: Float, waterY: Float, hw: Float): Float {
 }
 
 /** 在畫面角落疊加橋樑標示文字（左右依方位動態翻轉）*/
-private fun DrawScope.drawBridgeLabels(state: FocalSimulatorState, w: Float, h: Float) {
+private fun DrawScope.drawBridgeLabels(
+    state: FocalSimulatorState,
+    w: Float,
+    h: Float,
+    baliLabel: String,
+    tamsuiLabel: String,
+    towerHeightLabel: String,
+) {
     val deckY = (state.deckYFrac.toFloat() * h).coerceIn(0f, h)
     if (state.towerTopYFrac >= state.deckYFrac) return   // 塔不在畫面
 
@@ -682,9 +704,9 @@ private fun DrawScope.drawBridgeLabels(state: FocalSimulatorState, w: Float, h: 
 
     // 八里 / 淡水依 baliIsOnLeft 決定在左或右
     val (leftLabel, rightLabel) = if (state.baliIsOnLeft) {
-        "← 八里" to "淡水 →"
+        "← $baliLabel" to "$tamsuiLabel →"
     } else {
-        "← 淡水" to "八里 →"
+        "← $tamsuiLabel" to "$baliLabel →"
     }
 
     nc.drawText(leftLabel, 12f, deckY - 12f, paint)
@@ -696,7 +718,7 @@ private fun DrawScope.drawBridgeLabels(state: FocalSimulatorState, w: Float, h: 
     if (topY < deckY - 24f) {
         paint.textSize = 22f
         paint.color    = android.graphics.Color.argb(155, 255, 215, 90)
-        nc.drawText("塔高 211m", w / 2f + 14f, topY + 24f, paint)
+        nc.drawText(towerHeightLabel, w / 2f + 14f, topY + 24f, paint)
     }
 }
 
@@ -826,19 +848,18 @@ private fun DrawScope.drawArrow(tip: Offset, angleRad: Float, size: Float, color
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
-private fun SensorPicker(currentName: String, onPick: (String) -> Unit) {
+private fun SensorPicker(current: SensorSpec, onPick: (SensorSpec) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
-    val options = SensorSpec.ALL.map { it.displayName }
 
     ExposedDropdownMenuBox(
         expanded = expanded,
         onExpandedChange = { expanded = !expanded },
     ) {
         OutlinedTextField(
-            value = currentName,
+            value = stringResource(current.labelRes),
             onValueChange = {},
             readOnly = true,
-            label = { Text("感光元件") },
+            label = { Text(stringResource(R.string.focal_sensor_label)) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable, true),
         )
@@ -846,11 +867,11 @@ private fun SensorPicker(currentName: String, onPick: (String) -> Unit) {
             expanded = expanded,
             onDismissRequest = { expanded = false },
         ) {
-            options.forEach { name ->
+            SensorSpec.ALL.forEach { spec ->
                 DropdownMenuItem(
-                    text = { Text(name) },
+                    text = { Text(stringResource(spec.labelRes)) },
                     onClick = {
-                        onPick(name)
+                        onPick(spec)
                         expanded = false
                     },
                 )
@@ -870,7 +891,11 @@ private fun HotspotPicker(
 ) {
     var expanded by remember { mutableStateOf(false) }
     val ctx = androidx.compose.ui.platform.LocalContext.current
-    val displayName = current.nameRes?.let { ctx.getString(it) } ?: current.customName.orEmpty()
+    val displayName = when {
+        current.id == GPS_HOTSPOT_ID -> stringResource(R.string.gps_hotspot_name)
+        current.nameRes != null -> stringResource(current.nameRes!!)
+        else -> current.customName.orEmpty()
+    }
 
     Box {
         AssistChip(
@@ -882,7 +907,7 @@ private fun HotspotPicker(
             onDismissRequest = { expanded = false },
         ) {
             // ── 第一項：GPS 目前位置（永遠顯示；沒 GPS 時呼叫 onRequestGps 觸發權限/重試）
-            val gpsLabel = if (gpsReady) GPS_HOTSPOT.customName.orEmpty() else "📍 目前位置 (點此啟用)"
+            val gpsLabel = if (gpsReady) stringResource(R.string.gps_hotspot_name) else stringResource(R.string.gps_hotspot_enable)
             DropdownMenuItem(
                 text = { Text(gpsLabel) },
                 onClick = {
