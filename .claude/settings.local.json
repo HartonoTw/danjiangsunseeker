@@ -21,7 +21,8 @@
       "Bash(Get-ChildItem -Path \"D:\\\\AI\\\\danjiangsunseeker\" -Force)",
       "Bash(Select-Object Name, FullName)",
       "Bash(xargs grep -l \"Settings\\\\|About\")",
-      "Bash(./gradlew compileDebugKotlin --no-daemon)"
+      "Bash(./gradlew compileDebugKotlin --no-daemon)",
+      "Bash(./gradlew :app:compileDebugKotlin -q)"
     ]
   }
 }

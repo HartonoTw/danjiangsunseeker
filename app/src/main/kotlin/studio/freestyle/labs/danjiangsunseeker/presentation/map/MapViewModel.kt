@@ -18,6 +18,7 @@ import studio.freestyle.labs.danjiangsunseeker.domain.usecase.ComputeGoldenLineU
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.TowerTargetSunResolver
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -79,23 +80,42 @@ class MapViewModel @Inject constructor(
 
     companion object { private const val TAG = "MapDebug" }
 
+    private var computeJob: Job? = null
+    private var pendingDate: LocalDate? = null
+
     fun setDate(date: LocalDate) {
-        _state.value = _state.value.copy(selectedDate = date, computing = true)
-        viewModelScope.launch {
-            val (gl, topGl, sunsetAz) = withContext(Dispatchers.Default) {
-                val gl = computeGoldenLine(date)
-                val topGl = computeGoldenLine(date, target = TowerTarget.UpperY)
-                val sunAz = sunCalc.dailyEvents(date, BridgeTower.position).sunsetAzimuthDegrees
-                Triple(gl, topGl, sunAz)
+        // 立即更新日期文字（便宜），重運算放背景。
+        _state.value = _state.value.copy(selectedDate = date)
+        // 用「conflated latest」取代取消：永遠記住最新要算的日期；
+        // 若已有 worker 在跑就不另開，等它算完會自動接最新日期。
+        // 這樣每次算完的結果都會落地（線會動），但快速播放時自動略過跟不上的中間日期，
+        // 不會像取消那樣每次都被打斷而完全不更新。
+        pendingDate = date
+        if (computeJob?.isActive == true) return
+        computeJob = viewModelScope.launch {
+            while (true) {
+                val d = pendingDate ?: break
+                pendingDate = null
+                val (gl, topGl, sunsetAz) = withContext(Dispatchers.Default) {
+                    val gl = computeGoldenLine(d)
+                    val topGl = computeGoldenLine(d, target = TowerTarget.UpperY)
+                    val sunAz = sunCalc.dailyEvents(d, BridgeTower.position).sunsetAzimuthDegrees
+                    Triple(gl, topGl, sunAz)
+                }
+                _state.value = _state.value.copy(
+                    goldenLine = gl,
+                    towerTopGoldenLine = topGl,
+                    sunsetAzimuthAtTower = sunsetAz,
+                    computing = false,
+                    tap = _state.value.tap?.let { rebuildTap(it.point) },
+                )
             }
-            _state.value = _state.value.copy(
-                goldenLine = gl,
-                towerTopGoldenLine = topGl,
-                sunsetAzimuthAtTower = sunsetAz,
-                computing = false,
-                tap = _state.value.tap?.let { rebuildTap(it.point) },
-            )
         }
+    }
+
+    /** 以目前選定日期為基準，往前或往後跳 [days] 天。 */
+    fun stepDate(days: Long) {
+        setDate(_state.value.selectedDate.plusDays(days))
     }
 
     fun onMapTap(latitude: Double, longitude: Double) {

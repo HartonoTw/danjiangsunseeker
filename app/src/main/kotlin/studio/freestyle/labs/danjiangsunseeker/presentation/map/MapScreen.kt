@@ -6,6 +6,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +25,9 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.MyLocation
+import androidx.compose.material.icons.outlined.NavigateBefore
+import androidx.compose.material.icons.outlined.NavigateNext
+import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
@@ -50,8 +54,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -61,6 +68,7 @@ import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.Style
+import kotlinx.coroutines.delay
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -73,6 +81,38 @@ fun MapScreen(vm: MapViewModel = hiltViewModel()) {
 
     val mapHolder = remember { MapHolder() }
     var showDatePicker by remember { mutableStateOf(false) }
+    // 連續播放方向：-1 往前、0 停止、+1 往後。
+    // playLevel：0 停止、1=0.5s、2=0.1s、3=0.05s，每點一次往上跳，超過 3 則停止。
+    var playDirection by remember { mutableIntStateOf(0) }
+    var playLevel by remember { mutableIntStateOf(0) }
+
+    LaunchedEffect(playDirection, playLevel) {
+        if (playDirection == 0 || playLevel == 0) return@LaunchedEffect
+        val delayMs = when (playLevel) {
+            1 -> 500L
+            2 -> 100L
+            else -> 50L
+        }
+        while (true) {
+            delay(delayMs)
+            vm.stepDate(playDirection.toLong())
+        }
+    }
+
+    // 點擊連續播放鈕：同方向則加速 (level+1)，超過 3 停止；不同方向則從 level 1 起跳。
+    fun cyclePlay(direction: Int) {
+        if (playDirection == direction) {
+            if (playLevel >= 3) {
+                playDirection = 0
+                playLevel = 0
+            } else {
+                playLevel += 1
+            }
+        } else {
+            playDirection = direction
+            playLevel = 1
+        }
+    }
     val locationPermLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { granted ->
@@ -156,16 +196,50 @@ fun MapScreen(vm: MapViewModel = hiltViewModel()) {
             colors = CardDefaults.cardColors(),
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(Icons.Outlined.CalendarMonth, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.width(4.dp))
+                // << 連續往前播放（每點一次加速：0.5s→0.1s→0.05s→停止）
+                DatePlayButton(
+                    forward = false,
+                    activeLevel = if (playDirection == -1) playLevel else 0,
+                    onClick = { cyclePlay(-1) },
+                )
+                // < 往前一天
+                DateStepButton(
+                    icon = Icons.Outlined.NavigateBefore,
+                    contentDescription = "前一天",
+                    active = false,
+                    onClick = {
+                        playDirection = 0
+                        playLevel = 0
+                        vm.stepDate(-1)
+                    },
+                )
                 Text(
                     state.selectedDate.format(dateFmt),
                     style = MaterialTheme.typography.titleMedium,
                 )
-                Spacer(Modifier.width(8.dp))
+                // > 往後一天
+                DateStepButton(
+                    icon = Icons.Outlined.NavigateNext,
+                    contentDescription = "後一天",
+                    active = false,
+                    onClick = {
+                        playDirection = 0
+                        playLevel = 0
+                        vm.stepDate(1)
+                    },
+                )
+                // >> 連續往後播放（每點一次加速：0.5s→0.1s→0.05s→停止）
+                DatePlayButton(
+                    forward = true,
+                    activeLevel = if (playDirection == 1) playLevel else 0,
+                    onClick = { cyclePlay(1) },
+                )
+                Spacer(Modifier.width(4.dp))
                 AssistChip(
                     onClick = { showDatePicker = true },
                     label = { Text("選日期") },
@@ -401,6 +475,58 @@ private fun AddHotspotDialog(
         confirmButton = { TextButton(onClick = onSave) { Text("儲存") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } },
     )
+}
+
+/** 日期播放控制鈕：< > 單日跳、<< >> 連續跳（active 時高亮）。 */
+@Composable
+private fun DateStepButton(
+    icon: ImageVector,
+    contentDescription: String,
+    active: Boolean,
+    onClick: () -> Unit,
+) {
+    IconButton(onClick = onClick, modifier = Modifier.size(32.dp)) {
+        Icon(
+            icon,
+            contentDescription = contentDescription,
+            modifier = Modifier.size(22.dp),
+            tint = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+        )
+    }
+}
+
+/**
+ * 連續播放鈕：以箭頭數量表示速度等級 (|> = 0.5s、|>|> = 0.1s、|>|>|> = 0.05s)。
+ * 未啟用時顯示單一暗色箭頭。forward=false 時水平鏡射成往前 (<|)。
+ */
+@Composable
+private fun DatePlayButton(
+    forward: Boolean,
+    activeLevel: Int,
+    onClick: () -> Unit,
+) {
+    val active = activeLevel > 0
+    val count = if (active) activeLevel else 1
+    val tint = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+    Row(
+        modifier = Modifier
+            .clip(CircleShape)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 4.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy((-4).dp),
+    ) {
+        repeat(count) {
+            Icon(
+                Icons.Outlined.PlayArrow,
+                contentDescription = if (forward) "連續往後" else "連續往前",
+                modifier = Modifier
+                    .size(18.dp)
+                    .then(if (!forward) Modifier.scale(-1f, 1f) else Modifier),
+                tint = tint,
+            )
+        }
+    }
 }
 
 /** 持有 Compose 重組之間共用的 MapLibre 物件參考。 */
