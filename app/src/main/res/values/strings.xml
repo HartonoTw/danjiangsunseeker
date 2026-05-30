@@ -7,13 +7,15 @@
     <string name="tab_ar">AR</string>
     <string name="tab_calendar">日曆</string>
 
-    <string name="hotspot_sand_dune">沙崙海灘</string>
     <string name="hotspot_bali">八里左岸公園</string>
-    <string name="hotspot_datun">大屯山助航站觀景台</string>
     <string name="hotspot_tamsui_ferry">淡水渡船頭</string>
     <string name="hotspot_bali_ferry">八里渡船頭</string>
     <string name="hotspot_starbucks">淡水河岸星巴克</string>
     <string name="hotspot_customs_wharf">海關碼頭</string>
+    <string name="hotspot_mackay_landing">馬偕上岸處</string>
+    <string name="hotspot_riverside_park_1">水岸公園1</string>
+    <string name="hotspot_riverside_park_2">水岸公園2</string>
+    <string name="hotspot_tamsui_mrt">淡水捷運</string>
 
     <string name="label_sunset_time">日落時間</string>
     <string name="label_sun_azimuth">日落方位</string>

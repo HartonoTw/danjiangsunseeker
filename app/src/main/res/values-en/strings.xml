@@ -7,13 +7,15 @@
     <string name="tab_ar">AR</string>
     <string name="tab_calendar">Calendar</string>
 
-    <string name="hotspot_sand_dune">Shalun Beach</string>
     <string name="hotspot_bali">Bali Left Bank Park</string>
-    <string name="hotspot_datun">Mt. Datun Navigation Station</string>
     <string name="hotspot_tamsui_ferry">Tamsui Ferry Pier</string>
     <string name="hotspot_bali_ferry">Bali Ferry Pier</string>
     <string name="hotspot_starbucks">Riverside Starbucks (Tamsui)</string>
     <string name="hotspot_customs_wharf">Tamsui Customs Wharf</string>
+    <string name="hotspot_mackay_landing">Mackay Landing</string>
+    <string name="hotspot_riverside_park_1">Riverside Park 1</string>
+    <string name="hotspot_riverside_park_2">Riverside Park 2</string>
+    <string name="hotspot_tamsui_mrt">Tamsui MRT</string>
 
     <string name="label_sunset_time">Sunset</string>
     <string name="label_sun_azimuth">Sun azimuth</string>
