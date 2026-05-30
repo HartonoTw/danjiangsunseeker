@@ -3,15 +3,19 @@
 import android.graphics.Paint
 import android.graphics.Typeface
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -120,16 +124,45 @@ fun FocalSimulatorScreen(vm: FocalSimulatorViewModel = hiltViewModel()) {
                 )
             }
         }
-        Slider(
-            value = state.timeMinuteOfDay.toFloat().coerceIn(8 * 60f, 20 * 60f),
-            onValueChange = { vm.setMinuteOfDay(it.toInt()) },
-            valueRange = (8 * 60).toFloat()..(20 * 60).toFloat(),
-            steps = 0,
-        )
+        // 範圍 12:00–19:30；採非線性映射，日落前 1.5 小時起的「細調區」佔較大滑桿比例，
+        // 讓接近日落時拖動的時間粒度更細。日落點以紅色刻度標在滑桿上。
+        val sunsetMin = state.sunsetTime?.let { it.hour * 60 + it.minute }
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            val thumbRadius = 10.dp
+            Slider(
+                value = minuteToSliderFraction(state.timeMinuteOfDay, sunsetMin),
+                onValueChange = { vm.setMinuteOfDay(sliderFractionToMinute(it, sunsetMin)) },
+                valueRange = 0f..1f,
+            )
+            // 日落刻度：依非線性映射換算日落在軌道上的位置（扣掉左右各 thumbRadius 內縮）
+            sunsetMin?.let { sm ->
+                val frac = minuteToSliderFraction(sm, sunsetMin)
+                val markerCenterX = thumbRadius + (maxWidth - thumbRadius * 2f) * frac
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .offset(x = markerCenterX - 1.dp)
+                        .width(2.dp)
+                        .height(24.dp)
+                        .background(MaterialTheme.colorScheme.error),
+                )
+                Text(
+                    "日落",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .offset(x = (markerCenterX - 12.dp).coerceAtLeast(0.dp)),
+                )
+            }
+        }
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("08:00", style = MaterialTheme.typography.labelSmall)
-            Text("14:00", style = MaterialTheme.typography.labelSmall)
-            Text("20:00", style = MaterialTheme.typography.labelSmall)
+            Text("12:00", style = MaterialTheme.typography.labelSmall)
+            val endMinute = timeSliderBounds(sunsetMin).maxMinute
+            Text(
+                "%02d:%02d".format(endMinute / 60, endMinute % 60),
+                style = MaterialTheme.typography.labelSmall,
+            )
         }
 
         FrameCanvas(state)
@@ -668,6 +701,71 @@ private fun DrawScope.drawBridgeLabels(state: FocalSimulatorState, w: Float, h: 
 }
 
 private fun lerp(a: Float, b: Float, t: Float) = a + (b - a) * t.coerceIn(0f, 1f)
+
+// ── 時間滑桿的非線性映射 ───────────────────────────────────────────────
+//   起點固定 12:00；終點動態 = 日落 + 30 分鐘。三段式，越接近日落越細：
+//     粗調區 [12:00, 日落-90m]            佔 COARSE_TRACK_FRACTION
+//     細調區 [日落-90m, 日落-10m]          佔 FINE_TRACK_FRACTION
+//     超細區 [日落-10m, 日落+10m]          佔剩餘軌道（最細）
+private const val TIME_MIN_MINUTE = 12 * 60          // 720 = 12:00
+private const val FALLBACK_SUNSET_MINUTE = 17 * 60 + 30
+private const val END_AFTER_SUNSET_MINUTE = 10       // 終點 = 日落 + 10 分鐘
+private const val FINE_WINDOW_MINUTE = 90            // 日落前 90 分鐘進入細調區
+private const val ULTRA_WINDOW_MINUTE = 10           // 日落前 10 分鐘進入超細區
+private const val COARSE_TRACK_FRACTION = 0.30f      // 粗調區佔軌道
+private const val FINE_TRACK_FRACTION = 0.35f        // 細調區佔軌道（超細區 = 0.35）
+
+/** 滑桿各分界（分鐘），由日落時間動態推算並保證遞增。 */
+private data class TimeSliderBounds(
+    val minMinute: Int,
+    val fineStart: Int,
+    val ultraStart: Int,
+    val maxMinute: Int,
+)
+
+private fun timeSliderBounds(sunsetMinute: Int?): TimeSliderBounds {
+    val sunset = sunsetMinute ?: FALLBACK_SUNSET_MINUTE
+    val min = TIME_MIN_MINUTE
+    val end = sunset + END_AFTER_SUNSET_MINUTE
+    val ultraStart = (sunset - ULTRA_WINDOW_MINUTE).coerceIn(min + 2, end - 1)
+    val fineStart = (sunset - FINE_WINDOW_MINUTE).coerceIn(min + 1, ultraStart - 1)
+    return TimeSliderBounds(min, fineStart, ultraStart, end)
+}
+
+/** 分鐘 → 滑桿 0..1（三段式，越接近日落越細）。 */
+private fun minuteToSliderFraction(minute: Int, sunsetMinute: Int?): Float {
+    val b = timeSliderBounds(sunsetMinute)
+    val m = minute.coerceIn(b.minMinute, b.maxMinute)
+    val coarse = COARSE_TRACK_FRACTION
+    val fine = FINE_TRACK_FRACTION
+    return when {
+        m <= b.fineStart ->
+            coarse * (m - b.minMinute).toFloat() / (b.fineStart - b.minMinute).toFloat()
+        m <= b.ultraStart ->
+            coarse + fine * (m - b.fineStart).toFloat() / (b.ultraStart - b.fineStart).toFloat()
+        else ->
+            coarse + fine + (1f - coarse - fine) *
+                (m - b.ultraStart).toFloat() / (b.maxMinute - b.ultraStart).toFloat()
+    }
+}
+
+/** 滑桿 0..1 → 分鐘。 */
+private fun sliderFractionToMinute(fraction: Float, sunsetMinute: Int?): Int {
+    val b = timeSliderBounds(sunsetMinute)
+    val f = fraction.coerceIn(0f, 1f)
+    val coarse = COARSE_TRACK_FRACTION
+    val fine = FINE_TRACK_FRACTION
+    val minute = when {
+        f <= coarse ->
+            b.minMinute + (b.fineStart - b.minMinute) * (f / coarse)
+        f <= coarse + fine ->
+            b.fineStart + (b.ultraStart - b.fineStart) * ((f - coarse) / fine)
+        else ->
+            b.ultraStart + (b.maxMinute - b.ultraStart) *
+                ((f - coarse - fine) / (1f - coarse - fine))
+    }
+    return minute.toInt()
+}
 
 private fun DrawScope.drawSunTrail(state: FocalSimulatorState, w: Float, h: Float) {
     state.sunTrail.forEach { p ->
