@@ -48,6 +48,18 @@ class ARViewModel @Inject constructor(
     @Volatile private var azimuthOffsetDeg: Double = 0.0
     @Volatile private var pitchOffsetDeg: Double = 0.0
 
+    /** 鏡頭防曬遮蔽的遲滯狀態 — 避免在臨界角度反覆 bind/unbind 相機。 */
+    private var cameraBlockedPrev: Boolean = false
+
+    private companion object {
+        /** 校正僅在日落前 45 分鐘內（含日落後）開放。 */
+        const val CALIBRATION_WINDOW_MIN = 45.0
+        /** 進入危險：太陽距「畫面邊緣」還有 12° 就遮蔽（快看到就關，不必等真的入框）。 */
+        const val SUN_BLOCK_MARGIN_DEG = 12.0
+        /** 解除危險：太陽需離開到畫面邊緣外 22°（遲滯帶，避免臨界反覆切換）。 */
+        const val SUN_UNBLOCK_MARGIN_DEG = 22.0
+    }
+
     /**
      * 軌跡世界座標快取 (azimuth/altitude/minutesFromSunset)。
      *
@@ -233,6 +245,25 @@ class ARViewModel @Inject constructor(
             sunsetAltitude = null
         }
 
+        // ── 校正時段 + 防曬遮蔽 ───────────────────────────────────────────
+        // 校正僅在日落前 45 分鐘內開放（此時太陽夠低、亮度可接受）。
+        // 在此時段以前，若相機朝向太接近太陽（且太陽在地平線上），為保護眼睛與
+        // 感光元件，遮蔽鏡頭。用遲滯帶避免臨界反覆切換。
+        val minsToSunset = sunsetTime?.let {
+            ChronoUnit.SECONDS.between(now, it).toDouble() / 60.0
+        }
+        val calibrationAllowed = minsToSunset != null && minsToSunset <= CALIBRATION_WINDOW_MIN
+        val dangerApplies = minsToSunset != null &&
+            minsToSunset > CALIBRATION_WINDOW_MIN &&
+            sunPos.altitudeDegrees > 0.0
+        // 以「畫面邊緣 + 邊距」判斷：太陽水平/垂直偏移只要逼近畫面範圍就遮蔽，
+        // 不必等太陽真的進到畫面中央。遲滯：已遮蔽時要離更遠才解除。
+        val margin = if (cameraBlockedPrev) SUN_UNBLOCK_MARGIN_DEG else SUN_BLOCK_MARGIN_DEG
+        val nearFrameH = abs(sunTarget.horizontalOffsetDegrees) < fov.horizontalDeg / 2.0 + margin
+        val nearFrameV = abs(sunTarget.verticalOffsetDegrees) < fov.verticalDeg / 2.0 + margin
+        val cameraBlocked = dangerApplies && nearFrameH && nearFrameV
+        cameraBlockedPrev = cameraBlocked
+
         _state.value = snapshot.copy(
             orientation = orientation,
             tower = towerTarget,
@@ -249,6 +280,8 @@ class ARViewModel @Inject constructor(
             sunAzimuthDegrees = sunPos.azimuthDegrees,
             sunAltitudeDegrees = sunPos.altitudeDegrees,
             alignmentOffsetDegrees = Geodesy.signedAzimuthDelta(sunPos.azimuthDegrees, towerBearing),
+            calibrationAllowed = calibrationAllowed,
+            cameraBlockedBySun = cameraBlocked,
             ready = true,
         )
     }
@@ -360,6 +393,10 @@ data class ARState(
     val alignmentOffsetDegrees: Double = 0.0,
     val ready: Boolean = false,
     val errorMessage: String? = null,
+    /** 是否在校正開放時段（日落前 45 分鐘內）。 */
+    val calibrationAllowed: Boolean = false,
+    /** 鏡頭因太接近太陽（且非日落前 45 分鐘時段）被遮蔽保護。 */
+    val cameraBlockedBySun: Boolean = false,
     val calibrating: Boolean = false,
     val calibrationApplied: Boolean = false,
     val calibrationAzimuthOffsetDeg: Double = 0.0,

@@ -198,6 +198,11 @@
     <string name="ar_sun_off_minor">太陽偏離 %1$s°</string>
     <string name="ar_sun_off_major">今日太陽方位偏離 %1$s°</string>
 
+    <!-- AR sun-safety -->
+    <string name="ar_sun_shutter_title">鏡頭已暫停</string>
+    <string name="ar_sun_shutter_body">鏡頭太接近太陽。為保護你的眼睛與相機感光元件，已在日落前 45 分鐘前暫停鏡頭。\n請將鏡頭移開太陽，或等接近日落再使用。</string>
+    <string name="ar_calibration_window_hint">校正僅在日落前 45 分鐘內開放</string>
+
     <!-- AR view-model messages -->
     <string name="ar_err_location_permission">需要位置權限</string>
     <string name="ar_err_calibration_no_gps">校正失敗：尚未取得 GPS</string>
@@ -254,6 +259,7 @@
     <string name="changelog_title">更新日誌</string>
     <string-array name="changelog_0_11">
         <item>「關於」介面優化。</item>
+        <item>AR 護眼：校正僅在日落前 45 分鐘內開放；鏡頭快對到太陽時自動暫停並保留日落投影。</item>
     </string-array>
     <string-array name="changelog_0_10">
         <item>地圖：日期列新增播放控制鈕。「&lt;」「&gt;」可單日往前／往後跳；「&lt;&lt;」「&gt;&gt;」連續播放，每點一次切換速度（0.5 秒 → 0.1 秒 → 0.05 秒 → 停止），以箭頭數量顯示目前速度。</item>

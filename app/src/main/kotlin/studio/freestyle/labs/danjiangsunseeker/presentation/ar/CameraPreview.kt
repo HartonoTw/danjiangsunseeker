@@ -10,6 +10,7 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -25,11 +26,15 @@ import kotlin.math.atan
 @Composable
 fun CameraPreview(
     modifier: Modifier = Modifier,
+    active: Boolean = true,
     onFovComputed: (CameraFov) -> Unit = {},
     onCameraReady: (Camera) -> Unit = {},
 ) {
     val ctx = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val previewView = remember {
+        PreviewView(ctx).apply { scaleType = PreviewView.ScaleType.FILL_CENTER }
+    }
 
     // 計算 FOV 一次；失敗時用預設值 (避免極端機型卡住)
     LaunchedEffect(Unit) {
@@ -38,30 +43,33 @@ fun CameraPreview(
         onFovComputed(fov)
     }
 
-    AndroidView(
-        modifier = modifier,
-        factory = { context ->
-            PreviewView(context).also { previewView ->
-                previewView.scaleType = PreviewView.ScaleType.FILL_CENTER
-                val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
-                cameraProviderFuture.addListener({
-                    val cameraProvider = cameraProviderFuture.get()
-                    val preview = Preview.Builder().build().apply {
-                        surfaceProvider = previewView.surfaceProvider
-                    }
-                    cameraProvider.unbindAll()
-                    runCatching {
-                        val camera = cameraProvider.bindToLifecycle(
-                            lifecycleOwner,
-                            CameraSelector.DEFAULT_BACK_CAMERA,
-                            preview,
-                        )
-                        onCameraReady(camera)
-                    }
-                }, ContextCompat.getMainExecutor(context))
+    // 依 active 綁定 / 解除相機。active=false 時 unbindAll() 真正關閉感光元件，
+    // 用於「鏡頭太接近太陽」的護眼/護鏡頭遮蔽。
+    DisposableEffect(active) {
+        val future = ProcessCameraProvider.getInstance(ctx)
+        future.addListener({
+            val cameraProvider = future.get()
+            cameraProvider.unbindAll()
+            if (active) {
+                val preview = Preview.Builder().build().apply {
+                    surfaceProvider = previewView.surfaceProvider
+                }
+                runCatching {
+                    val camera = cameraProvider.bindToLifecycle(
+                        lifecycleOwner,
+                        CameraSelector.DEFAULT_BACK_CAMERA,
+                        preview,
+                    )
+                    onCameraReady(camera)
+                }
             }
-        },
-    )
+        }, ContextCompat.getMainExecutor(ctx))
+        onDispose {
+            runCatching { future.get().unbindAll() }
+        }
+    }
+
+    AndroidView(modifier = modifier, factory = { previewView })
 }
 
 /**

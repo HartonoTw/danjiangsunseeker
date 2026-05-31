@@ -3,6 +3,7 @@
 import android.Manifest
 import android.content.pm.PackageManager
 import android.view.Surface
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.Camera
@@ -126,36 +127,69 @@ fun ARScreen(vm: ARViewModel = hiltViewModel()) {
     Box(modifier = Modifier.fillMaxSize()) {
         CameraPreview(
             modifier = Modifier.fillMaxSize(),
+            active = !state.cameraBlockedBySun,
             onFovComputed = { vm.setCameraFov(it) },
             onCameraReady = { camera = it },
         )
-        AROverlay(state, modifier = Modifier.fillMaxSize())
-        InfoHud(
-            state,
-            modifier = Modifier.align(Alignment.TopStart).padding(12.dp),
-        )
 
-        if (!state.calibrating) {
-            FloatingActionButton(
-                onClick = { vm.startCalibration() },
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(top = 12.dp, end = 12.dp)
-                    .size(52.dp),
-                containerColor = MaterialTheme.colorScheme.primary,
-            ) {
-                Icon(Icons.Outlined.GpsFixed, contentDescription = stringResource(R.string.cd_calibrate))
-            }
-            AlignmentBadge(
+        if (state.cameraBlockedBySun) {
+            // 鏡頭太接近太陽：以暗色蓋掉相機畫面（相機已停止擷取），
+            // 但保留日落投影（太陽軌跡 / 日落標記 / 主塔）讓使用者仍能取景對位。
+            Box(modifier = Modifier.fillMaxSize().background(Color(0xFF120A06)))
+            AROverlay(state, modifier = Modifier.fillMaxSize())
+            InfoHud(
                 state,
-                onReset = { vm.resetCalibration() },
-                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 24.dp),
+                modifier = Modifier.align(Alignment.TopStart).padding(12.dp),
+            )
+            SunSafetyBanner(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 24.dp, start = 16.dp, end = 16.dp),
             )
         } else {
-            CalibrationOverlay(
-                onConfirm = { vm.confirmCalibration() },
-                onCancel = { vm.cancelCalibration() },
+            AROverlay(state, modifier = Modifier.fillMaxSize())
+            InfoHud(
+                state,
+                modifier = Modifier.align(Alignment.TopStart).padding(12.dp),
             )
+
+            if (!state.calibrating) {
+                // 校正鈕：僅在日落前 45 分鐘內可用；其餘時段點擊顯示提示
+                FloatingActionButton(
+                    onClick = {
+                        if (state.calibrationAllowed) {
+                            vm.startCalibration()
+                        } else {
+                            Toast.makeText(
+                                ctx,
+                                ctx.getString(R.string.ar_calibration_window_hint),
+                                Toast.LENGTH_SHORT,
+                            ).show()
+                        }
+                    },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = 12.dp, end = 12.dp)
+                        .size(52.dp),
+                    containerColor = if (state.calibrationAllowed) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                    },
+                ) {
+                    Icon(Icons.Outlined.GpsFixed, contentDescription = stringResource(R.string.cd_calibrate))
+                }
+                AlignmentBadge(
+                    state,
+                    onReset = { vm.resetCalibration() },
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 24.dp),
+                )
+            } else {
+                CalibrationOverlay(
+                    onConfirm = { vm.confirmCalibration() },
+                    onCancel = { vm.cancelCalibration() },
+                )
+            }
         }
     }
 }
@@ -179,6 +213,35 @@ private fun PermissionPrompt(onRequest: () -> Unit) {
         )
         Spacer(Modifier.height(16.dp))
         Button(onClick = onRequest) { Text(stringResource(R.string.action_grant_permission)) }
+    }
+}
+
+/** 鏡頭因太接近太陽暫停時的護眼/護鏡頭警告橫幅（疊在日落投影之上）。 */
+@Composable
+private fun SunSafetyBanner(modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier.fillMaxWidth().shadow(6.dp, RoundedCornerShape(14.dp)),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFB71C1C).copy(alpha = 0.94f)),
+        shape = RoundedCornerShape(14.dp),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Outlined.Warning, contentDescription = null, tint = Color.White)
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    stringResource(R.string.ar_sun_shutter_title),
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium,
+                )
+            }
+            Spacer(Modifier.height(6.dp))
+            Text(
+                stringResource(R.string.ar_sun_shutter_body),
+                color = Color.White.copy(alpha = 0.9f),
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
     }
 }
 
