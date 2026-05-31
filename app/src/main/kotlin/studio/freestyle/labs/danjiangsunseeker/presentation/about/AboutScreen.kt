@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -76,9 +77,9 @@ fun AboutScreen(
                 .padding(padding)
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 32.dp, vertical = 40.dp),
+                .padding(horizontal = 32.dp, vertical = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             // ── App icon（同 launcher：橘底 + 主塔/夕陽前景）──────────────
             Box(
@@ -118,16 +119,12 @@ fun AboutScreen(
                 ),
             )
 
-            Spacer(Modifier.height(8.dp))
             HorizontalDivider()
-            Spacer(Modifier.height(4.dp))
 
             // ── Language selector ─────────────────────────────────────────
             LanguageSelector()
 
-            Spacer(Modifier.height(4.dp))
             HorizontalDivider()
-            Spacer(Modifier.height(4.dp))
 
             // ── Description ───────────────────────────────────────────────
             Text(
@@ -137,23 +134,22 @@ fun AboutScreen(
                 textAlign = TextAlign.Center,
             )
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(8.dp))
 
-            // ── Changelog ─────────────────────────────────────────────────
-            FilledTonalButton(
-                onClick = onShowChangelog,
+            // ── 開放原始碼授權（左）＋ 更新日誌（右）同一行 ────────────────
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Text(stringResource(R.string.about_changelog))
+                FilledTonalButton(onClick = onShowLicenses) {
+                    Text(stringResource(R.string.about_open_source_licenses))
+                }
+                FilledTonalButton(onClick = onShowChangelog) {
+                    Text(stringResource(R.string.about_changelog))
+                }
             }
 
-            // ── Open-source licenses ──────────────────────────────────────
-            FilledTonalButton(
-                onClick = onShowLicenses,
-            ) {
-                Text(stringResource(R.string.about_open_source_licenses))
-            }
-
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(12.dp))
 
             // ── Copyright ─────────────────────────────────────────────────
             Text(

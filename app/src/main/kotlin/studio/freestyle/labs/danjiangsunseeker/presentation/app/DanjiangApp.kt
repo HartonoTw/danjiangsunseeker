@@ -68,13 +68,20 @@ fun DanjiangApp() {
     val isSimulatorJumpMode = currentRoute?.startsWith(TopLevelDestination.Simulator.route) == true &&
         backStackEntry?.arguments?.getString("hotspotId").orEmpty().isNotEmpty()
 
+    // 在「關於」及其子頁時，停用其他功能分頁圖示（只能用返回鍵離開），避免誤觸。
+    val isAboutSection = currentRoute == "about" ||
+        currentRoute == "changelog" ||
+        currentRoute == "license_detail"
+
     Scaffold(
         bottomBar = {
             NavigationBar {
                 TopLevelDestinations.forEach { dest ->
                     val selected = currentRoute?.startsWith(dest.route) == true
                     // 跳轉模式下只有「焦距」tab 本身可互動（已選中，點也沒用）；其餘全灰
-                    val enabled = !isSimulatorJumpMode || dest == TopLevelDestination.Simulator
+                    // 「關於」模式下全部功能分頁停用
+                    val enabled = (!isSimulatorJumpMode || dest == TopLevelDestination.Simulator) &&
+                        !isAboutSection
                     NavigationBarItem(
                         selected = selected,
                         onClick = {

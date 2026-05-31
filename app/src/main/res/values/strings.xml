@@ -252,6 +252,9 @@
 
     <!-- Changelog page -->
     <string name="changelog_title">更新日誌</string>
+    <string-array name="changelog_0_11">
+        <item>「關於」介面優化。</item>
+    </string-array>
     <string-array name="changelog_0_10">
         <item>地圖：日期列新增播放控制鈕。「&lt;」「&gt;」可單日往前／往後跳；「&lt;&lt;」「&gt;&gt;」連續播放，每點一次切換速度（0.5 秒 → 0.1 秒 → 0.05 秒 → 停止），以箭頭數量顯示目前速度。</item>
         <item>焦段模擬：時間軸改為 12:00 起、終點動態為「日落 + 10 分鐘」。</item>
