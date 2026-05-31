@@ -59,6 +59,9 @@ android {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1,DEPENDENCIES,LICENSE,LICENSE.txt,NOTICE,NOTICE.txt}"
         }
+        jniLibs {
+            useLegacyPackaging = false
+        }
     }
 }
 
