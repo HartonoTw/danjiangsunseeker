@@ -13,7 +13,6 @@ import studio.freestyle.labs.danjiangsunseeker.domain.model.GeoPoint
 import studio.freestyle.labs.danjiangsunseeker.domain.model.Hotspot
 import studio.freestyle.labs.danjiangsunseeker.domain.model.TowerTarget
 import studio.freestyle.labs.danjiangsunseeker.domain.physics.Geodesy
-import studio.freestyle.labs.danjiangsunseeker.domain.usecase.FocalAdvice
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.SensorSpec
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.SimulateFocalLengthUseCase
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.TowerTargetSunResolver
@@ -307,7 +306,6 @@ class FocalSimulatorViewModel @Inject constructor(
             sunTrail = trail,
             sunAltitudeDegrees = sunPos.altitudeDegrees,
             sunAzimuthDegrees = sunPos.azimuthDegrees,
-            advice = baseSim.advice,
             baliIsOnLeft = baliIsOnLeft,
             baliSpanFrac = baliSpanFrac,
             tamsuilSpanFrac = tamsuilSpanFrac,
@@ -374,7 +372,6 @@ data class FocalSimulatorState(
     val sunTrail: List<SunFramePosition> = emptyList(),
     val sunAltitudeDegrees: Double = 0.0,
     val sunAzimuthDegrees: Double = 0.0,
-    val advice: FocalAdvice = FocalAdvice.OK,
     val towerTarget: TowerTarget = TowerTarget.UpperY,
     /** 八里端（主跨 450m）是否在畫面左側；由觀察者方位動態計算 */
     val baliIsOnLeft: Boolean = true,

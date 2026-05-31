@@ -57,7 +57,6 @@ import studio.freestyle.labs.danjiangsunseeker.domain.model.BridgeTower
 import studio.freestyle.labs.danjiangsunseeker.domain.model.Hotspot
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.SensorSpec
 import studio.freestyle.labs.danjiangsunseeker.presentation.common.TowerTargetSelector
-import studio.freestyle.labs.danjiangsunseeker.presentation.common.focalAdviceLabel
 import java.time.Instant
 import java.time.ZoneId
 
@@ -188,7 +187,6 @@ fun FocalSimulatorScreen(vm: FocalSimulatorViewModel = hiltViewModel()) {
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.outline,
         )
-        Text(focalAdviceLabel(state.advice), color = MaterialTheme.colorScheme.primary)
     }
 
     if (showDatePicker) {

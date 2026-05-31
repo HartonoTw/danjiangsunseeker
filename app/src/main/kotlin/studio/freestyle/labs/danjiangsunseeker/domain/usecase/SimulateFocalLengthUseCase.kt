@@ -49,17 +49,7 @@ class SimulateFocalLengthUseCase @Inject constructor() {
             towerWidthFractionOfFrame = towerAngularWidth / fovH,
             towerHeightFractionOfFrame = towerAngularHeight / fovV,
             sunWidthFractionOfFrame = sunAngularDiameter / fovH,
-            advice = recommend(towerAngularWidth, fovH),
         )
-    }
-
-    private fun recommend(towerWidthDeg: Double, fovH: Double): FocalAdvice {
-        val frac = towerWidthDeg / fovH
-        return when {
-            frac > 0.4 -> FocalAdvice.TOO_WIDE
-            frac < 0.02 -> FocalAdvice.TOO_TELE
-            else -> FocalAdvice.OK
-        }
     }
 
     /** 太陽 (與滿月) 視角直徑 (deg)。 */
@@ -75,11 +65,7 @@ data class FocalSimulationResult(
     val towerWidthFractionOfFrame: Double,
     val towerHeightFractionOfFrame: Double,
     val sunWidthFractionOfFrame: Double,
-    val advice: FocalAdvice,
 )
-
-/** 焦段構圖建議；UI 端對應到本地化字串。 */
-enum class FocalAdvice { TOO_WIDE, TOO_TELE, OK }
 
 /**
  * 常見感光元件規格。
