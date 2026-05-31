@@ -10,7 +10,9 @@ import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavType
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -74,8 +77,13 @@ fun DanjiangApp() {
         currentRoute == "license_detail"
 
     Scaffold(
+        containerColor = androidx.compose.material3.MaterialTheme.colorScheme.background,
         bottomBar = {
-            NavigationBar {
+            NavigationBar(
+                containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface,
+                tonalElevation = 8.dp,
+                windowInsets = NavigationBarDefaults.windowInsets,
+            ) {
                 TopLevelDestinations.forEach { dest ->
                     val selected = currentRoute?.startsWith(dest.route) == true
                     // 跳轉模式下只有「焦距」tab 本身可互動（已選中，點也沒用）；其餘全灰
@@ -94,6 +102,13 @@ fun DanjiangApp() {
                         enabled = enabled,
                         icon = { Icon(dest.icon, contentDescription = null) },
                         label = { Text(stringResource(dest.titleRes), maxLines = 1, softWrap = false) },
+                        colors = NavigationBarItemDefaults.colors(
+                            indicatorColor = androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer,
+                            selectedIconColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                            selectedTextColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                            unselectedIconColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                            unselectedTextColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                        ),
                     )
                 }
                 // ── About：放在「日曆」右邊 ──────────────────────────────
@@ -108,6 +123,13 @@ fun DanjiangApp() {
                         )
                     },
                     label = { Text(stringResource(R.string.about_title), maxLines = 1, softWrap = false) },
+                    colors = NavigationBarItemDefaults.colors(
+                        indicatorColor = androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer,
+                        selectedIconColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                        selectedTextColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                        unselectedIconColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                        unselectedTextColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                    ),
                 )
             }
         },

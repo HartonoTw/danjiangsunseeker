@@ -1,13 +1,19 @@
 package studio.freestyle.labs.danjiangsunseeker.presentation.common
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.FilterChip
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import studio.freestyle.labs.danjiangsunseeker.R
 import studio.freestyle.labs.danjiangsunseeker.domain.model.TowerTarget
@@ -34,24 +40,39 @@ fun verdictLabel(level: VerdictLevel): String = stringResource(
     },
 )
 
-@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun TowerTargetSelector(
     selected: TowerTarget,
     onSelect: (TowerTarget) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    FlowRow(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+    Surface(
+        modifier = modifier.height(32.dp),
+        shape = RoundedCornerShape(8.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
     ) {
-        TowerTarget.entries.forEach { target ->
-            FilterChip(
-                selected = selected == target,
-                onClick = { onSelect(target) },
-                label = { Text(towerTargetLabel(target)) },
-            )
+        Row(modifier = Modifier.padding(2.dp)) {
+            TowerTarget.entries.forEach { target ->
+                val isSelected = selected == target
+                Text(
+                    text = towerTargetLabel(target),
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(
+                            if (isSelected) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.surfaceVariant,
+                        )
+                        .clickable { onSelect(target) }
+                        .padding(horizontal = 12.dp, vertical = 5.dp),
+                    color = if (isSelected) {
+                        MaterialTheme.colorScheme.onPrimary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                    style = MaterialTheme.typography.labelLarge,
+                )
+            }
         }
     }
 }

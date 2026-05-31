@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -60,6 +62,7 @@ import studio.freestyle.labs.danjiangsunseeker.presentation.common.TowerTargetSe
 import java.time.Instant
 import java.time.ZoneId
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun FocalSimulatorScreen(vm: FocalSimulatorViewModel = hiltViewModel()) {
     val state by vm.state.collectAsState()
@@ -78,11 +81,14 @@ fun FocalSimulatorScreen(vm: FocalSimulatorViewModel = hiltViewModel()) {
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(stringResource(R.string.focal_title), style = MaterialTheme.typography.headlineMedium)
 
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
             HotspotPicker(
                 current = state.hotspot,
                 hotspots = state.mergedHotspots,
@@ -96,76 +102,38 @@ fun FocalSimulatorScreen(vm: FocalSimulatorViewModel = hiltViewModel()) {
                     else locationPermLauncher.launch(android.Manifest.permission.ACCESS_FINE_LOCATION)
                 },
             )
-            AssistChip(
-                onClick = { showDatePicker = true },
-                label = { Text(state.date.toString()) },
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                AssistChip(
+                    onClick = { showDatePicker = true },
+                    label = { Text(state.date.toString()) },
+                )
+                TowerTargetSelector(
+                    selected = state.towerTarget,
+                    onSelect = vm::setTowerTarget,
+                )
+            }
         }
-
-        TowerTargetSelector(
-            selected = state.towerTarget,
-            onSelect = vm::setTowerTarget,
-        )
 
         SensorPicker(current = state.sensor, onPick = vm::setSensor)
 
-        Text(stringResource(R.string.focal_focal_length, state.focalLengthMm.toInt()), style = MaterialTheme.typography.titleMedium)
-        Slider(
-            value = state.focalLengthMm.toFloat().coerceAtMost(300f),
-            onValueChange = { vm.setFocalLength(it.toDouble()) },
-            valueRange = 14f..300f,
+        CompactFocalSlider(
+            focalLengthMm = state.focalLengthMm,
+            onChange = { vm.setFocalLength(it.toDouble()) },
         )
 
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(stringResource(R.string.focal_time, state.selectedTimeLabel), style = MaterialTheme.typography.titleMedium)
-            state.sunsetTime?.let {
-                Text(
-                    stringResource(R.string.focal_sunset_label, "%02d:%02d".format(it.hour, it.minute)),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.outline,
-                )
-            }
-        }
         // 範圍 12:00–19:30；採非線性映射，日落前 1.5 小時起的「細調區」佔較大滑桿比例，
         // 讓接近日落時拖動的時間粒度更細。日落點以紅色刻度標在滑桿上。
         val sunsetMin = state.sunsetTime?.let { it.hour * 60 + it.minute }
-        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-            val thumbRadius = 10.dp
-            Slider(
-                value = minuteToSliderFraction(state.timeMinuteOfDay, sunsetMin),
-                onValueChange = { vm.setMinuteOfDay(sliderFractionToMinute(it, sunsetMin)) },
-                valueRange = 0f..1f,
-            )
-            // 日落刻度：依非線性映射換算日落在軌道上的位置（扣掉左右各 thumbRadius 內縮）
-            sunsetMin?.let { sm ->
-                val frac = minuteToSliderFraction(sm, sunsetMin)
-                val markerCenterX = thumbRadius + (maxWidth - thumbRadius * 2f) * frac
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .offset(x = markerCenterX - 1.dp)
-                        .width(2.dp)
-                        .height(24.dp)
-                        .background(MaterialTheme.colorScheme.error),
-                )
-                Text(
-                    "日落",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .offset(x = (markerCenterX - 12.dp).coerceAtLeast(0.dp)),
-                )
-            }
-        }
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("12:00", style = MaterialTheme.typography.labelSmall)
-            val endMinute = timeSliderBounds(sunsetMin).maxMinute
-            Text(
-                "%02d:%02d".format(endMinute / 60, endMinute % 60),
-                style = MaterialTheme.typography.labelSmall,
-            )
-        }
+        CompactTimeSlider(
+            selectedTimeLabel = state.selectedTimeLabel,
+            sunsetLabel = state.sunsetTime?.let { "%02d:%02d".format(it.hour, it.minute) },
+            timeMinuteOfDay = state.timeMinuteOfDay,
+            sunsetMin = sunsetMin,
+            onChange = { vm.setMinuteOfDay(sliderFractionToMinute(it, sunsetMin)) },
+        )
 
         FrameCanvas(state)
 
@@ -213,6 +181,86 @@ fun FocalSimulatorScreen(vm: FocalSimulatorViewModel = hiltViewModel()) {
                 TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.action_cancel)) }
             },
         ) { DatePicker(state = pickerState) }
+    }
+}
+
+@Composable
+private fun CompactFocalSlider(
+    focalLengthMm: Double,
+    onChange: (Float) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Column(modifier = Modifier.width(104.dp)) {
+            Text(
+                stringResource(R.string.focal_focal_length, focalLengthMm.toInt()),
+                style = MaterialTheme.typography.labelLarge,
+                maxLines = 1,
+                softWrap = false,
+            )
+        }
+        Slider(
+            modifier = Modifier.weight(1f),
+            value = focalLengthMm.toFloat().coerceAtMost(300f),
+            onValueChange = onChange,
+            valueRange = 14f..300f,
+        )
+    }
+}
+
+@Composable
+private fun CompactTimeSlider(
+    selectedTimeLabel: String,
+    sunsetLabel: String?,
+    timeMinuteOfDay: Int,
+    sunsetMin: Int?,
+    onChange: (Float) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Column(modifier = Modifier.width(104.dp)) {
+            Text(
+                stringResource(R.string.focal_time, selectedTimeLabel),
+                style = MaterialTheme.typography.labelLarge,
+                maxLines = 1,
+                softWrap = false,
+            )
+            sunsetLabel?.let {
+                Text(
+                    stringResource(R.string.focal_sunset_label, it),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.outline,
+                    maxLines = 1,
+                    softWrap = false,
+                )
+            }
+        }
+        BoxWithConstraints(modifier = Modifier.weight(1f)) {
+            val thumbRadius = 10.dp
+            Slider(
+                value = minuteToSliderFraction(timeMinuteOfDay, sunsetMin),
+                onValueChange = onChange,
+                valueRange = 0f..1f,
+            )
+            sunsetMin?.let { sm ->
+                val frac = minuteToSliderFraction(sm, sunsetMin)
+                val markerCenterX = thumbRadius + (maxWidth - thumbRadius * 2f) * frac
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .offset(x = markerCenterX - 1.dp)
+                        .width(2.dp)
+                        .height(20.dp)
+                        .background(MaterialTheme.colorScheme.error),
+                )
+            }
+        }
     }
 }
 

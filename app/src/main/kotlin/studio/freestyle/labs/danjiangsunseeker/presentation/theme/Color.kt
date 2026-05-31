@@ -2,13 +2,16 @@
 
 import androidx.compose.ui.graphics.Color
 
-// 日落色盤 — 主色取自磺港夕陽
-val SunsetOrange = Color(0xFFEB6432)
-val SunsetAmber = Color(0xFFFFA640)
-val DuskPurple = Color(0xFF4A2A5C)
-val OceanBlue = Color(0xFF1B4D7A)
-val BridgeGray = Color(0xFFB7BEC4)
-val GoldHour = Color(0xFFFFC270)
+val SunsetOrange = Color(0xFFE86B3A)
+val SunsetAmber = Color(0xFFF4B24F)
+val DeepTeal = Color(0xFF14636A)
+val InkBlue = Color(0xFF172330)
+val MistBlue = Color(0xFFEAF1F4)
+val WarmMist = Color(0xFFFFF8F2)
+val CloudWhite = Color(0xFFFFFBF7)
+val Slate = Color(0xFF65717D)
+val BridgeGray = Color(0xFFB8C2C9)
+val GoldHour = Color(0xFFFFC96B)
 
-val DarkBackground = Color(0xFF15131F)
-val LightBackground = Color(0xFFFFF8F0)
+val DarkBackground = Color(0xFF101820)
+val LightBackground = Color(0xFFF6F1EA)

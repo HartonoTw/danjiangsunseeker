@@ -154,37 +154,37 @@ fun HotspotListScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.42f),
+                        MaterialTheme.colorScheme.background,
+                    ),
+                ),
+            ),
+    ) {
         Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    headerLabel(state.date, today),
-                    style = MaterialTheme.typography.headlineMedium,
-                    modifier = Modifier.weight(1f),
-                )
-                IconButton(onClick = { importLauncher.launch(arrayOf("application/json")) }) {
-                    Icon(Icons.Outlined.FolderOpen, contentDescription = stringResource(R.string.cd_import))
-                }
-                IconButton(onClick = {
+            HotspotHeader(
+                title = headerLabel(state.date, today),
+                count = state.predictions.size,
+                onImport = { importLauncher.launch(arrayOf("application/json")) },
+                onExport = {
                     val fname = "hotspots_${today.format(DateTimeFormatter.ofPattern("yyyyMMdd"))}.json"
                     exportLauncher.launch(fname)
-                }) {
-                    Icon(Icons.Outlined.Upload, contentDescription = stringResource(R.string.cd_export))
-                }
-                IconButton(onClick = { vm.showEditor() }) {
-                    Icon(Icons.Outlined.Add, contentDescription = stringResource(R.string.hotspot_add_title))
-                }
-            }
-            Spacer(Modifier.height(8.dp))
+                },
+                onAdd = { vm.showEditor() },
+            )
+            Spacer(Modifier.height(12.dp))
             DateChipRow(
                 selectedDate = state.date,
                 today = today,
                 onPickQuick = { vm.loadFor(it) },
                 onOpenPicker = { showDatePicker = true },
-            )
-            TowerTargetSelector(
-                selected = state.towerTarget,
-                onSelect = vm::setTowerTarget,
+                selectedTowerTarget = state.towerTarget,
+                onSelectTowerTarget = vm::setTowerTarget,
             )
             Spacer(Modifier.height(8.dp))
 
@@ -195,7 +195,7 @@ fun HotspotListScreen(
             } else if (state.error != null) {
                 Text(state.error!!, color = MaterialTheme.colorScheme.error)
             } else {
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     items(state.predictions, key = { it.prediction.hotspot.id }) { p ->
                         HotspotRow(
                             p,
@@ -297,6 +297,61 @@ fun HotspotListScreen(
 }
 
 @Composable
+private fun HotspotHeader(
+    title: String,
+    count: Int,
+    onImport: () -> Unit,
+    onExport: () -> Unit,
+    onAdd: () -> Unit,
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
+        tonalElevation = 3.dp,
+    ) {
+        Row(
+            modifier = Modifier.padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = "$count 個拍攝點",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            HeaderActionButton(Icons.Outlined.FolderOpen, stringResource(R.string.cd_import), onImport)
+            HeaderActionButton(Icons.Outlined.Upload, stringResource(R.string.cd_export), onExport)
+            HeaderActionButton(Icons.Outlined.Add, stringResource(R.string.hotspot_add_title), onAdd)
+        }
+    }
+}
+
+@Composable
+private fun HeaderActionButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    contentDescription: String,
+    onClick: () -> Unit,
+) {
+    Surface(
+        modifier = Modifier.padding(start = 6.dp).size(40.dp),
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surfaceVariant,
+    ) {
+        IconButton(onClick = onClick) {
+            Icon(icon, contentDescription = contentDescription, tint = MaterialTheme.colorScheme.secondary)
+        }
+    }
+}
+
+@Composable
 private fun headerLabel(selectedDate: LocalDate, today: LocalDate): String {
     val diff = selectedDate.toEpochDay() - today.toEpochDay()
     val prefix = when (diff) {
@@ -318,6 +373,8 @@ private fun DateChipRow(
     today: LocalDate,
     onPickQuick: (LocalDate) -> Unit,
     onOpenPicker: () -> Unit,
+    selectedTowerTarget: TowerTarget,
+    onSelectTowerTarget: (TowerTarget) -> Unit,
 ) {
     val quickDates = listOf(
         stringResource(R.string.date_today) to today,
@@ -341,12 +398,21 @@ private fun DateChipRow(
                 label = { Text(label) },
             )
         }
-        AssistChip(
-            onClick = onOpenPicker,
-            label = { Text(selectedDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))) },
-            leadingIcon = { Icon(Icons.Outlined.CalendarMonth, contentDescription = null) },
-            colors = AssistChipDefaults.assistChipColors(),
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            AssistChip(
+                onClick = onOpenPicker,
+                label = { Text(selectedDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))) },
+                leadingIcon = { Icon(Icons.Outlined.CalendarMonth, contentDescription = null) },
+                colors = AssistChipDefaults.assistChipColors(),
+            )
+            TowerTargetSelector(
+                selected = selectedTowerTarget,
+                onSelect = onSelectTowerTarget,
+            )
+        }
     }
 }
 
@@ -376,20 +442,21 @@ private fun HotspotRow(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
             containerColor = if (isTooFar) {
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
             } else {
                 MaterialTheme.colorScheme.surface
             },
         ),
-        shape = RoundedCornerShape(14.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        shape = RoundedCornerShape(8.dp),
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            modifier = Modifier.padding(12.dp),
             // Top 對齊：當 Column 內容因大字體而變高時，Badge 與按鈕靠頂，不會被強制拉伸
             verticalAlignment = Alignment.Top,
         ) {
             if (isTooFar) TooFarBadge() else ScoreBadge(p.score, scoreBadgeColor(p.score.overall))
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(10.dp))
 
             // ── 日落前一小時太陽軌跡縮圖（TOO_FAR 或無軌跡時顯示空白佔位）
             // 點縮圖 → 帶日期 + 地點 + 塔頂/塔基跳到焦距模擬頁
@@ -399,12 +466,12 @@ private fun HotspotRow(
                 distanceToTowerMeters = p.prediction.distanceToTowerMeters,
                 classification = p.prediction.classification,
                 modifier = Modifier
-                    .width(72.dp)
-                    .height(48.dp)
-                    .clip(RoundedCornerShape(6.dp))
+                    .width(86.dp)
+                    .height(58.dp)
+                    .clip(RoundedCornerShape(8.dp))
                     .clickable(onClick = onGoToSimulator),
             )
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(12.dp))
 
             // ── 主要內容：全部垂直堆疊，任何字體大小都不會橫向溢出 ──────
             Column(modifier = Modifier.weight(1f)) {
@@ -413,6 +480,7 @@ private fun HotspotRow(
                     text = name,
                     fontWeight = FontWeight.SemiBold,
                     style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 // 自訂 / 已修改 標籤放在名稱下方獨立一行
                 if (isPureCustom) {
@@ -442,11 +510,13 @@ private fun HotspotRow(
                     Text(
                         stringResource(R.string.hotspot_target_time, towerTargetLabel(p.prediction.towerTarget), targetTime ?: stringResource(R.string.value_none)),
                         style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     offset?.let {
                         Text(
                             stringResource(R.string.hotspot_alignment_offset, "%+.2f".format(it)),
                             style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.secondary,
                         )
                     }
                     Text(
@@ -462,16 +532,21 @@ private fun HotspotRow(
             }
 
             // ── 操作按鈕：垂直排列，大字體時與高 Column 並列不擠版 ────
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                IconButton(onClick = onEdit) {
-                    Icon(Icons.Outlined.Edit, contentDescription = stringResource(R.string.cd_edit))
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surfaceVariant) {
+                    IconButton(onClick = onEdit, modifier = Modifier.size(36.dp)) {
+                        Icon(Icons.Outlined.Edit, contentDescription = stringResource(R.string.cd_edit), modifier = Modifier.size(19.dp))
+                    }
                 }
-                IconButton(onClick = onNavigate) {
-                    Icon(
-                        Icons.Outlined.Directions,
-                        contentDescription = stringResource(R.string.cd_navigate),
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
+                Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer) {
+                    IconButton(onClick = onNavigate, modifier = Modifier.size(36.dp)) {
+                        Icon(
+                            Icons.Outlined.Directions,
+                            contentDescription = stringResource(R.string.cd_navigate),
+                            modifier = Modifier.size(19.dp),
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
                 }
             }
         }
@@ -481,7 +556,7 @@ private fun HotspotRow(
 @Composable
 private fun ScoreBadge(score: SunsetScore, color: Color) {
     Box(
-        modifier = Modifier.size(48.dp).clip(CircleShape).background(color),
+        modifier = Modifier.size(48.dp).clip(RoundedCornerShape(8.dp)).background(color),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -496,7 +571,7 @@ private fun ScoreBadge(score: SunsetScore, color: Color) {
 @Composable
 private fun TooFarBadge() {
     Box(
-        modifier = Modifier.size(48.dp).clip(CircleShape).background(MaterialTheme.colorScheme.outline),
+        modifier = Modifier.size(48.dp).clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.outline),
         contentAlignment = Alignment.Center,
     ) {
         Text(stringResource(R.string.badge_too_far), color = Color.White, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
