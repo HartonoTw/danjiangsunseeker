@@ -31,6 +31,28 @@ import javax.inject.Singleton
 @Singleton
 class SunCalcDataSource @Inject constructor() {
 
+    /**
+     * 輕量版「視日落」事件：只算 visual sunset 時間 + 方位。
+     *
+     * [dailyEvents] 會額外計算黃金/藍調時刻 (共 3× SunTimes.compute())，
+     * 但日曆掃描 (365 天 × N 熱點) 只需要日落時間與方位 — 其餘兩次純屬浪費。
+     * 此方法只跑 1× SunTimes.compute()，把掃描的 SunTimes 成本砍到 1/3。
+     */
+    fun sunsetEvent(date: LocalDate, observer: GeoPoint): SunsetEvent {
+        val startOfDay = date.atStartOfDay(TAIPEI)
+        val visualTimes = SunTimes.compute()
+            .on(startOfDay)
+            .at(observer.latitude, observer.longitude)
+            .elevation(observer.elevationMeters)
+            .oneDay()
+            .execute()
+        val sunset = visualTimes.set
+        return SunsetEvent(
+            sunset = sunset,
+            azimuthDegrees = sunset?.let { positionAt(it, observer).azimuthDegrees },
+        )
+    }
+
     /** 計算某瞬間從觀察者看太陽的位置 (含手動套用的大氣折射修正)。 */
     fun positionAt(time: ZonedDateTime, observer: GeoPoint): DomainSunPosition {
         val result = SunPosition.compute()
@@ -55,8 +77,7 @@ class SunCalcDataSource @Inject constructor() {
      * 時區固定 Asia/Taipei；觀察者高度若 > 0 m 會自動納入計算。
      */
     fun dailyEvents(date: LocalDate, observer: GeoPoint): DailySunEvents {
-        val tz = ZoneId.of("Asia/Taipei")
-        val startOfDay = date.atStartOfDay(tz)
+        val startOfDay = date.atStartOfDay(TAIPEI)
 
         val visualTimes = SunTimes.compute()
             .on(startOfDay)
@@ -105,4 +126,14 @@ class SunCalcDataSource @Inject constructor() {
             sunsetAzimuthDegrees = sunsetAzimuth,
         )
     }
+
+    private companion object {
+        val TAIPEI: ZoneId = ZoneId.of("Asia/Taipei")
+    }
 }
+
+/** [SunCalcDataSource.sunsetEvent] 的回傳值：視日落時間與方位 (極區無日落時兩者皆為 null)。 */
+data class SunsetEvent(
+    val sunset: ZonedDateTime?,
+    val azimuthDegrees: Double?,
+)

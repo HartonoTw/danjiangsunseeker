@@ -14,12 +14,13 @@ class TowerTargetSunResolver @Inject constructor(
     private val sunCalc: SunCalcDataSource,
 ) {
     fun resolve(date: LocalDate, observer: GeoPoint, target: TowerTarget): TowerTargetSunEvent {
-        val daily = sunCalc.dailyEvents(date, observer)
-        val sunset = daily.sunset
+        // 只取「視日落」：略過 dailyEvents 內的黃金/藍調時刻計算 (掃描熱點時用不到)。
+        val event = sunCalc.sunsetEvent(date, observer)
+        val sunset = event.sunset
         if (sunset == null) {
             return TowerTargetSunEvent(
                 time = null,
-                azimuthDegrees = daily.sunsetAzimuthDegrees,
+                azimuthDegrees = event.azimuthDegrees,
                 altitudeDegrees = null,
                 targetAltitudeDegrees = targetAltitude(observer, target),
             )
@@ -53,7 +54,9 @@ class TowerTargetSunResolver @Inject constructor(
         val hiAlt = sunCalc.positionAt(hi, observer).altitudeDegrees
         if (targetAltitudeDegrees !in hiAlt..loAlt) return null
 
-        repeat(22) {
+        // 16 次二分把 210 分鐘窗口收斂到 ~0.2 秒 (太陽方位誤差 < 0.001°，遠小於對齊容差)。
+        // 原本 22 次 (≈微秒級) 純屬浪費 — 每對 (日期×熱點) 省下 6 次 positionAt。
+        repeat(16) {
             val mid = lo.plusNanos(java.time.Duration.between(lo, hi).toNanos() / 2)
             val midAlt = sunCalc.positionAt(mid, observer).altitudeDegrees
             if (midAlt > targetAltitudeDegrees) lo = mid else hi = mid

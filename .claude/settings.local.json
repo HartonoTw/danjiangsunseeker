@@ -28,7 +28,11 @@
       "Bash(./gradlew :app:assembleRelease -q)",
       "PowerShell(.\\\\gradlew.bat :app:compileDebugKotlin -q 2>&1 | Select-Object -Last 30)",
       "Bash(xargs grep -l \"Canvas\\\\|drawCircle\\\\|drawLine\")",
-      "Bash(awk '/Box\\\\\\(modifier = Modifier\\\\.fillMaxSize\\\\\\(\\\\\\)\\\\\\)/,/state\\\\.hotspotDraft\\\\?\\\\.let/' app/src/main/kotlin/studio/freestyle/labs/danjiangsunseeker/presentation/map/MapScreen.kt)"
+      "Bash(awk '/Box\\\\\\(modifier = Modifier\\\\.fillMaxSize\\\\\\(\\\\\\)\\\\\\)/,/state\\\\.hotspotDraft\\\\?\\\\.let/' app/src/main/kotlin/studio/freestyle/labs/danjiangsunseeker/presentation/map/MapScreen.kt)",
+      "Bash(PYTHONIOENCODING=utf-8 PYTHONUTF8=1 python -c ' *)",
+      "Bash(PYTHONIOENCODING=utf-8 PYTHONUTF8=1 python scripts/generate_store_promo_0530.py)",
+      "Bash(awk '{print $5, $9}')",
+      "Bash(./gradlew :app:testDebugUnitTest --tests \"*ScanGoldenCalendar*\" --tests \"*SunCalcDataSource*\" -q)"
     ]
   }
 }
