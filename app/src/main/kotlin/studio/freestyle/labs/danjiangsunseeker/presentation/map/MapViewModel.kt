@@ -143,6 +143,19 @@ class MapViewModel @Inject constructor(
         )
     }
 
+    /**
+     * 以「地圖中心（準心圓點所指）」座標開啟新增熱點對話框。
+     * 由 UI 從相機 target 讀出中心經緯度傳入，解決「移動地圖後存檔仍記到舊點」的問題。
+     */
+    fun showAddHotspotDialog(latitude: Double, longitude: Double) {
+        _state.value = _state.value.copy(
+            hotspotDraft = MapHotspotDraft(
+                latitude = "%.6f".format(latitude),
+                longitude = "%.6f".format(longitude),
+            ),
+        )
+    }
+
     fun closeHotspotDraft() {
         _state.value = _state.value.copy(hotspotDraft = null)
     }

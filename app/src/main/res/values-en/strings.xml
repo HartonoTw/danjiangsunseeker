@@ -144,7 +144,7 @@
     <string name="editor_pick_on_map">Pick coordinates on map</string>
     <string name="editor_default_hint">Editing a default hotspot: your changes are saved as an override; tap Reset to restore defaults.</string>
     <string name="editor_tip">Tip: pick a spot on the Map tab to read its coordinates, then come back and fill them in.</string>
-    <string name="picker_tap_to_select">Tap the map to select a location</string>
+    <string name="picker_tap_to_select">Pan the map to aim the target at the center crosshair</string>
     <string name="picker_not_selected">Not selected (tap the map)</string>
 
     <!-- Hotspot detail page -->

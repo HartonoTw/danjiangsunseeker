@@ -6,9 +6,11 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -57,7 +59,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -189,6 +193,9 @@ fun MapScreen(vm: MapViewModel = hiltViewModel()) {
             onMapClick = { lat, lon -> vm.onMapTap(lat, lon) },
         )
 
+        // 畫面正中央的固定準心：移動地圖把目標對到此處，新增熱點時以「地圖中心」座標存檔。
+        MapCenterReticle()
+
         Card(
             modifier = Modifier
                 .align(Alignment.TopCenter)
@@ -279,6 +286,27 @@ fun MapScreen(vm: MapViewModel = hiltViewModel()) {
             }
         }
 
+        // 新增熱點：以準心所在的「地圖中心」座標開啟對話框
+        Surface(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = 142.dp, end = 16.dp)
+                .size(48.dp)
+                .shadow(elevation = 4.dp, shape = CircleShape),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 3.dp,
+        ) {
+            IconButton(
+                onClick = {
+                    val target = mapHolder.map?.cameraPosition?.target ?: return@IconButton
+                    vm.showAddHotspotDialog(target.latitude, target.longitude)
+                },
+            ) {
+                Icon(Icons.Outlined.Add, contentDescription = stringResource(R.string.hotspot_add_title))
+            }
+        }
+
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -332,6 +360,43 @@ fun MapScreen(vm: MapViewModel = hiltViewModel()) {
             onSave = vm::saveHotspotDraft,
             onDismiss = vm::closeHotspotDraft,
         )
+    }
+}
+
+/** 畫面正中央的固定準心（白描邊紅十字 + 中心圓點），標示新增熱點時採用的「地圖中心」位置。 */
+@Composable
+private fun BoxScope.MapCenterReticle() {
+    Canvas(
+        modifier = Modifier
+            .align(Alignment.Center)
+            .size(40.dp),
+    ) {
+        val cx = size.width / 2f
+        val cy = size.height / 2f
+        val center = Offset(cx, cy)
+        val ring = size.minDimension / 2f - 4.dp.toPx()
+        val gap = ring * 0.45f
+        val arm = ring + 3.dp.toPx()
+        val white = Color.White.copy(alpha = 0.95f)
+        val red = Color(0xFFD72638)
+
+        // 十字準線（中心留空）
+        val segments = listOf(
+            Offset(cx - arm, cy) to Offset(cx - gap, cy),
+            Offset(cx + gap, cy) to Offset(cx + arm, cy),
+            Offset(cx, cy - arm) to Offset(cx, cy - gap),
+            Offset(cx, cy + gap) to Offset(cx, cy + arm),
+        )
+        segments.forEach { (a, b) ->
+            drawLine(white, a, b, strokeWidth = 3.5.dp.toPx())
+            drawLine(red, a, b, strokeWidth = 1.5.dp.toPx())
+        }
+        // 圓環
+        drawCircle(white, radius = ring, center = center, style = Stroke(width = 3.5.dp.toPx()))
+        drawCircle(red, radius = ring, center = center, style = Stroke(width = 1.5.dp.toPx()))
+        // 中心圓點
+        drawCircle(white, radius = 3.dp.toPx(), center = center)
+        drawCircle(red, radius = 2.dp.toPx(), center = center)
     }
 }
 

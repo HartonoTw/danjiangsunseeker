@@ -26,7 +26,9 @@
       "Bash(./gradlew :app:compileDebugUnitTestKotlin :app:assembleDebug -q)",
       "Bash(./gradlew :app:assembleDebug -q)",
       "Bash(./gradlew :app:assembleRelease -q)",
-      "PowerShell(.\\\\gradlew.bat :app:compileDebugKotlin -q 2>&1 | Select-Object -Last 30)"
+      "PowerShell(.\\\\gradlew.bat :app:compileDebugKotlin -q 2>&1 | Select-Object -Last 30)",
+      "Bash(xargs grep -l \"Canvas\\\\|drawCircle\\\\|drawLine\")",
+      "Bash(awk '/Box\\\\\\(modifier = Modifier\\\\.fillMaxSize\\\\\\(\\\\\\)\\\\\\)/,/state\\\\.hotspotDraft\\\\?\\\\.let/' app/src/main/kotlin/studio/freestyle/labs/danjiangsunseeker/presentation/map/MapScreen.kt)"
     ]
   }
 }

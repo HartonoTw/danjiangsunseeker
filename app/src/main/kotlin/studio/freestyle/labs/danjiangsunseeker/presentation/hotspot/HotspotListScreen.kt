@@ -718,8 +718,9 @@ private fun LocationPickerOverlay(
     onConfirm: (Double, Double) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var pickedLat by remember { mutableStateOf<Double?>(if (markInitialLocation) initLat else null) }
-    var pickedLon by remember { mutableStateOf<Double?>(if (markInitialLocation) initLon else null) }
+    // 採「地圖中心」選點：座標永遠等於相機中心（中央準星所指），初始為傳入值。
+    var pickedLat by remember { mutableStateOf<Double?>(initLat) }
+    var pickedLon by remember { mutableStateOf<Double?>(initLon) }
     var mapRef    by remember { mutableStateOf<MapLibreMap?>(null) }
 
     LaunchedEffect(currentLocationFlyRequest) {
@@ -756,13 +757,18 @@ private fun LocationPickerOverlay(
                                 LatLng(initLat, initLon), 14.0,
                             ),
                         )
+                        // 相機停止移動時，把「地圖中心」更新為目前選點座標。
+                        map.addOnCameraIdleListener {
+                            val center = map.cameraPosition.target ?: return@addOnCameraIdleListener
+                            pickedLat = center.latitude
+                            pickedLon = center.longitude
+                        }
                     },
                     onMapClick = { lat, lon ->
-                        pickedLat = lat
-                        pickedLon = lon
-                        // 移動相機到點選位置
-                        mapRef?.moveCamera(
-                            org.maplibre.android.camera.CameraUpdateFactory.newLatLng(LatLng(lat, lon))
+                        // 點擊＝把地圖飛到該點，中心準星隨即對準（座標由 idle 監聽更新）
+                        mapRef?.animateCamera(
+                            org.maplibre.android.camera.CameraUpdateFactory.newLatLng(LatLng(lat, lon)),
+                            300,
                         )
                     },
                 )
@@ -802,11 +808,10 @@ private fun LocationPickerOverlay(
                         }
                         Button(
                             onClick = {
-                                val lat = pickedLat ?: return@Button
-                                val lon = pickedLon ?: return@Button
-                                onConfirm(lat, lon)
+                                val center = mapRef?.cameraPosition?.target ?: return@Button
+                                onConfirm(center.latitude, center.longitude)
                             },
-                            enabled = pickedLat != null,
+                            enabled = mapRef != null,
                         ) {
                             Icon(Icons.Outlined.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.size(4.dp))
@@ -836,14 +841,19 @@ private fun LocationPickerOverlay(
                     }
                 }
 
-                // ── 中心準星（視覺輔助，非選點依據）──────────────────
-                if (pickedLat != null) {
+                // ── 中心準星（選點依據：存檔即採此中心點座標）──────────
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .align(Alignment.Center)
+                        .background(MaterialTheme.colorScheme.surface, CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
                     Box(
                         modifier = Modifier
-                            .size(20.dp)
-                            .align(Alignment.Center)
+                            .size(14.dp)
                             .background(
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.85f),
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.9f),
                                 CircleShape,
                             ),
                     )

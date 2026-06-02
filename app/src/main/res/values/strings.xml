@@ -144,7 +144,7 @@
     <string name="editor_pick_on_map">在地圖上選取座標</string>
     <string name="editor_default_hint">編輯預設熱點：你的修改會保存為覆寫；按「重置」可回復預設值。</string>
     <string name="editor_tip">提示：可在「地圖」分頁點選位置看座標，再回來填入</string>
-    <string name="picker_tap_to_select">點選地圖選取位置</string>
+    <string name="picker_tap_to_select">移動地圖，將目標對準中央準星</string>
     <string name="picker_not_selected">尚未選取（點擊地圖）</string>
 
     <!-- Hotspot detail page -->
