@@ -25,7 +25,8 @@
       "Bash(./gradlew :app:compileDebugKotlin -q)",
       "Bash(./gradlew :app:compileDebugUnitTestKotlin :app:assembleDebug -q)",
       "Bash(./gradlew :app:assembleDebug -q)",
-      "Bash(./gradlew :app:assembleRelease -q)"
+      "Bash(./gradlew :app:assembleRelease -q)",
+      "PowerShell(.\\\\gradlew.bat :app:compileDebugKotlin -q 2>&1 | Select-Object -Last 30)"
     ]
   }
 }

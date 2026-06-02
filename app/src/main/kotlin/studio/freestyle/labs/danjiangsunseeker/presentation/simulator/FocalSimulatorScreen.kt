@@ -303,7 +303,6 @@ private fun DrawScope.drawBridge(state: FocalSimulatorState, w: Float, h: Float)
     val midX = w / 2f
     val topY   = (state.towerTopYFrac.toFloat()    * h).coerceIn(0f, h)
     val deckY  = (state.deckYFrac.toFloat()        * h).coerceIn(0f, h)
-    val botY   = (state.towerBottomYFrac.toFloat() * h).coerceIn(0f, h)
     val waterY = (state.waterYFrac.toFloat()       * h).coerceIn(0f, h)
 
     if (topY >= deckY) return   // 主塔不在畫面內
@@ -354,21 +353,41 @@ private fun DrawScope.drawBridge(state: FocalSimulatorState, w: Float, h: Float)
     drawBridgeDeck(deckY, w, hw)
 
     // ── 4. A 字主塔（甲板以下倒 V 基座 + 甲板以上 A 字塔身）
-    drawTowerAFrame(midX, topY, aJoinY, deckY, botY, h, hw)
+    //   倒 V 基座底部錨在水面 waterY，不論焦段如何縮放都「站在水面」、不沉入水下。
+    drawTowerAFrame(midX, topY, aJoinY, deckY, waterY, hw)
 
     // ── 5. 水面倒影：水面使用海平面投影，不吃畫面剩餘高度比例，
     //   避免 zoom in 時水面和橋面被不自然拉開。
     //   倒影高度跟著「塔可見高度 (deckY - topY)」走，
     //   而非固定 50% 反射區，這樣 zoom in 時倒影也跟著放大
     drawWaterReflection(midX, topY, deckY, waterY, w, h, hw)
+
+    // ── 6. 河面與河中橋墩柱（剪影，仿 bridge2.png）
+    //   柱位以「自主塔起算的實際公尺距離」換算畫面 X，故隨焦段等比縮放、不會擠在中央：
+    //     八里（主跨側）：450m（主跨端）/ 525m / 600m 三根
+    //     淡水（側跨側）：250m（側跨端 175m + 引橋 75m）一根
+    //   河面延伸到引橋末端（八里 600m / 淡水 320m）才靠岸，使整段橋身立於水上。
+    val baliPxPerM   = baliSpanPx   / BridgeTower.MAIN_SPAN_M.toFloat()
+    val tamsuiPxPerM = tamsuiSpanPx / BridgeTower.SIDE_SPAN_M.toFloat()
+    val baliDir   = if (state.baliIsOnLeft) -1f else 1f
+    val tamsuiDir = -baliDir
+    val baliApproachEndM   = (BridgeTower.MAIN_SPAN_M + BridgeTower.BALI_APPROACH_TOTAL_M).toFloat()   // 600m
+    val tamsuiApproachEndM = (BridgeTower.SIDE_SPAN_M + BridgeTower.TAMSUI_APPROACH_TOTAL_M).toFloat()  // 320m
+
     drawShoreMasks(
-        baliX = if (state.baliIsOnLeft) midX - baliSpanPx else midX + baliSpanPx,
-        tamsuiX = if (state.baliIsOnLeft) midX + tamsuiSpanPx else midX - tamsuiSpanPx,
+        baliX = midX + baliDir * baliApproachEndM * baliPxPerM,
+        tamsuiX = midX + tamsuiDir * tamsuiApproachEndM * tamsuiPxPerM,
         baliIsOnLeft = state.baliIsOnLeft,
         deckY = deckY,
         waterY = waterY,
         hw = hw,
     )
+
+    val riverPillarXs = buildList {
+        listOf(450f, 525f, 600f).forEach { add(midX + baliDir * it * baliPxPerM) }
+        add(midX + tamsuiDir * 250f * tamsuiPxPerM)
+    }
+    drawRiverPillars(riverPillarXs, deckY, waterY, w, hw)
 }
 
 /**
@@ -451,25 +470,22 @@ private fun DrawScope.drawApproachSpans(
     val baliSpanPx    = baliSpanFrac    * w
     val tamsuilSpanPx = tamsuilSpanFrac * w
 
-    val (leftSpanPx, leftApproachPx, leftPierFractions) = if (baliIsOnLeft) {
-        Triple(baliSpanPx, baliApproachPx, listOf(75f / 150f))    // 八里 75+75 分節
+    val (leftSpanPx, leftApproachPx) = if (baliIsOnLeft) {
+        baliSpanPx to baliApproachPx
     } else {
-        Triple(tamsuilSpanPx, tamsuilApproachPx, listOf(75f / 145f)) // 淡水 75+70 分節
+        tamsuilSpanPx to tamsuilApproachPx
     }
-    val (rightSpanPx, rightApproachPx, rightPierFractions) = if (baliIsOnLeft) {
-        Triple(tamsuilSpanPx, tamsuilApproachPx, listOf(75f / 145f))
+    val (rightSpanPx, rightApproachPx) = if (baliIsOnLeft) {
+        tamsuilSpanPx to tamsuilApproachPx
     } else {
-        Triple(baliSpanPx, baliApproachPx, listOf(75f / 150f))
+        baliSpanPx to baliApproachPx
     }
 
-    val approachColor   = Color(0xFF1E1E1E).copy(alpha = 0.85f) // 比主橋面略淡，做出區隔
-    val pierColor       = Color(0xFF222222)
-    // 引橋面比主橋面薄一點；橋墩高度與寬度也跟著 hw 等比例變化
-    val approachThick   = (hw * 0.85f).coerceIn(3f, 16f)
-    val pierWidth       = (hw * 0.8f).coerceAtLeast(3f)
-    val pierHeight      = (hw * 2.5f).coerceAtLeast(10f)
+    val approachColor = Color(0xFF1E1E1E).copy(alpha = 0.85f) // 比主橋面略淡，做出區隔
+    // 引橋面比主橋面薄一點（橋墩柱另由 drawRiverPillars 統一畫成落水剪影）
+    val approachThick = (hw * 0.85f).coerceIn(3f, 16f)
 
-    // 左側引橋
+    // 左側引橋面
     val leftStartX = (midX - leftSpanPx).coerceAtLeast(0f)
     val leftEndX   = (leftStartX - leftApproachPx).coerceAtLeast(0f)
     if (leftStartX > 0f) {
@@ -478,26 +494,9 @@ private fun DrawScope.drawApproachSpans(
             topLeft = Offset(leftEndX, deckY - approachThick / 2f),
             size = Size(leftStartX - leftEndX, approachThick),
         )
-        // 橋墩（介於引橋兩段之間）
-        leftPierFractions.forEach { f ->
-            val px = leftStartX - leftApproachPx * f
-            drawRect(
-                color = pierColor,
-                topLeft = Offset(px - pierWidth / 2f, deckY - approachThick / 2f),
-                size = Size(pierWidth, pierHeight),
-            )
-        }
-        // 引橋末端的端墩
-        if (leftEndX > 0f) {
-            drawRect(
-                color = pierColor,
-                topLeft = Offset(leftEndX - pierWidth / 2f, deckY - approachThick / 2f),
-                size = Size(pierWidth, pierHeight),
-            )
-        }
     }
 
-    // 右側引橋
+    // 右側引橋面
     val rightStartX = (midX + rightSpanPx).coerceAtMost(w)
     val rightEndX   = (rightStartX + rightApproachPx).coerceAtMost(w)
     if (rightStartX < w) {
@@ -506,21 +505,6 @@ private fun DrawScope.drawApproachSpans(
             topLeft = Offset(rightStartX, deckY - approachThick / 2f),
             size = Size(rightEndX - rightStartX, approachThick),
         )
-        rightPierFractions.forEach { f ->
-            val px = rightStartX + rightApproachPx * f
-            drawRect(
-                color = pierColor,
-                topLeft = Offset(px - pierWidth / 2f, deckY - approachThick / 2f),
-                size = Size(pierWidth, pierHeight),
-            )
-        }
-        if (rightEndX < w) {
-            drawRect(
-                color = pierColor,
-                topLeft = Offset(rightEndX - pierWidth / 2f, deckY - approachThick / 2f),
-                size = Size(pierWidth, pierHeight),
-            )
-        }
     }
 }
 
@@ -542,14 +526,15 @@ private fun DrawScope.drawBridgeDeck(deckY: Float, w: Float, hw: Float) {
 /**
  * A 字主塔：
  *   - 甲板以上：在 A 字交會點 aJoinY 上方為「單柱」、下方為「兩柱張開」直到橋面 deckY
- *   - 甲板以下：倒 V 基座兩腳張開（真實塔基在水下 EL -11.4m，畫面通常看不到，但用 botY 撐住視覺）
+ *   - 甲板以下：倒 V 基座兩腳張開，**底部錨在水面 waterY**（甲板水面以上 20m 那段塔基），
+ *     不沉入水下——避免 zoom in 時兩腳變成「水下兩條黑影」。張角隨甲板到水面的高度自動變化。
  *
  * A 字結構參數：
  *   交會點高度 72m / 露出塔高 200m，所以 aJoinY 在 topY..deckY 之間距 topY 約 64%
  *   下半張開幅度：A 字柱腳在橋面寬度約塔身寬 4×（視覺比例，比真實略誇張以利辨識）
  */
 private fun DrawScope.drawTowerAFrame(
-    midX: Float, topY: Float, aJoinY: Float, deckY: Float, botY: Float, h: Float, hw: Float,
+    midX: Float, topY: Float, aJoinY: Float, deckY: Float, waterY: Float, hw: Float,
 ) {
     val tw = hw * 2f
 
@@ -619,17 +604,18 @@ private fun DrawScope.drawTowerAFrame(
         )
     }
 
-    // ── 3. 倒 V 基座（甲板以下）：從 deck 兩腳張開繼續往下
-    val legLen    = (botY - deckY).coerceAtLeast(h * 0.08f)
+    // ── 3. 倒 V 基座（甲板以下到水面）：兩腳張開，底部停在水面 waterStart。
+    //   不畫到水面下，故 zoom in 也不會在水裡留下兩條黑影；張角 = 張幅/(水面-甲板高) 隨縮放自適應。
+    val baseBottomY = projectedWaterStart(deckY, waterY, hw)
     val baseSpread = hw * 4.5f
     val baseLegW   = hw * 0.85f
 
-    // 左腳：從 A 字下端的左柱腳延伸到水下基座
+    // 左腳：從 A 字下端的左柱腳延伸到水面基座
     drawPath(
         Path().apply {
             moveTo(midX - deckSpread, deckY)
-            lineTo(midX - baseSpread, deckY + legLen)
-            lineTo(midX - baseSpread + baseLegW, deckY + legLen)
+            lineTo(midX - baseSpread, baseBottomY)
+            lineTo(midX - baseSpread + baseLegW, baseBottomY)
             lineTo(midX - deckSpread + legBottomW, deckY)
             close()
         },
@@ -639,8 +625,8 @@ private fun DrawScope.drawTowerAFrame(
     drawPath(
         Path().apply {
             moveTo(midX + deckSpread, deckY)
-            lineTo(midX + baseSpread, deckY + legLen)
-            lineTo(midX + baseSpread - baseLegW, deckY + legLen)
+            lineTo(midX + baseSpread, baseBottomY)
+            lineTo(midX + baseSpread - baseLegW, baseBottomY)
             lineTo(midX + deckSpread - legBottomW, deckY)
             close()
         },
@@ -657,10 +643,11 @@ private fun DrawScope.drawWaterReflection(
     if (waterStart >= h) return
     val waterRegion = h - waterStart
 
-    // 水面色塊（漸層）
+    // 水面色塊（漸層）：壓低不透明度讓背景亮天色透出，水面偏亮以反射，
+    //   使暗色橋身/橋墩成為剪影（仿 bridge2.png 逆光感）。
     drawRect(
         brush = Brush.verticalGradient(
-            listOf(Color(0xFF0D2A40).copy(alpha = 0.55f), Color.Transparent),
+            listOf(Color(0xFF0D2A40).copy(alpha = 0.28f), Color.Transparent),
             startY = waterStart, endY = h,
         ),
         topLeft = Offset(0f, waterStart),
@@ -684,6 +671,40 @@ private fun DrawScope.drawWaterReflection(
         val alpha = lerp(0.22f, 0.06f, t)
         val len   = w * lerp(0.35f, 0.85f, t)
         drawLine(Color.White.copy(alpha = alpha), Offset((w - len) / 2f, y), Offset((w + len) / 2f, y), rippleStrokeW)
+    }
+}
+
+/**
+ * 河中橋墩柱（剪影）：自橋面 deckY 垂直落入水面 waterStart，
+ * 並於水面下畫一段漸淡倒影，營造「柱腳插入河面」的挖空剪影感（仿 bridge2.png）。
+ * 柱位由呼叫端依「自塔起算之公尺距離」換算為畫面 X，故會隨焦段縮放等比變化。
+ */
+private fun DrawScope.drawRiverPillars(
+    xs: List<Float>, deckY: Float, waterY: Float, w: Float, hw: Float,
+) {
+    val waterStart = projectedWaterStart(deckY, waterY, hw)
+    val aboveH = waterStart - deckY
+    if (aboveH <= 0f) return
+
+    // 柱身寬度跟著塔半寬等比；下限 2px 避免廣角時消失、上限 10px 避免望遠時變牆
+    val pillarW     = (hw * 0.55f).coerceIn(2f, 10f)
+    val pillarColor = Color(0xFF101010).copy(alpha = 0.92f)
+    val reflH       = aboveH * 0.55f
+
+    xs.forEach { cx ->
+        if (cx <= 0f || cx >= w) return@forEach
+        val left = cx - pillarW / 2f
+        // 水上柱身（剪影）
+        drawRect(pillarColor, Offset(left, deckY), Size(pillarW, aboveH))
+        // 水面下倒影（漸淡 → 透明，挖空河面）
+        drawRect(
+            brush = Brush.verticalGradient(
+                listOf(Color(0xFF101010).copy(alpha = 0.40f), Color.Transparent),
+                startY = waterStart, endY = waterStart + reflH,
+            ),
+            topLeft = Offset(left, waterStart),
+            size = Size(pillarW, reflH),
+        )
     }
 }
 

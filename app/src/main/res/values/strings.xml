@@ -261,6 +261,7 @@
         <item>UI優化。</item>
         <item>「關於」介面優化。</item>
         <item>AR 護眼：校正僅在日落前 45 分鐘內開放；鏡頭快對到太陽時自動暫停並保留日落投影。</item>
+        <item>優化橋的繪製。</item>
     </string-array>
     <string-array name="changelog_0_10">
         <item>地圖：日期列新增播放控制鈕。「&lt;」「&gt;」可單日往前／往後跳；「&lt;&lt;」「&gt;&gt;」連續播放，每點一次切換速度（0.5 秒 → 0.1 秒 → 0.05 秒 → 停止），以箭頭數量顯示目前速度。</item>

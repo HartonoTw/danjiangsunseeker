@@ -261,6 +261,7 @@
         <item>UI improvements.</item>
         <item>About page UI improvements.</item>
         <item>AR eye safety: calibration only within 45 min of sunset; camera auto-pauses as it nears the sun while keeping the sunset overlay.</item>
+        <item>Improved bridge rendering.</item>
     </string-array>
     <string-array name="changelog_0_10">
         <item>Map: new playback controls on the date row. “&lt;”/“&gt;” step one day back/forward; “&lt;&lt;”/“&gt;&gt;” play continuously — each tap cycles the speed (0.5s → 0.1s → 0.05s → stop), shown by the number of arrows.</item>
