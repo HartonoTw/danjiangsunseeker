@@ -258,6 +258,7 @@
     <!-- Changelog page -->
     <string name="changelog_title">更新日誌</string>
     <string-array name="changelog_0_11">
+        <item>UI優化。</item>
         <item>「關於」介面優化。</item>
         <item>AR 護眼：校正僅在日落前 45 分鐘內開放；鏡頭快對到太陽時自動暫停並保留日落投影。</item>
     </string-array>

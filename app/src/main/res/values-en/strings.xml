@@ -258,6 +258,7 @@
     <!-- Changelog page -->
     <string name="changelog_title">Changelog</string>
     <string-array name="changelog_0_11">
+        <item>UI improvements.</item>
         <item>About page UI improvements.</item>
         <item>AR eye safety: calibration only within 45 min of sunset; camera auto-pauses as it nears the sun while keeping the sunset overlay.</item>
     </string-array>
