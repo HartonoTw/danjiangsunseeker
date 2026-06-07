@@ -2,6 +2,7 @@
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import studio.freestyle.labs.danjiangsunseeker.data.astro.MoonCalcDataSource
 import studio.freestyle.labs.danjiangsunseeker.data.astro.SunCalcDataSource
 import studio.freestyle.labs.danjiangsunseeker.data.sensors.DeviceOrientation
 import studio.freestyle.labs.danjiangsunseeker.data.sensors.DeviceOrientationProvider
@@ -9,6 +10,7 @@ import studio.freestyle.labs.danjiangsunseeker.data.sensors.LocationProvider
 import studio.freestyle.labs.danjiangsunseeker.domain.model.BridgeTower
 import studio.freestyle.labs.danjiangsunseeker.domain.model.GeoPoint
 import studio.freestyle.labs.danjiangsunseeker.domain.physics.Geodesy
+import studio.freestyle.labs.danjiangsunseeker.domain.premium.PremiumGate
 import studio.freestyle.labs.danjiangsunseeker.R
 import android.content.Context
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -36,6 +38,8 @@ class ARViewModel @Inject constructor(
     private val orientationProvider: DeviceOrientationProvider,
     private val locationProvider: LocationProvider,
     private val sunCalc: SunCalcDataSource,
+    private val moonCalc: MoonCalcDataSource,
+    private val premiumGate: PremiumGate,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ARState())
@@ -44,9 +48,26 @@ class ARViewModel @Inject constructor(
     private var locationJob: Job? = null
     private var combineJob: Job? = null
 
+    init {
+        // 月相/潮汐付費解鎖狀態（決定是否疊加月亮軌跡）。
+        premiumGate.isPremium
+            .onEach {
+                premiumUnlockedFlag = it
+                _state.value = _state.value.copy(premiumUnlocked = it)
+            }
+            .launchIn(viewModelScope)
+    }
+
     /** 磁感測器朝向校正偏移 — 從「對準太陽」校正流程算出。In-memory only。 */
     @Volatile private var azimuthOffsetDeg: Double = 0.0
     @Volatile private var pitchOffsetDeg: Double = 0.0
+
+    /**
+     * 付費解鎖旗標 — 與 [azimuthOffsetDeg] 同理採 @Volatile 直接讀取。
+     * 不可只靠 combine 的 snapshot.premiumUnlocked：orientation 以 ~60Hz 觸發 recompute，
+     * 其 snapshot 可能仍是舊值 (premium=false)，會把付費收集器剛寫入的 true 蓋掉，導致 AR 永遠看不到月亮。
+     */
+    @Volatile private var premiumUnlockedFlag: Boolean = false
 
     /** 鏡頭防曬遮蔽的遲滯狀態 — 避免在臨界角度反覆 bind/unbind 相機。 */
     private var cameraBlockedPrev: Boolean = false
@@ -71,6 +92,10 @@ class ARViewModel @Inject constructor(
      */
     private var cachedTrajectory: List<TrajectoryWorldPoint> = emptyList()
     private var cachedFor: TrajectoryCacheKey? = null
+
+    /** 月亮軌跡世界座標快取 (付費功能)。與 [cachedTrajectory] 平行。 */
+    private var cachedMoonTrajectory: List<TrajectoryWorldPoint> = emptyList()
+    private var cachedMoonFor: TrajectoryCacheKey? = null
 
     /** 由 ARScreen 在 onResume 呼叫；開啟感測器與位置監聽。 */
     fun start() {
@@ -222,6 +247,19 @@ class ARViewModel @Inject constructor(
             )
         }
 
+        // ── 月亮 (付費功能；鎖定時不計算，省每幀成本) ──────────────────────
+        val premium = premiumUnlockedFlag
+        val moonPos = if (premium) moonCalc.moonPositionAt(now, observer) else null
+        val moonTarget = moonPos?.let {
+            project(it.azimuthDegrees, it.altitudeDegrees, cameraAz, cameraPitch, fov)
+        } ?: ARTarget()
+        ensureMoonTrajectoryCache(now, observer, premium)
+        val moonTrajectory = cachedMoonTrajectory.map { wp ->
+            project(wp.azimuthDegrees, wp.altitudeDegrees, cameraAz, cameraPitch, fov).copy(
+                timeOffsetMinutes = ChronoUnit.MINUTES.between(now, wp.time).toInt(),
+            )
+        }
+
         // 主塔頂端與底端
         val towerTipScreen = project(towerBearing, towerTipAlt, cameraAz, cameraPitch, fov)
         val towerBaseScreen = project(towerBearing, towerBaseAlt, cameraAz, cameraPitch, fov)
@@ -271,6 +309,11 @@ class ARViewModel @Inject constructor(
             towerBase = towerBaseScreen,
             sun = sunTarget,
             sunTrajectory = trajectory,
+            moon = moonTarget,
+            moonTrajectory = if (premium) moonTrajectory else emptyList(),
+            moonAzimuthDegrees = moonPos?.azimuthDegrees ?: 0.0,
+            moonAltitudeDegrees = moonPos?.altitudeDegrees ?: 0.0,
+            premiumUnlocked = premium,
             sunsetMarker = sunsetMarker,
             sunsetTime = sunsetTime,
             sunsetAzimuthDegrees = sunsetAzimuth,
@@ -344,6 +387,47 @@ class ARViewModel @Inject constructor(
         cachedFor = key
     }
 
+    /**
+     * 月亮軌跡世界座標快取 (付費功能)。範圍 now-1h ~ now+5h，每 4 分鐘一點 (前瞻月亮路徑)。
+     * 鎖定時清空。快取以 (observer, now/5min) 為 key（sunsetEpochMin 欄位對月亮不適用，填 0）。
+     */
+    private fun ensureMoonTrajectoryCache(
+        now: ZonedDateTime,
+        observer: GeoPoint,
+        premium: Boolean,
+    ) {
+        if (!premium) {
+            cachedMoonTrajectory = emptyList()
+            cachedMoonFor = null
+            return
+        }
+        val key = TrajectoryCacheKey(
+            observerLatRound = (observer.latitude * 10000).toInt(),
+            observerLonRound = (observer.longitude * 10000).toInt(),
+            sunsetEpochMin = 0,
+            nowEpochMin5 = now.toEpochSecond() / 60 / 5,
+        )
+        if (key == cachedMoonFor) return
+
+        val points = mutableListOf<TrajectoryWorldPoint>()
+        var t = now.minusHours(1)
+        val end = now.plusHours(5)
+        while (!t.isAfter(end)) {
+            val pos = moonCalc.moonPositionAt(t, observer)
+            points.add(
+                TrajectoryWorldPoint(
+                    time = t,
+                    azimuthDegrees = pos.azimuthDegrees,
+                    altitudeDegrees = pos.altitudeDegrees,
+                    minutesFromSunset = Double.NaN,
+                )
+            )
+            t = t.plusMinutes(4)
+        }
+        cachedMoonTrajectory = points
+        cachedMoonFor = key
+    }
+
     private fun project(
         targetAzimuth: Double,
         targetAltitude: Double,
@@ -382,6 +466,14 @@ data class ARState(
     val towerBase: ARTarget = ARTarget(),
     val sun: ARTarget = ARTarget(),
     val sunTrajectory: List<ARTarget> = emptyList(),
+    /** 月亮當下位置 (付費功能)。 */
+    val moon: ARTarget = ARTarget(),
+    /** 月亮軌跡 (付費功能；鎖定時為空)。 */
+    val moonTrajectory: List<ARTarget> = emptyList(),
+    val moonAzimuthDegrees: Double = 0.0,
+    val moonAltitudeDegrees: Double = 0.0,
+    /** 月相/潮汐付費功能是否解鎖。 */
+    val premiumUnlocked: Boolean = false,
     val sunsetMarker: ARTarget? = null,
     val sunsetTime: ZonedDateTime? = null,
     val sunsetAzimuthDegrees: Double? = null,

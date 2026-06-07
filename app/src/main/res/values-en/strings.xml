@@ -73,6 +73,7 @@
     <string name="map_sunset_azimuth_from_tower">Sunset azimuth (from tower): %1$s</string>
     <string name="map_golden_line_base">Golden line · base: %1$s</string>
     <string name="map_golden_line_top">Golden line · top: %1$s</string>
+    <string name="map_golden_line_both">Golden line · base: %1$s, top: %2$s</string>
     <string name="map_tap_hint">Tap anywhere on the map and the app tells you how many degrees off the sunset-through-tower shot would be.</string>
     <string name="map_verdict_perfect">Almost perfectly aligned with the tower — this is the golden spot!</string>
     <string name="map_verdict_near">Near the golden band (±%1$s°)</string>
@@ -80,8 +81,8 @@
     <string name="map_selected_coords">Selected point</string>
     <string name="map_distance_to_tower">To tower: %1$s km</string>
     <string name="map_tower_bearing">Tower bearing: %1$s°</string>
-    <string name="map_lower_offset">Base offset: %1$s · %2$s</string>
-    <string name="map_upper_offset">Top offset: %1$s · %2$s</string>
+    <string name="map_sun_offsets">Base: %1$s · %2$s, Top: %3$s · %4$s</string>
+    <string name="map_moon_offsets">Moon base: %1$s · %2$s, top: %3$s · %4$s</string>
     <string name="map_time_value">Time %1$s</string>
     <string name="value_none">—</string>
     <string name="coords_lat_lon">%1$s°N, %2$s°E</string>
@@ -278,4 +279,65 @@
     <string name="license_badge_bsd2">BSD 2-Clause</string>
     <string name="license_badge_apache2">Apache 2.0</string>
     <string name="license_note_attribution_required">Attribution required</string>
+
+    <!-- ===== Moon &amp; Tide (premium) ===== -->
+    <!-- Premium gate -->
+    <string name="premium_section">Moon &amp; Tide</string>
+    <string name="premium_locked_hint">Moon &amp; Tide is a premium feature; unlock to see it across all tabs</string>
+    <string name="premium_unlocked_toast">Moon &amp; Tide unlocked</string>
+    <string name="premium_unlock_progress">Tap %1$d more to unlock premium</string>
+    <string name="premium_status_unlocked">Premium: unlocked</string>
+    <string name="premium_status_locked">Premium: locked</string>
+
+    <!-- Moon phases -->
+    <string name="moon_phase_new">New moon</string>
+    <string name="moon_phase_waxing_crescent">Waxing crescent</string>
+    <string name="moon_phase_first_quarter">First quarter</string>
+    <string name="moon_phase_waxing_gibbous">Waxing gibbous</string>
+    <string name="moon_phase_full">Full moon</string>
+    <string name="moon_phase_waning_gibbous">Waning gibbous</string>
+    <string name="moon_phase_last_quarter">Last quarter</string>
+    <string name="moon_phase_waning_crescent">Waning crescent</string>
+
+    <!-- Moon fields -->
+    <string name="moon_section">Moon</string>
+    <string name="moon_phase_label">Phase</string>
+    <string name="moon_illumination">Illumination</string>
+    <string name="moon_rise">Moonrise</string>
+    <string name="moon_set">Moonset</string>
+    <string name="moon_azimuth_at_set">Moonset azimuth</string>
+    <string name="moon_summary">%1$s · %2$s%% lit</string>
+    <string name="moon_illumination_value">%1$s%%</string>
+    <string name="moon_lit">%1$s%% lit</string>
+
+    <!-- Tide fields -->
+    <string name="tide_section">Tide</string>
+    <string name="tide_high">High</string>
+    <string name="tide_low">Low</string>
+    <string name="tide_rising">Rising</string>
+    <string name="tide_falling">Falling</string>
+    <string name="tide_extreme_row">%1$s %2$s · %3$s m</string>
+    <string name="tide_current">Now %1$s m (%2$s)</string>
+    <string name="tide_summary">%1$s %2$s</string>
+    <string name="tide_none">No tide data for this day</string>
+    <string name="unit_meter">m</string>
+
+    <!-- Map: moon golden line -->
+    <string name="map_moon_line">Moon golden line: %1$s</string>
+
+    <!-- Focal simulator: sun / moon toggle -->
+    <string name="focal_body_sun">Sun</string>
+    <string name="focal_body_moon">Moon</string>
+    <string name="focal_moon_info">Moon: az %1$s° · alt %2$s°</string>
+
+    <!-- AR: moon -->
+    <string name="ar_hud_moon">Moon: az %1$s° · alt %2$s°</string>
+    <string name="ar_moon_azimuth_hint">(moon bearing %1$s°)</string>
+    <string name="ar_find_moon_trail">%1$s %2$s to find the moon trail</string>
+
+    <!-- Calendar: sun / moon mode -->
+    <string name="calendar_mode_sun">Sun days</string>
+    <string name="calendar_mode_moon">Moon days</string>
+    <string name="calendar_moon_subtitle">Days in the next year when the moonset azimuth nearly aligns with the tower</string>
+    <string name="calendar_moon_row_detail">%1$s %2$s · offset %3$s° · %4$s</string>
 </resources>

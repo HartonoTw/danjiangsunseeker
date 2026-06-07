@@ -73,6 +73,7 @@
     <string name="map_sunset_azimuth_from_tower">日落方位 (從主塔看): %1$s</string>
     <string name="map_golden_line_base">黃金線 塔基: %1$s</string>
     <string name="map_golden_line_top">黃金線 塔頂: %1$s</string>
+    <string name="map_golden_line_both">黃金線 塔基: %1$s, 塔頂: %2$s</string>
     <string name="map_tap_hint">點地圖上任一點，APP 會告訴你「站在這拍夕陽穿塔會差幾度」</string>
     <string name="map_verdict_perfect">幾乎完美對齊主塔，這就是黃金拍攝點！</string>
     <string name="map_verdict_near">接近黃金拍攝帶 (±%1$s°)</string>
@@ -80,8 +81,8 @@
     <string name="map_selected_coords">選定座標</string>
     <string name="map_distance_to_tower">距主塔: %1$s km</string>
     <string name="map_tower_bearing">主塔方位: %1$s°</string>
-    <string name="map_lower_offset">塔基偏差: %1$s · %2$s</string>
-    <string name="map_upper_offset">塔頂偏差: %1$s · %2$s</string>
+    <string name="map_sun_offsets">塔基偏差: %1$s · %2$s,塔頂偏差: %3$s · %4$s</string>
+    <string name="map_moon_offsets">月亮塔基: %1$s · %2$s,塔頂: %3$s · %4$s</string>
     <string name="map_time_value">時間 %1$s</string>
     <string name="value_none">—</string>
     <string name="coords_lat_lon">%1$s°N, %2$s°E</string>
@@ -278,4 +279,65 @@
     <string name="license_badge_bsd2">BSD 2-Clause</string>
     <string name="license_badge_apache2">Apache 2.0</string>
     <string name="license_note_attribution_required">需保留著作權聲明</string>
+
+    <!-- ===== 月相・潮汐 (付費功能) ===== -->
+    <!-- Premium gate -->
+    <string name="premium_section">月相・潮汐</string>
+    <string name="premium_locked_hint">月相・潮汐為進階功能，解鎖後於各頁顯示</string>
+    <string name="premium_unlocked_toast">已解鎖「月相・潮汐」功能</string>
+    <string name="premium_unlock_progress">再點 %1$d 下解鎖進階功能</string>
+    <string name="premium_status_unlocked">進階功能：已解鎖</string>
+    <string name="premium_status_locked">進階功能：未解鎖</string>
+
+    <!-- Moon phases -->
+    <string name="moon_phase_new">朔（新月）</string>
+    <string name="moon_phase_waxing_crescent">眉月</string>
+    <string name="moon_phase_first_quarter">上弦</string>
+    <string name="moon_phase_waxing_gibbous">盈凸月</string>
+    <string name="moon_phase_full">望（滿月）</string>
+    <string name="moon_phase_waning_gibbous">虧凸月</string>
+    <string name="moon_phase_last_quarter">下弦</string>
+    <string name="moon_phase_waning_crescent">殘月</string>
+
+    <!-- Moon fields -->
+    <string name="moon_section">月相</string>
+    <string name="moon_phase_label">月相</string>
+    <string name="moon_illumination">亮面比例</string>
+    <string name="moon_rise">月出</string>
+    <string name="moon_set">月落</string>
+    <string name="moon_azimuth_at_set">月落方位</string>
+    <string name="moon_summary">%1$s · 亮面 %2$s%%</string>
+    <string name="moon_illumination_value">%1$s%%</string>
+    <string name="moon_lit">亮面 %1$s%%</string>
+
+    <!-- Tide fields -->
+    <string name="tide_section">潮汐</string>
+    <string name="tide_high">高潮</string>
+    <string name="tide_low">低潮</string>
+    <string name="tide_rising">漲潮</string>
+    <string name="tide_falling">退潮</string>
+    <string name="tide_extreme_row">%1$s %2$s · %3$s m</string>
+    <string name="tide_current">目前潮位 %1$s m（%2$s）</string>
+    <string name="tide_summary">%1$s %2$s</string>
+    <string name="tide_none">今日無潮汐資料</string>
+    <string name="unit_meter">m</string>
+
+    <!-- Map: moon golden line -->
+    <string name="map_moon_line">月亮黃金帶: %1$s</string>
+
+    <!-- Focal simulator: sun / moon toggle -->
+    <string name="focal_body_sun">太陽</string>
+    <string name="focal_body_moon">月亮</string>
+    <string name="focal_moon_info">月亮: 方位 %1$s° · 仰角 %2$s°</string>
+
+    <!-- AR: moon -->
+    <string name="ar_hud_moon">月亮: 方位 %1$s° · 仰角 %2$s°</string>
+    <string name="ar_moon_azimuth_hint">(月亮方位 %1$s°)</string>
+    <string name="ar_find_moon_trail">%1$s %2$s 找月亮軌跡</string>
+
+    <!-- Calendar: sun / moon mode -->
+    <string name="calendar_mode_sun">夕陽日</string>
+    <string name="calendar_mode_moon">月亮日</string>
+    <string name="calendar_moon_subtitle">未來一年內，月落方位與主塔方位接近對齊的日子</string>
+    <string name="calendar_moon_row_detail">%1$s %2$s · 偏差 %3$s° · %4$s</string>
 </resources>

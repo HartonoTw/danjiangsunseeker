@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -41,7 +42,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import studio.freestyle.labs.danjiangsunseeker.R
+import studio.freestyle.labs.danjiangsunseeker.domain.model.TideKind
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.SunsetScore
+import studio.freestyle.labs.danjiangsunseeker.presentation.common.MoonPhaseIcon
+import studio.freestyle.labs.danjiangsunseeker.presentation.common.lunarPhaseLabel
 import studio.freestyle.labs.danjiangsunseeker.presentation.common.verdictLabel
 import java.time.format.DateTimeFormatter
 
@@ -129,6 +133,60 @@ fun HotspotDetailScreen(
                     )
                     DetailRow(stringResource(R.string.label_distance_to_tower), "%.2f km".format(prediction.distanceToTowerMeters / 1000.0))
                     DetailRow(stringResource(R.string.detail_tower_angular_width), "%.4f".format(prediction.towerAngularWidthDegrees) + "°")
+                }
+
+                // ── 月相・潮汐 (付費功能) ──────────────────────────────
+                val moon = prediction.moonInfo
+                if (state.premiumUnlocked && moon != null) {
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
+                    DetailSection(stringResource(R.string.moon_section)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                        ) {
+                            MoonPhaseIcon(
+                                fractionLit = moon.fractionLit.toFloat(),
+                                waxing = moon.waxing,
+                                modifier = Modifier.size(36.dp),
+                            )
+                            Text(lunarPhaseLabel(moon.phase), style = MaterialTheme.typography.bodyLarge)
+                        }
+                        DetailRow(
+                            stringResource(R.string.moon_illumination),
+                            stringResource(R.string.moon_illumination_value, "%.0f".format(moon.fractionLit * 100)),
+                        )
+                        DetailRow(stringResource(R.string.moon_rise), moon.rise?.format(HM))
+                        DetailRow(stringResource(R.string.moon_set), moon.set?.format(HM))
+                        DetailRow(
+                            stringResource(R.string.moon_azimuth_at_set),
+                            moon.azimuthAtSet?.let { "%.1f".format(it) + "°" },
+                        )
+                    }
+                }
+
+                val tide = prediction.tideInfo
+                if (state.premiumUnlocked && tide != null) {
+                    val meterUnit = stringResource(R.string.unit_meter)
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
+                    DetailSection(stringResource(R.string.tide_section)) {
+                        if (tide.extremes.isEmpty()) {
+                            Text(
+                                stringResource(R.string.tide_none),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.outline,
+                            )
+                        }
+                        tide.extremes.forEach { ex ->
+                            val kindLabel = stringResource(
+                                if (ex.kind == TideKind.HIGH) R.string.tide_high else R.string.tide_low,
+                            )
+                            DetailRow(
+                                kindLabel,
+                                "%s · %.2f %s".format(ex.time.format(HM), ex.heightMeters, meterUnit),
+                            )
+                        }
+                    }
                 }
             }
 
@@ -251,3 +309,4 @@ private fun DetailScrollBar(
 }
 
 private val F: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
+private val HM: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")

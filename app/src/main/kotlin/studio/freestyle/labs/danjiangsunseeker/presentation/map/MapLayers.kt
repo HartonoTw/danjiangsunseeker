@@ -27,6 +27,7 @@ object MapLayers {
     private const val SRC_HOTSPOTS = "src-hotspots"
     private const val SRC_GOLDEN_LINE = "src-golden-line"
     private const val SRC_TOWER_TOP_GOLDEN_LINE = "src-tower-top-golden-line"
+    private const val SRC_MOON_GOLDEN_LINE = "src-moon-golden-line"
     private const val SRC_TAP = "src-tap"
 
     private const val LAYER_TOWER_CIRCLE = "layer-tower-circle"
@@ -35,6 +36,7 @@ object MapLayers {
     private const val LAYER_HOTSPOT_LABEL = "layer-hotspot-label"
     private const val LAYER_GOLDEN_LINE = "layer-golden-line"
     private const val LAYER_TOWER_TOP_GOLDEN_LINE = "layer-tower-top-golden-line"
+    private const val LAYER_MOON_GOLDEN_LINE = "layer-moon-golden-line"
     private const val LAYER_TAP_CIRCLE = "layer-tap-circle"
     private const val LAYER_TAP_MARK = "layer-tap-mark"
 
@@ -59,12 +61,15 @@ object MapLayers {
         val hotspotsExists = style.getSourceAs<GeoJsonSource>(SRC_HOTSPOTS) != null
         val goldenExists = style.getSourceAs<GeoJsonSource>(SRC_GOLDEN_LINE) != null
         val towerTopGoldenExists = style.getSourceAs<GeoJsonSource>(SRC_TOWER_TOP_GOLDEN_LINE) != null
+        val moonGoldenExists = style.getSourceAs<GeoJsonSource>(SRC_MOON_GOLDEN_LINE) != null
         val tapExists = style.getSourceAs<GeoJsonSource>(SRC_TAP) != null
-        Log.d(TAG, "install: hotspots.size=${hotspots.size} existing(tower=$towerExists hotspots=$hotspotsExists golden=$goldenExists topGolden=$towerTopGoldenExists tap=$tapExists)")
+        Log.d(TAG, "install: hotspots.size=${hotspots.size} existing(tower=$towerExists hotspots=$hotspotsExists golden=$goldenExists topGolden=$towerTopGoldenExists moonGolden=$moonGoldenExists tap=$tapExists)")
         if (!towerExists) addTower(style)
         if (!hotspotsExists) addHotspots(style, hotspots, context)
         if (!goldenExists) addGoldenLine(style, SRC_GOLDEN_LINE, LAYER_GOLDEN_LINE, "#EB6432", 4f, 0.85f)
         if (!towerTopGoldenExists) addGoldenLine(style, SRC_TOWER_TOP_GOLDEN_LINE, LAYER_TOWER_TOP_GOLDEN_LINE, "#2F80ED", 3.5f, 0.82f)
+        // 月亮黃金帶：銀白色，畫在日落帶之上
+        if (!moonGoldenExists) addGoldenLine(style, SRC_MOON_GOLDEN_LINE, LAYER_MOON_GOLDEN_LINE, "#C9D2E8", 3f, 0.9f)
         if (!tapExists) addTapMark(style)
     }
 
@@ -99,6 +104,10 @@ object MapLayers {
 
     fun updateTowerTopGoldenLine(style: Style, line: GoldenLine?) {
         updateLineSource(style, SRC_TOWER_TOP_GOLDEN_LINE, line)
+    }
+
+    fun updateMoonGoldenLine(style: Style, line: GoldenLine?) {
+        updateLineSource(style, SRC_MOON_GOLDEN_LINE, line)
     }
 
     private fun updateLineSource(style: Style, sourceId: String, line: GoldenLine?) {

@@ -15,6 +15,7 @@ import studio.freestyle.labs.danjiangsunseeker.domain.usecase.ComputeSunsetScore
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.HotspotPrediction
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.PredictHotspotsUseCase
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.SunsetScore
+import studio.freestyle.labs.danjiangsunseeker.domain.premium.PremiumGate
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -41,6 +42,7 @@ class HotspotListViewModel @Inject constructor(
     private val customHotspotStore: CustomHotspotStore,
     private val locationProvider: LocationProvider,
     private val towerTargetStore: TowerTargetStore,
+    private val premiumGate: PremiumGate,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(HotspotListState())
@@ -75,6 +77,16 @@ class HotspotListViewModel @Inject constructor(
                 loadFor(_state.value.date)
             }
             .launchIn(viewModelScope)
+        premiumGate.isPremium
+            .onEach { unlocked ->
+                if (unlocked != _state.value.premiumUnlocked) {
+                    // 鎖定時強制回到太陽模式，避免殘留在月亮模式
+                    val body = if (unlocked) _state.value.body else HotspotBody.SUN
+                    _state.value = _state.value.copy(premiumUnlocked = unlocked, body = body)
+                    loadFor(_state.value.date)
+                }
+            }
+            .launchIn(viewModelScope)
         loadFor(LocalDate.now(java.time.ZoneId.of("Asia/Taipei")))
     }
 
@@ -94,7 +106,11 @@ class HotspotListViewModel @Inject constructor(
             runCatching {
                 withContext(Dispatchers.Default) {
                     val all = mergedHotspots()
-                    val predictions = predictHotspots(date, all, _state.value.towerTarget)
+                    val predictions = predictHotspots(
+                        date, all, _state.value.towerTarget,
+                        includeMoonTide = _state.value.premiumUnlocked,
+                        useMoon = _state.value.body == HotspotBody.MOON,
+                    )
                     val customIds = customHotspots.map { it.id }.toSet()
                     predictions.map { p ->
                         ScoredPrediction(
@@ -308,7 +324,18 @@ class HotspotListViewModel @Inject constructor(
     fun setTowerTarget(target: TowerTarget) {
         viewModelScope.launch { towerTargetStore.setTarget(target) }
     }
+
+    /** 切換預測天體（太陽 / 月亮）。月亮為付費功能，鎖定時忽略。 */
+    fun setBody(body: HotspotBody) {
+        if (body == HotspotBody.MOON && !_state.value.premiumUnlocked) return
+        if (body == _state.value.body) return
+        _state.value = _state.value.copy(body = body)
+        loadFor(_state.value.date)
+    }
 }
+
+/** 熱點列表的預測天體：夕陽穿塔 / 月亮穿塔。 */
+enum class HotspotBody { SUN, MOON }
 
 data class HotspotListState(
     val date: LocalDate = LocalDate.now(java.time.ZoneId.of("Asia/Taipei")),
@@ -318,6 +345,10 @@ data class HotspotListState(
     val editor: HotspotEditorState? = null,
     val importMessage: String? = null,
     val towerTarget: TowerTarget = TowerTarget.UpperY,
+    /** 月相/潮汐付費功能是否解鎖 (決定是否計算與顯示)。 */
+    val premiumUnlocked: Boolean = false,
+    /** 預測天體：太陽 / 月亮（月亮為付費功能）。 */
+    val body: HotspotBody = HotspotBody.SUN,
 )
 
 data class HotspotEditorState(

@@ -53,9 +53,11 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
@@ -179,11 +181,21 @@ fun ARScreen(vm: ARViewModel = hiltViewModel()) {
                 ) {
                     Icon(Icons.Outlined.GpsFixed, contentDescription = stringResource(R.string.cd_calibrate))
                 }
-                AlignmentBadge(
-                    state,
-                    onReset = { vm.resetCalibration() },
-                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 24.dp),
-                )
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 24.dp, start = 16.dp, end = 16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    // 月亮轉向指引（付費功能）：與太陽一樣告訴使用者要往哪轉幾度才能找到月亮軌跡
+                    MoonGuidanceBadge(state)
+                    AlignmentBadge(
+                        state,
+                        onReset = { vm.resetCalibration() },
+                        modifier = Modifier,
+                    )
+                }
             } else {
                 CalibrationOverlay(
                     onConfirm = { vm.confirmCalibration() },
@@ -274,6 +286,20 @@ private fun AROverlay(state: ARState, modifier: Modifier) {
             )
         }
 
+        // 月亮軌跡 (付費功能；銀藍色，與太陽暖色區隔)
+        if (state.premiumUnlocked) {
+            state.moonTrajectory.forEach { t ->
+                if (!t.inFrame) return@forEach
+                val isFuture = t.timeOffsetMinutes >= 0
+                val alpha = if (isFuture) 0.55f else 0.3f
+                drawCircle(
+                    color = Color(0xFFCAD6FF).copy(alpha = alpha),
+                    radius = 3.5f,
+                    center = Offset((t.xFrac * w).toFloat(), (t.yFrac * h).toFloat()),
+                )
+            }
+        }
+
         // 日落瞬間特別標記 (紅色十字 + 圓圈)
         state.sunsetMarker?.takeIf { it.inFrame }?.let { m ->
             val cx = (m.xFrac * w).toFloat()
@@ -312,6 +338,18 @@ private fun AROverlay(state: ARState, modifier: Modifier) {
             drawCircle(Color.White.copy(alpha = 0.7f), 20f, Offset(cx, cy), style = Stroke(width = 1.5f))
         }
 
+        // 月亮 (付費功能)：在框內畫弦月圖案；不在框內則於邊緣畫弦月標記 + 箭頭指引方位
+        if (state.premiumUnlocked) {
+            if (state.moon.inFrame) {
+                val cx = (state.moon.xFrac * w).toFloat()
+                val cy = (state.moon.yFrac * h).toFloat()
+                drawCircle(Color(0xFFCAD6FF).copy(alpha = 0.30f), 34f, Offset(cx, cy))
+                drawMoonGlyph(Offset(cx, cy), 16f)
+            } else {
+                drawMoonEdgeIndicator(state.moon, w, h)
+            }
+        }
+
         // 主塔出框箭頭
         drawOffFrameArrow(state.tower, Color(0xFFE63946), w, h)
         // 太陽出框箭頭
@@ -319,6 +357,31 @@ private fun AROverlay(state: ARState, modifier: Modifier) {
         // 日落位置出框箭頭 (引導使用者轉向太陽軌跡所在方向)
         state.sunsetMarker?.let { drawOffFrameArrow(it, Color(0xFFFF6B6B), w, h) }
     }
+}
+
+/** 弦月圖案：銀白圓盤 + 裁切於圓內的暗影偏移，做出新月/弦月的辨識度（與太陽的暖黃光暈區隔）。 */
+private fun DrawScope.drawMoonGlyph(center: Offset, radius: Float) {
+    drawCircle(Color(0xFFEDF0FA), radius, center)
+    clipPath(Path().apply { addOval(Rect(center.x - radius, center.y - radius, center.x + radius, center.y + radius)) }) {
+        drawCircle(Color(0xFF2A2F45).copy(alpha = 0.6f), radius, center.copy(x = center.x + radius * 0.5f))
+    }
+    drawCircle(Color.White.copy(alpha = 0.7f), radius, center, style = Stroke(width = 1.2f))
+}
+
+/** 月亮不在畫面內時：於邊緣畫弦月標記 + 箭頭，指引使用者往月亮方位轉。 */
+private fun DrawScope.drawMoonEdgeIndicator(target: ARTarget, w: Float, h: Float) {
+    if (target.inFrame) return
+    val silver = Color(0xFFCAD6FF)
+    val inset = 40f
+    val anchor = when {
+        target.offFrameLeft -> Offset(inset, h / 2f)
+        target.offFrameRight -> Offset(w - inset, h / 2f)
+        target.offFrameTop -> Offset(w / 2f, inset)
+        target.offFrameBottom -> Offset(w / 2f, h - inset)
+        else -> return
+    }
+    drawMoonGlyph(anchor, 14f)
+    drawOffFrameArrow(target, silver, w, h)
 }
 
 private fun DrawScope.drawOffFrameArrow(target: ARTarget, color: Color, w: Float, h: Float) {
@@ -506,6 +569,18 @@ private fun InfoHud(state: ARState, modifier: Modifier) {
                     color = Color.White,
                     style = MaterialTheme.typography.bodySmall,
                 )
+                // 月亮 (付費功能)：與太陽並列顯示，讓使用者同時看到日月位置
+                if (state.premiumUnlocked) {
+                    Text(
+                        stringResource(
+                            R.string.ar_hud_moon,
+                            "%.1f".format(state.moonAzimuthDegrees),
+                            "%+.1f".format(state.moonAltitudeDegrees),
+                        ),
+                        color = Color(0xFFCAD6FF),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
             }
             if (state.calibrationApplied) {
                 Text(
@@ -522,6 +597,40 @@ private fun InfoHud(state: ARState, modifier: Modifier) {
                 Text("⚠ $it", color = Color(0xFFFFA0A0), style = MaterialTheme.typography.labelSmall)
             }
         }
+    }
+}
+
+/**
+ * 月亮轉向指引（付費功能）：月亮不在畫面內時，於下方顯示「向左/右轉 X° 找月亮軌跡」，
+ * 與太陽找日落軌跡的提示對應（銀藍色，與太陽暖色區隔）。
+ *
+ * 與太陽一致：只要月亮不在框內就持續指引（不限月亮須在地平線上）——AR 的月亮軌跡涵蓋
+ * now−1h ~ now+5h，即使此刻月亮在地平線下，依方位轉向仍能找到其升起/行經的軌跡。
+ */
+@Composable
+private fun MoonGuidanceBadge(state: ARState) {
+    // 鎖定、未就緒、或月亮已在框內 → 不顯示指引
+    if (!state.premiumUnlocked || !state.ready) return
+    if (state.moon.inFrame) return
+
+    val hOff = state.moon.horizontalOffsetDegrees
+    val direction = when {
+        hOff > 0 -> stringResource(R.string.ar_turn_right, "%.0f".format(hOff))
+        hOff < 0 -> stringResource(R.string.ar_turn_left, "%.0f".format(-hOff))
+        else -> stringResource(R.string.ar_facing)
+    }
+    val moonAzHint = stringResource(R.string.ar_moon_azimuth_hint, "%.0f".format(state.moonAzimuthDegrees))
+    Row(
+        modifier = Modifier
+            .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(20.dp))
+            .padding(horizontal = 16.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            stringResource(R.string.ar_find_moon_trail, direction, moonAzHint),
+            color = Color(0xFFCAD6FF),
+            style = MaterialTheme.typography.bodyMedium,
+        )
     }
 }
 

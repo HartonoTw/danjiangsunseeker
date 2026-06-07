@@ -42,8 +42,6 @@ import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.MyLocation
 import androidx.compose.material.icons.outlined.Upload
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -66,7 +64,10 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import studio.freestyle.labs.danjiangsunseeker.domain.model.BridgeTower
 import studio.freestyle.labs.danjiangsunseeker.domain.model.SunTrailPoint
+import studio.freestyle.labs.danjiangsunseeker.domain.model.TideKind
 import studio.freestyle.labs.danjiangsunseeker.domain.model.TowerTarget
+import studio.freestyle.labs.danjiangsunseeker.presentation.common.MoonPhaseIcon
+import studio.freestyle.labs.danjiangsunseeker.presentation.common.lunarPhaseLabel
 import studio.freestyle.labs.danjiangsunseeker.presentation.map.ComposeMapLibre
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -112,7 +113,7 @@ import kotlin.math.atan
 @Composable
 fun HotspotListScreen(
     onHotspotClick: (String) -> Unit,
-    onGoToSimulator: (hotspotId: String, date: LocalDate, towerTarget: TowerTarget) -> Unit = { _, _, _ -> },
+    onGoToSimulator: (hotspotId: String, date: LocalDate, towerTarget: TowerTarget, useMoon: Boolean) -> Unit = { _, _, _, _ -> },
     vm: HotspotListViewModel = hiltViewModel(),
 ) {
     val state by vm.state.collectAsState()
@@ -185,6 +186,9 @@ fun HotspotListScreen(
                 onOpenPicker = { showDatePicker = true },
                 selectedTowerTarget = state.towerTarget,
                 onSelectTowerTarget = vm::setTowerTarget,
+                premiumUnlocked = state.premiumUnlocked,
+                body = state.body,
+                onSelectBody = vm::setBody,
             )
             Spacer(Modifier.height(8.dp))
 
@@ -199,6 +203,7 @@ fun HotspotListScreen(
                     items(state.predictions, key = { it.prediction.hotspot.id }) { p ->
                         HotspotRow(
                             p,
+                            isMoon = state.body == HotspotBody.MOON,
                             onClick = { onHotspotClick(p.prediction.hotspot.id) },
                             onEdit = { vm.showEditor(p.prediction.hotspot) },
                             onNavigate = {
@@ -215,6 +220,7 @@ fun HotspotListScreen(
                                     p.prediction.hotspot.id,
                                     state.date,
                                     state.towerTarget,
+                                    state.body == HotspotBody.MOON,
                                 )
                             },
                         )
@@ -375,6 +381,9 @@ private fun DateChipRow(
     onOpenPicker: () -> Unit,
     selectedTowerTarget: TowerTarget,
     onSelectTowerTarget: (TowerTarget) -> Unit,
+    premiumUnlocked: Boolean,
+    body: HotspotBody,
+    onSelectBody: (HotspotBody) -> Unit,
 ) {
     val quickDates = listOf(
         stringResource(R.string.date_today) to today,
@@ -402,16 +411,43 @@ private fun DateChipRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            AssistChip(
+            // 日期選擇：只留行事曆圖示（不再顯示日期文字），騰出空間給「太陽/月亮」切換。
+            //   完整日期仍顯示在上方標題列 (headerLabel)。
+            Surface(
                 onClick = onOpenPicker,
-                label = { Text(selectedDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))) },
-                leadingIcon = { Icon(Icons.Outlined.CalendarMonth, contentDescription = null) },
-                colors = AssistChipDefaults.assistChipColors(),
-            )
+                modifier = Modifier.height(32.dp),
+                shape = RoundedCornerShape(8.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxHeight().padding(horizontal = 9.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Outlined.CalendarMonth,
+                        contentDescription = selectedDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
             TowerTargetSelector(
                 selected = selectedTowerTarget,
                 onSelect = onSelectTowerTarget,
             )
+            // 太陽 / 月亮切換（付費功能；鎖定時不顯示）— 月亮模式改以「月亮升起穿塔」為對齊基準。
+            if (premiumUnlocked) {
+                FilterChip(
+                    selected = body == HotspotBody.SUN,
+                    onClick = { onSelectBody(HotspotBody.SUN) },
+                    label = { Text(stringResource(R.string.focal_body_sun)) },
+                )
+                FilterChip(
+                    selected = body == HotspotBody.MOON,
+                    onClick = { onSelectBody(HotspotBody.MOON) },
+                    label = { Text(stringResource(R.string.focal_body_moon)) },
+                )
+            }
         }
     }
 }
@@ -422,9 +458,12 @@ private fun nextSaturday(from: LocalDate): LocalDate {
     return d
 }
 
+private val ROW_HM: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+
 @Composable
 private fun HotspotRow(
     p: ScoredPrediction,
+    isMoon: Boolean = false,
     onClick: () -> Unit,
     onEdit: () -> Unit,
     onNavigate: () -> Unit,
@@ -450,8 +489,8 @@ private fun HotspotRow(
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         shape = RoundedCornerShape(8.dp),
     ) {
+      Column(modifier = Modifier.padding(12.dp)) {
         Row(
-            modifier = Modifier.padding(12.dp),
             // Top 對齊：當 Column 內容因大字體而變高時，Badge 與按鈕靠頂，不會被強制拉伸
             verticalAlignment = Alignment.Top,
         ) {
@@ -465,6 +504,7 @@ private fun HotspotRow(
                 towerBearing = p.prediction.bearingToTowerDegrees,
                 distanceToTowerMeters = p.prediction.distanceToTowerMeters,
                 classification = p.prediction.classification,
+                isMoon = isMoon,
                 modifier = Modifier
                     .width(86.dp)
                     .height(58.dp)
@@ -550,6 +590,48 @@ private fun HotspotRow(
                 }
             }
         }
+
+        // ── 月相・潮汐 (付費功能；moonInfo/tideInfo 鎖定時為 null)：放在分數＋簡圖下方，整列寬 ──
+        val moon = p.prediction.moonInfo
+        val tide = p.prediction.tideInfo
+        if (moon != null || (tide != null && tide.extremes.isNotEmpty())) {
+            Spacer(Modifier.height(8.dp))
+            if (moon != null) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    MoonPhaseIcon(
+                        fractionLit = moon.fractionLit.toFloat(),
+                        waxing = moon.waxing,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Text(
+                        stringResource(
+                            R.string.moon_summary,
+                            lunarPhaseLabel(moon.phase),
+                            "%.0f".format(moon.fractionLit * 100),
+                        ),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            if (tide != null && tide.extremes.isNotEmpty()) {
+                val highLabel = stringResource(R.string.tide_high)
+                val lowLabel = stringResource(R.string.tide_low)
+                val tideLine = tide.extremes.joinToString("  ") { ex ->
+                    (if (ex.kind == TideKind.HIGH) highLabel else lowLabel) +
+                        " " + ex.time.format(ROW_HM)
+                }
+                Text(
+                    tideLine,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.secondary,
+                )
+            }
+        }
+      }
     }
 }
 
@@ -879,6 +961,7 @@ private fun HotspotThumbnail(
     towerBearing: Double,
     distanceToTowerMeters: Double,
     classification: AlignmentClass,
+    isMoon: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     Canvas(modifier = modifier) {
@@ -894,7 +977,7 @@ private fun HotspotThumbnail(
             drawLine(Color.White.copy(alpha = 0.18f), Offset(0f, horizonY), Offset(size.width, horizonY), 1f)
             return@Canvas
         }
-        drawSunTrailThumbnail(trail, towerBearing, distanceToTowerMeters, classification)
+        drawSunTrailThumbnail(trail, towerBearing, distanceToTowerMeters, classification, isMoon)
     }
 }
 
@@ -903,19 +986,27 @@ private fun DrawScope.drawSunTrailThumbnail(
     towerBearing: Double,
     distanceToTowerMeters: Double,
     classification: AlignmentClass,
+    isMoon: Boolean,
 ) {
     val w = size.width
     val h = size.height
 
-    // 1. 天空漸層（日落色）
+    // 1. 天空漸層：太陽＝日落暖色；月亮＝夜空冷色
+    val skyColors = if (isMoon) {
+        listOf(
+            Color(0xFF13203F),       // 夜藍
+            Color(0xFF1A2A4A),       // 暗藍
+            Color(0xFF070512),       // 近黑
+        )
+    } else {
+        listOf(
+            Color(0xFFC0392B),       // 紅
+            Color(0xFFFF8C42),       // 橙
+            Color(0xFF1A0A3A),       // 深藍紫
+        )
+    }
     drawRect(
-        brush = Brush.verticalGradient(
-            listOf(
-                Color(0xFFC0392B),       // 紅
-                Color(0xFFFF8C42),       // 橙
-                Color(0xFF1A0A3A),       // 深藍紫
-            ),
-        ),
+        brush = Brush.verticalGradient(skyColors),
         size = Size(w, h),
     )
 
@@ -961,21 +1052,23 @@ private fun DrawScope.drawSunTrailThumbnail(
         drawCircle(towerColor, 2.5f, Offset(towerX, towerTopY))
     }
 
-    // 5. 太陽軌跡 13 點
+    // 5. 天體軌跡 13 點（太陽暖黃 / 月亮銀藍）
+    val glowColor = if (isMoon) Color(0xFFCAD6FF) else Color(0xFFFFD66B)
+    val coreColor = if (isMoon) Color(0xFFEDF0FA) else Color(0xFFFFE19A)
     trail.forEachIndexed { i, p ->
         val x = bearingToX(p.azimuthDegrees, centerAz, fovH, w) ?: return@forEachIndexed
         val y = horizonY - (p.altitudeDegrees / vFov * horizonY).toFloat()
         val isLast = i == trail.lastIndex
         val ratio = i.toFloat() / (trail.size - 1).coerceAtLeast(1)
-        // 越接近日落越亮
+        // 越接近穿塔瞬間越亮
         val alpha = lerpF(0.35f, 1.0f, ratio)
         val radius = if (isLast) 4f else lerpF(1.5f, 2.5f, ratio)
         if (isLast) {
             // 光暈
-            drawCircle(Color(0xFFFFD66B).copy(alpha = 0.45f), 7f, Offset(x, y))
-            drawCircle(Color(0xFFFFD66B).copy(alpha = 0.65f), 5f, Offset(x, y))
+            drawCircle(glowColor.copy(alpha = 0.45f), 7f, Offset(x, y))
+            drawCircle(glowColor.copy(alpha = 0.65f), 5f, Offset(x, y))
         }
-        drawCircle(Color(0xFFFFE19A).copy(alpha = alpha), radius, Offset(x, y))
+        drawCircle(coreColor.copy(alpha = alpha), radius, Offset(x, y))
     }
 }
 

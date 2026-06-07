@@ -38,6 +38,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -61,12 +62,14 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import studio.freestyle.labs.danjiangsunseeker.R
+import studio.freestyle.labs.danjiangsunseeker.domain.model.TideKind
+import studio.freestyle.labs.danjiangsunseeker.presentation.common.MoonPhaseIcon
+import studio.freestyle.labs.danjiangsunseeker.presentation.common.lunarPhaseLabel
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.maplibre.android.camera.CameraPosition
@@ -143,11 +146,12 @@ fun MapScreen(vm: MapViewModel = hiltViewModel()) {
         Log.d("MapDebug", "LE[hotspots] -> updateHotspots, ids=${state.mergedHotspots.map { it.id }}")
         MapLayers.updateHotspots(style, state.mergedHotspots, ctx)
     }
-    LaunchedEffect(mapHolder.styleVersion, state.goldenLine, state.towerTopGoldenLine) {
+    LaunchedEffect(mapHolder.styleVersion, state.goldenLine, state.towerTopGoldenLine, state.moonGoldenLine) {
         if (mapHolder.styleVersion == 0) return@LaunchedEffect
         val style = mapHolder.style ?: return@LaunchedEffect
         MapLayers.updateGoldenLine(style, state.goldenLine)
         MapLayers.updateTowerTopGoldenLine(style, state.towerTopGoldenLine)
+        MapLayers.updateMoonGoldenLine(style, state.moonGoldenLine)
     }
     LaunchedEffect(mapHolder.styleVersion, state.tap) {
         if (mapHolder.styleVersion == 0) return@LaunchedEffect
@@ -182,6 +186,7 @@ fun MapScreen(vm: MapViewModel = hiltViewModel()) {
                 MapLayers.install(ctx, style, state.mergedHotspots)
                 MapLayers.updateGoldenLine(style, state.goldenLine)
                 MapLayers.updateTowerTopGoldenLine(style, state.towerTopGoldenLine)
+                MapLayers.updateMoonGoldenLine(style, state.moonGoldenLine)
                 mapHolder.styleVersion += 1
                 Log.d("MapDebug", "onMapReady: styleVersion bumped to ${mapHolder.styleVersion}")
                 // 初始相機定位在主塔上方
@@ -190,10 +195,17 @@ fun MapScreen(vm: MapViewModel = hiltViewModel()) {
                     .zoom(12.5)
                     .build()
             },
-            onMapClick = { lat, lon -> vm.onMapTap(lat, lon) },
+            onMapClick = { lat, lon ->
+                // 點擊＝把地圖飛到該點，中央準心（X）隨即對準選定位置（與「熱點」選點覆蓋層一致）。
+                mapHolder.map?.animateCamera(
+                    CameraUpdateFactory.newLatLng(LatLng(lat, lon)),
+                    300,
+                )
+                vm.onMapTap(lat, lon)
+            },
         )
 
-        // 畫面正中央的固定準心：移動地圖把目標對到此處，新增熱點時以「地圖中心」座標存檔。
+        // 畫面正中央的固定準心（X）：點地圖移動把目標對到此處，新增熱點時以「地圖中心」座標存檔。
         MapCenterReticle()
 
         Card(
@@ -318,6 +330,7 @@ fun MapScreen(vm: MapViewModel = hiltViewModel()) {
             state.tap?.let { tap ->
                 TapAnalysisCard(
                     tap = tap,
+                    premium = state.premiumUnlocked,
                     onAddHotspot = { vm.showAddTapHotspotDialog() },
                     onClose = { vm.clearTap() },
                 )
@@ -363,7 +376,7 @@ fun MapScreen(vm: MapViewModel = hiltViewModel()) {
     }
 }
 
-/** 畫面正中央的固定準心（白描邊紅十字 + 中心圓點），標示新增熱點時採用的「地圖中心」位置。 */
+/** 畫面正中央的固定準心（白描邊紅色 X + 中心圓點），標示新增熱點時採用的「地圖中心」位置。 */
 @Composable
 private fun BoxScope.MapCenterReticle() {
     Canvas(
@@ -374,26 +387,24 @@ private fun BoxScope.MapCenterReticle() {
         val cx = size.width / 2f
         val cy = size.height / 2f
         val center = Offset(cx, cy)
-        val ring = size.minDimension / 2f - 4.dp.toPx()
-        val gap = ring * 0.45f
-        val arm = ring + 3.dp.toPx()
+        val arm = size.minDimension / 2f - 4.dp.toPx()
+        val gap = arm * 0.30f
         val white = Color.White.copy(alpha = 0.95f)
         val red = Color(0xFFD72638)
 
-        // 十字準線（中心留空）
+        // X 形準線（中心留空）：四條對角線段（45° 投影 → ×0.7071）
+        val diag = arm * 0.7071f
+        val gd = gap * 0.7071f
         val segments = listOf(
-            Offset(cx - arm, cy) to Offset(cx - gap, cy),
-            Offset(cx + gap, cy) to Offset(cx + arm, cy),
-            Offset(cx, cy - arm) to Offset(cx, cy - gap),
-            Offset(cx, cy + gap) to Offset(cx, cy + arm),
+            Offset(cx - diag, cy - diag) to Offset(cx - gd, cy - gd),
+            Offset(cx + gd, cy + gd) to Offset(cx + diag, cy + diag),
+            Offset(cx - diag, cy + diag) to Offset(cx - gd, cy + gd),
+            Offset(cx + gd, cy - gd) to Offset(cx + diag, cy - diag),
         )
         segments.forEach { (a, b) ->
             drawLine(white, a, b, strokeWidth = 3.5.dp.toPx())
             drawLine(red, a, b, strokeWidth = 1.5.dp.toPx())
         }
-        // 圓環
-        drawCircle(white, radius = ring, center = center, style = Stroke(width = 3.5.dp.toPx()))
-        drawCircle(red, radius = ring, center = center, style = Stroke(width = 1.5.dp.toPx()))
         // 中心圓點
         drawCircle(white, radius = 3.dp.toPx(), center = center)
         drawCircle(red, radius = 2.dp.toPx(), center = center)
@@ -418,15 +429,63 @@ private fun SunSummaryCard(state: MapUiState) {
             )
             Spacer(Modifier.height(2.dp))
             Text(
-                stringResource(R.string.map_golden_line_base, baseBearing?.let { "%.2f°".format(it) } ?: none),
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            Spacer(Modifier.height(2.dp))
-            Text(
-                stringResource(R.string.map_golden_line_top, topBearing?.let { "%.2f°".format(it) } ?: none),
+                stringResource(
+                    R.string.map_golden_line_both,
+                    baseBearing?.let { "%.2f°".format(it) } ?: none,
+                    topBearing?.let { "%.2f°".format(it) } ?: none,
+                ),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.primary,
             )
+            // ── 月象・潮汐・月亮黃金帶 (付費功能；鎖定時不顯示) ──────────────
+            if (state.premiumUnlocked) {
+                HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
+                Text(
+                    stringResource(
+                        R.string.map_moon_line,
+                        state.moonGoldenLine?.bearingFromTowerDegrees?.let { "%.2f°".format(it) } ?: none,
+                    ),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.secondary,
+                )
+                state.moonInfo?.let { moon ->
+                    Spacer(Modifier.height(2.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        MoonPhaseIcon(
+                            fractionLit = moon.fractionLit.toFloat(),
+                            waxing = moon.waxing,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Text(
+                            stringResource(
+                                R.string.moon_summary,
+                                lunarPhaseLabel(moon.phase),
+                                "%.0f".format(moon.fractionLit * 100),
+                            ),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                val tide = state.tideInfo
+                if (tide != null && tide.extremes.isNotEmpty()) {
+                    val highLabel = stringResource(R.string.tide_high)
+                    val lowLabel = stringResource(R.string.tide_low)
+                    val tideLine = tide.extremes.joinToString("  ") { ex ->
+                        (if (ex.kind == TideKind.HIGH) highLabel else lowLabel) +
+                            " %02d:%02d".format(ex.time.hour, ex.time.minute)
+                    }
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        tideLine,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.secondary,
+                    )
+                }
+            }
             Spacer(Modifier.height(4.dp))
             Text(
                 stringResource(R.string.map_tap_hint),
@@ -437,9 +496,18 @@ private fun SunSummaryCard(state: MapUiState) {
     }
 }
 
+/** 把時間格式化為「時間 HH:MM」字串；無時間時以 [none] 佔位。 */
+@Composable
+private fun timeValueOrNone(time: java.time.ZonedDateTime?, none: String): String =
+    stringResource(
+        R.string.map_time_value,
+        time?.let { "%02d:%02d".format(it.hour, it.minute) } ?: none,
+    )
+
 @Composable
 private fun TapAnalysisCard(
     tap: TapAnalysis,
+    premium: Boolean,
     onAddHotspot: () -> Unit,
     onClose: () -> Unit,
 ) {
@@ -478,25 +546,32 @@ private fun TapAnalysisCard(
                 Text(stringResource(R.string.map_tower_bearing, "%.2f".format(tap.bearingToTowerDegrees)), style = MaterialTheme.typography.bodySmall)
             }
             Spacer(Modifier.height(2.dp))
+            // 塔基 / 塔頂 太陽對齊偏差與時間（同一行）
             Text(
                 stringResource(
-                    R.string.map_lower_offset,
+                    R.string.map_sun_offsets,
                     tap.lowerAlignmentOffsetDegrees?.let { "%+.2f°".format(it) } ?: none,
-                    tap.lowerTargetTime?.let { stringResource(R.string.map_time_value, "%02d:%02d".format(it.hour, it.minute)) }
-                        ?: stringResource(R.string.map_time_value, none),
-                ),
-                style = MaterialTheme.typography.bodySmall,
-            )
-            Spacer(Modifier.height(2.dp))
-            Text(
-                stringResource(
-                    R.string.map_upper_offset,
+                    timeValueOrNone(tap.lowerTargetTime, none),
                     tap.upperAlignmentOffsetDegrees?.let { "%+.2f°".format(it) } ?: none,
-                    tap.upperTargetTime?.let { stringResource(R.string.map_time_value, "%02d:%02d".format(it.hour, it.minute)) }
-                        ?: stringResource(R.string.map_time_value, none),
+                    timeValueOrNone(tap.upperTargetTime, none),
                 ),
                 style = MaterialTheme.typography.bodySmall,
             )
+            // 月亮穿塔 (付費功能)：塔基 / 塔頂 月亮對齊偏差與時間（同一行）
+            if (premium) {
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    stringResource(
+                        R.string.map_moon_offsets,
+                        tap.moonLowerAlignmentOffsetDegrees?.let { "%+.2f°".format(it) } ?: none,
+                        timeValueOrNone(tap.moonLowerTime, none),
+                        tap.moonUpperAlignmentOffsetDegrees?.let { "%+.2f°".format(it) } ?: none,
+                        timeValueOrNone(tap.moonUpperTime, none),
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary,
+                )
+            }
             Spacer(Modifier.height(4.dp))
             Text(verdict, color = verdictColor, style = MaterialTheme.typography.bodySmall)
         }

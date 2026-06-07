@@ -1,6 +1,8 @@
 package studio.freestyle.labs.danjiangsunseeker.domain.usecase
 
+import studio.freestyle.labs.danjiangsunseeker.data.astro.MoonCalcDataSource
 import studio.freestyle.labs.danjiangsunseeker.data.astro.SunCalcDataSource
+import studio.freestyle.labs.danjiangsunseeker.data.astro.TideDataSource
 import studio.freestyle.labs.danjiangsunseeker.domain.model.DailySunEvents
 import studio.freestyle.labs.danjiangsunseeker.domain.model.DefaultHotspots
 import studio.freestyle.labs.danjiangsunseeker.domain.model.GeoPoint
@@ -19,7 +21,10 @@ import java.time.ZoneId
 class PredictHotspotsUseCaseTest {
 
     private val sunCalc: SunCalcDataSource = mockk()
+    private val moonCalc: MoonCalcDataSource = mockk(relaxed = true)
+    private val tideDataSource: TideDataSource = mockk(relaxed = true)
     private val targetSunResolver: TowerTargetSunResolver = mockk()
+    private val targetMoonResolver: TowerTargetMoonResolver = mockk(relaxed = true)
     private lateinit var useCase: PredictHotspotsUseCase
 
     private val testDate = LocalDate.of(2025, 6, 21)
@@ -55,7 +60,7 @@ class PredictHotspotsUseCaseTest {
 
     @Before
     fun setUp() {
-        useCase = PredictHotspotsUseCase(sunCalc, targetSunResolver)
+        useCase = PredictHotspotsUseCase(sunCalc, moonCalc, tideDataSource, targetSunResolver, targetMoonResolver)
         // positionAt is called for sun trail computation
         every { sunCalc.positionAt(any(), any()) } returns fakeSunPosition
     }

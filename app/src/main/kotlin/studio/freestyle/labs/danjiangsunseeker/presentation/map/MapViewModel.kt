@@ -4,7 +4,9 @@ import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import studio.freestyle.labs.danjiangsunseeker.data.astro.MoonCalcDataSource
 import studio.freestyle.labs.danjiangsunseeker.data.astro.SunCalcDataSource
+import studio.freestyle.labs.danjiangsunseeker.data.astro.TideDataSource
 import studio.freestyle.labs.danjiangsunseeker.data.hotspot.CustomHotspotStore
 import studio.freestyle.labs.danjiangsunseeker.data.sensors.LocationProvider
 import studio.freestyle.labs.danjiangsunseeker.data.settings.TowerTargetStore
@@ -13,10 +15,15 @@ import studio.freestyle.labs.danjiangsunseeker.domain.model.DefaultHotspots
 import studio.freestyle.labs.danjiangsunseeker.domain.model.GeoPoint
 import studio.freestyle.labs.danjiangsunseeker.domain.model.GoldenLine
 import studio.freestyle.labs.danjiangsunseeker.domain.model.Hotspot
+import studio.freestyle.labs.danjiangsunseeker.domain.model.MoonInfo
+import studio.freestyle.labs.danjiangsunseeker.domain.model.TideInfo
 import studio.freestyle.labs.danjiangsunseeker.domain.model.TowerTarget
 import studio.freestyle.labs.danjiangsunseeker.domain.physics.Geodesy
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.ComputeGoldenLineUseCase
+import studio.freestyle.labs.danjiangsunseeker.domain.usecase.ComputeMoonGoldenLineUseCase
+import studio.freestyle.labs.danjiangsunseeker.domain.usecase.TowerTargetMoonResolver
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.TowerTargetSunResolver
+import studio.freestyle.labs.danjiangsunseeker.domain.premium.PremiumGate
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import studio.freestyle.labs.danjiangsunseeker.R
@@ -39,11 +46,16 @@ import javax.inject.Inject
 class MapViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val computeGoldenLine: ComputeGoldenLineUseCase,
+    private val computeMoonGoldenLine: ComputeMoonGoldenLineUseCase,
     private val sunCalc: SunCalcDataSource,
+    private val moonCalc: MoonCalcDataSource,
+    private val tideDataSource: TideDataSource,
     private val customHotspotStore: CustomHotspotStore,
     private val towerTargetStore: TowerTargetStore,
     private val targetSunResolver: TowerTargetSunResolver,
+    private val targetMoonResolver: TowerTargetMoonResolver,
     private val locationProvider: LocationProvider,
+    private val premiumGate: PremiumGate,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MapUiState())
@@ -67,6 +79,14 @@ class MapViewModel @Inject constructor(
             .onEach { target ->
                 _state.value = _state.value.copy(towerTarget = target)
                 setDate(_state.value.selectedDate)
+            }
+            .launchIn(viewModelScope)
+        premiumGate.isPremium
+            .onEach { unlocked ->
+                if (unlocked != _state.value.premiumUnlocked) {
+                    _state.value = _state.value.copy(premiumUnlocked = unlocked)
+                    setDate(_state.value.selectedDate)
+                }
             }
             .launchIn(viewModelScope)
 
@@ -100,16 +120,24 @@ class MapViewModel @Inject constructor(
             while (true) {
                 val d = pendingDate ?: break
                 pendingDate = null
-                val (gl, topGl, sunsetAz) = withContext(Dispatchers.Default) {
+                val premium = _state.value.premiumUnlocked
+                val result = withContext(Dispatchers.Default) {
                     val gl = computeGoldenLine(d)
                     val topGl = computeGoldenLine(d, target = TowerTarget.UpperY)
                     val sunAz = sunCalc.dailyEvents(d, BridgeTower.position).sunsetAzimuthDegrees
-                    Triple(gl, topGl, sunAz)
+                    // 月亮黃金帶 / 月相 / 潮汐皆為付費功能；鎖定時為 null。
+                    val moonGl = if (premium) computeMoonGoldenLine(d) else null
+                    val moon = if (premium) moonCalc.dailyMoon(d, BridgeTower.position) else null
+                    val tide = if (premium) tideDataSource.tidesFor(d) else null
+                    MapComputeResult(gl, topGl, sunAz, moonGl, moon, tide)
                 }
                 _state.value = _state.value.copy(
-                    goldenLine = gl,
-                    towerTopGoldenLine = topGl,
-                    sunsetAzimuthAtTower = sunsetAz,
+                    goldenLine = result.goldenLine,
+                    towerTopGoldenLine = result.towerTopGoldenLine,
+                    sunsetAzimuthAtTower = result.sunsetAzimuth,
+                    moonGoldenLine = result.moonGoldenLine,
+                    moonInfo = result.moonInfo,
+                    tideInfo = result.tideInfo,
                     computing = false,
                     tap = _state.value.tap?.let { rebuildTap(it.point) },
                 )
@@ -262,6 +290,18 @@ class MapViewModel @Inject constructor(
         }
         val selectedEvent = if (_state.value.towerTarget == TowerTarget.UpperY) upperEvent else lowerEvent
         val selectedOffset = if (_state.value.towerTarget == TowerTarget.UpperY) upperOffset else lowerOffset
+
+        // 月亮穿塔 (付費功能；鎖定時不計算)：從選定點看月亮上升穿越塔頂/塔基的偏差與時間。
+        val premium = _state.value.premiumUnlocked
+        val moonLowerEvent = if (premium) targetMoonResolver.resolve(_state.value.selectedDate, point, TowerTarget.LowerY) else null
+        val moonLowerOffset = moonLowerEvent?.azimuthDegrees?.let {
+            Geodesy.signedAzimuthDelta(it, geodesic.initialBearingDegrees)
+        }
+        val moonUpperEvent = if (premium) targetMoonResolver.resolve(_state.value.selectedDate, point, TowerTarget.UpperY) else null
+        val moonUpperOffset = moonUpperEvent?.azimuthDegrees?.let {
+            Geodesy.signedAzimuthDelta(it, geodesic.initialBearingDegrees)
+        }
+
         return TapAnalysis(
             point = point,
             distanceToTowerMeters = geodesic.distanceMeters,
@@ -274,15 +314,36 @@ class MapViewModel @Inject constructor(
             lowerAlignmentOffsetDegrees = lowerOffset,
             upperTargetTime = upperEvent.time,
             upperAlignmentOffsetDegrees = upperOffset,
+            moonLowerTime = moonLowerEvent?.time,
+            moonLowerAlignmentOffsetDegrees = moonLowerOffset,
+            moonUpperTime = moonUpperEvent?.time,
+            moonUpperAlignmentOffsetDegrees = moonUpperOffset,
         )
     }
 }
+
+/** [MapViewModel.setDate] 背景計算的彙整結果。 */
+private data class MapComputeResult(
+    val goldenLine: GoldenLine?,
+    val towerTopGoldenLine: GoldenLine?,
+    val sunsetAzimuth: Double?,
+    val moonGoldenLine: GoldenLine?,
+    val moonInfo: MoonInfo?,
+    val tideInfo: TideInfo?,
+)
 
 data class MapUiState(
     val selectedDate: LocalDate = LocalDate.now(ZoneId.of("Asia/Taipei")),
     val goldenLine: GoldenLine? = null,
     val towerTopGoldenLine: GoldenLine? = null,
     val sunsetAzimuthAtTower: Double? = null,
+    /** 月亮黃金帶 (付費功能；鎖定時為 null)。 */
+    val moonGoldenLine: GoldenLine? = null,
+    /** 當日月相 (付費功能；鎖定時為 null)。主塔位置基準。 */
+    val moonInfo: MoonInfo? = null,
+    /** 當日潮汐 (付費功能；鎖定時為 null)。淡水測站。 */
+    val tideInfo: TideInfo? = null,
+    val premiumUnlocked: Boolean = false,
     val computing: Boolean = false,
     val tap: TapAnalysis? = null,
     val mergedHotspots: List<Hotspot> = DefaultHotspots.ALL,
@@ -316,6 +377,12 @@ data class TapAnalysis(
     val lowerAlignmentOffsetDegrees: Double?,
     val upperTargetTime: java.time.ZonedDateTime?,
     val upperAlignmentOffsetDegrees: Double?,
+    /** 月亮上升穿塔基的時間與方位偏差 (付費功能；鎖定或當日無月出時為 null)。 */
+    val moonLowerTime: java.time.ZonedDateTime? = null,
+    val moonLowerAlignmentOffsetDegrees: Double? = null,
+    /** 月亮上升穿塔頂的時間與方位偏差 (付費功能；鎖定或當日無月出時為 null)。 */
+    val moonUpperTime: java.time.ZonedDateTime? = null,
+    val moonUpperAlignmentOffsetDegrees: Double? = null,
     /**
      * 從點擊位置看，太陽方位相對主塔方位的偏差 (deg, signed)。
      * 正值: 太陽位於主塔右側 (順時針); 負值: 左側。

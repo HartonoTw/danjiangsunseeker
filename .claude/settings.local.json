@@ -32,7 +32,16 @@
       "Bash(PYTHONIOENCODING=utf-8 PYTHONUTF8=1 python -c ' *)",
       "Bash(PYTHONIOENCODING=utf-8 PYTHONUTF8=1 python scripts/generate_store_promo_0530.py)",
       "Bash(awk '{print $5, $9}')",
-      "Bash(./gradlew :app:testDebugUnitTest --tests \"*ScanGoldenCalendar*\" --tests \"*SunCalcDataSource*\" -q)"
+      "Bash(./gradlew :app:testDebugUnitTest --tests \"*ScanGoldenCalendar*\" --tests \"*SunCalcDataSource*\" -q)",
+      "Bash(Get-ChildItem -Path \"D:\\\\AI\\\\danjiangsunseeker\" -Directory)",
+      "Bash(Select-Object Name)",
+      "PowerShell(.\\\\gradlew.bat :app:compileDebugKotlin -q --offline 2>&1 | Select-Object -Last 60)",
+      "PowerShell($out = .\\\\gradlew.bat :app:compileDebugKotlin --offline --console=plain 2>&1 | Out-String; $code = $LASTEXITCODE; Write-Output \"EXIT=$code\"; \\($out -split \"`n\" | Select-Object -Last 50\\) -join \"`n\")",
+      "PowerShell($out = .\\\\gradlew.bat :app:compileDebugKotlin --offline --console=plain 2>&1 | Out-String; Write-Output \"EXIT=$LASTEXITCODE\"; \\($out -split \"`n\" | Where-Object { $_ -match \"error:|e: |BUILD |FAILED|Task :app:compileDebugKotlin\" } | Select-Object -Last 40\\) -join \"`n\")",
+      "PowerShell($out = .\\\\gradlew.bat :app:compileDebugKotlin --offline --console=plain 2>&1 | Out-String; Write-Output \"EXIT=$LASTEXITCODE\"; \\($out -split \"`n\" | Where-Object { $_ -match \"error:|e: |BUILD |FAILED|compileDebugKotlin\" } | Select-Object -Last 40\\) -join \"`n\")",
+      "PowerShell($out = .\\\\gradlew.bat :app:hiltJavaCompileDebug --offline --console=plain 2>&1 | Out-String; Write-Output \"EXIT=$LASTEXITCODE\"; \\($out -split \"`n\" | Where-Object { $_ -match \"error|Error|BUILD |FAILED|hiltJavaCompileDebug|kspDebugKotlin\" } | Select-Object -Last 40\\) -join \"`n\")",
+      "PowerShell($out = .\\\\gradlew.bat :app:hiltJavaCompileDebug --offline --console=plain 2>&1 | Out-String; Write-Output \"EXIT=$LASTEXITCODE\"; \\($out -split \"`n\" | Where-Object { $_ -match \"error|Error|BUILD |FAILED|hiltJavaCompileDebug\" } | Select-Object -Last 30\\) -join \"`n\")",
+      "PowerShell($out = .\\\\gradlew.bat :app:compileDebugKotlin --offline --console=plain 2>&1 | Out-String; Write-Output \"EXIT=$LASTEXITCODE\"; \\($out -split \"`n\" | Where-Object { $_ -match \"error:|e: |BUILD |FAILED|compileDebugKotlin\" } | Select-Object -Last 20\\) -join \"`n\")"
     ]
   }
 }

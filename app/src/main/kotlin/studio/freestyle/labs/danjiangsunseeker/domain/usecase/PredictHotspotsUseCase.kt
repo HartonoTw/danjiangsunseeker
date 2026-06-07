@@ -1,11 +1,15 @@
 ﻿package studio.freestyle.labs.danjiangsunseeker.domain.usecase
 
+import studio.freestyle.labs.danjiangsunseeker.data.astro.MoonCalcDataSource
 import studio.freestyle.labs.danjiangsunseeker.data.astro.SunCalcDataSource
+import studio.freestyle.labs.danjiangsunseeker.data.astro.TideDataSource
 import studio.freestyle.labs.danjiangsunseeker.domain.model.BridgeTower
 import studio.freestyle.labs.danjiangsunseeker.domain.model.DailySunEvents
 import studio.freestyle.labs.danjiangsunseeker.domain.model.DefaultHotspots
 import studio.freestyle.labs.danjiangsunseeker.domain.model.Hotspot
+import studio.freestyle.labs.danjiangsunseeker.domain.model.MoonInfo
 import studio.freestyle.labs.danjiangsunseeker.domain.model.SunTrailPoint
+import studio.freestyle.labs.danjiangsunseeker.domain.model.TideInfo
 import studio.freestyle.labs.danjiangsunseeker.domain.model.TowerTarget
 import studio.freestyle.labs.danjiangsunseeker.domain.physics.Geodesy
 import java.time.LocalDate
@@ -26,14 +30,26 @@ import kotlin.math.max
  */
 class PredictHotspotsUseCase @Inject constructor(
     private val sunCalc: SunCalcDataSource,
+    private val moonCalc: MoonCalcDataSource,
+    private val tideDataSource: TideDataSource,
     private val targetSunResolver: TowerTargetSunResolver,
+    private val targetMoonResolver: TowerTargetMoonResolver,
 ) {
+    /**
+     * @param includeMoonTide 是否計算月相/潮汐 (付費功能)。鎖定時傳 false 以省去計算且不外洩資料。
+     * @param useMoon true 時以「月亮上升穿塔」為對齊基準 (付費功能)，取代預設的「日落穿塔」；
+     *               月相/潮汐列在兩種模式下皆顯示。
+     */
     operator fun invoke(
         date: LocalDate,
         hotspots: List<Hotspot> = DefaultHotspots.ALL,
         target: TowerTarget = TowerTarget.UpperY,
-    ): List<HotspotPrediction> =
-        hotspots.map { hotspot ->
+        includeMoonTide: Boolean = true,
+        useMoon: Boolean = false,
+    ): List<HotspotPrediction> {
+        // 潮汐為單一測站 (淡水)，與熱點位置無關，整批計算一次重複使用。
+        val tide: TideInfo? = if (includeMoonTide) tideDataSource.tidesFor(date) else null
+        return hotspots.map { hotspot ->
             val geodesic = Geodesy.inverse(hotspot.position, BridgeTower.position)
 
             // 距主塔 > 25 km 視為「太遠」— 不執行天文計算 (省 CPU + 提示使用者選太遠)
@@ -52,13 +68,53 @@ class PredictHotspotsUseCase @Inject constructor(
                     targetTime = null,
                     targetAzimuthDegrees = null,
                     towerTarget = target,
+                    moonInfo = null,
+                    tideInfo = tide,
                 )
             }
 
             val events = sunCalc.dailyEvents(date, hotspot.position)
-            val targetEvent = targetSunResolver.resolve(date, hotspot.position, target)
-            val sunAzimuth = targetEvent.azimuthDegrees
-            val alignmentOffset = sunAzimuth?.let {
+            val moon: MoonInfo? = if (includeMoonTide) moonCalc.dailyMoon(date, hotspot.position) else null
+
+            // 對齊基準時刻 + 方位 + 軌跡：太陽模式以「日落穿塔」、月亮模式以「月亮上升穿塔」。
+            val targetAzimuth: Double?
+            val targetTime: ZonedDateTime?
+            val trail: List<SunTrailPoint>
+            if (useMoon) {
+                val moonEvent = targetMoonResolver.resolve(date, hotspot.position, target)
+                targetAzimuth = moonEvent.azimuthDegrees
+                targetTime = moonEvent.time
+                // 穿塔前 60 分鐘到穿塔瞬間，每 5 分鐘一個取樣點（共 13 點）。用於 UI 縮圖。
+                trail = if (targetTime != null) {
+                    (0..TRAIL_MINUTES step TRAIL_INTERVAL_MIN).map { minutesBefore ->
+                        val t = targetTime.minusMinutes(minutesBefore.toLong())
+                        val pos = moonCalc.moonPositionAt(t, hotspot.position)
+                        SunTrailPoint(
+                            minutesBeforeSunset = minutesBefore,
+                            azimuthDegrees = pos.azimuthDegrees,
+                            altitudeDegrees = pos.altitudeDegrees,
+                        )
+                    }.reversed()
+                } else emptyList()
+            } else {
+                val targetEvent = targetSunResolver.resolve(date, hotspot.position, target)
+                targetAzimuth = targetEvent.azimuthDegrees
+                targetTime = targetEvent.time ?: events.sunset
+                // 日落前 60 分鐘到日落瞬間，每 5 分鐘一個取樣點（共 13 點）。用於 UI 縮圖。
+                trail = if (targetTime != null) {
+                    (0..TRAIL_MINUTES step TRAIL_INTERVAL_MIN).map { minutesBefore ->
+                        val t = targetTime.minusMinutes(minutesBefore.toLong())
+                        val pos = sunCalc.positionAt(t, hotspot.position)
+                        SunTrailPoint(
+                            minutesBeforeSunset = minutesBefore,
+                            azimuthDegrees = pos.azimuthDegrees,
+                            altitudeDegrees = pos.altitudeDegrees,
+                        )
+                    }.reversed() // 從最早 (60min before) 到最晚 (sunset)
+                } else emptyList()
+            }
+
+            val alignmentOffset = targetAzimuth?.let {
                 Geodesy.signedAzimuthDelta(it, geodesic.initialBearingDegrees)
             }
             val angularWidth = towerAngularWidthDegrees(geodesic.distanceMeters)
@@ -68,19 +124,6 @@ class PredictHotspotsUseCase @Inject constructor(
                 abs(alignmentOffset) <= 2.0 -> AlignmentClass.NEAR
                 else -> AlignmentClass.FAR
             }
-            // 日落前 60 分鐘到日落瞬間，每 5 分鐘一個取樣點（共 13 點）。用於 UI 縮圖。
-            val targetTime = targetEvent.time ?: events.sunset
-            val trail = if (targetTime != null) {
-                (0..TRAIL_MINUTES step TRAIL_INTERVAL_MIN).map { minutesBefore ->
-                    val t = targetTime.minusMinutes(minutesBefore.toLong())
-                    val pos = sunCalc.positionAt(t, hotspot.position)
-                    SunTrailPoint(
-                        minutesBeforeSunset = minutesBefore,
-                        azimuthDegrees = pos.azimuthDegrees,
-                        altitudeDegrees = pos.altitudeDegrees,
-                    )
-                }.reversed() // 從最早 (60min before) 到最晚 (sunset)
-            } else emptyList()
             HotspotPrediction(
                 hotspot = hotspot,
                 events = events,
@@ -91,10 +134,13 @@ class PredictHotspotsUseCase @Inject constructor(
                 classification = classification,
                 lastHourSunTrail = trail,
                 targetTime = targetTime,
-                targetAzimuthDegrees = sunAzimuth,
+                targetAzimuthDegrees = targetAzimuth,
                 towerTarget = target,
+                moonInfo = moon,
+                tideInfo = tide,
             )
         }
+    }
 
     companion object {
         const val MAX_DISTANCE_METERS = 25_000.0
@@ -124,6 +170,10 @@ data class HotspotPrediction(
     val targetTime: ZonedDateTime? = null,
     val targetAzimuthDegrees: Double? = null,
     val towerTarget: TowerTarget = TowerTarget.UpperY,
+    /** 月相資訊 (付費功能；鎖定或太遠時為 null)。 */
+    val moonInfo: MoonInfo? = null,
+    /** 當日潮汐 (付費功能；鎖定時為 null)。淡水單一測站，所有熱點共用。 */
+    val tideInfo: TideInfo? = null,
 )
 
 enum class AlignmentClass { PERFECT, NEAR, FAR, UNKNOWN, TOO_FAR }

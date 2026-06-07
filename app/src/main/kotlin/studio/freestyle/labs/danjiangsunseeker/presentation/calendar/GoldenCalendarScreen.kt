@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -38,11 +40,14 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import studio.freestyle.labs.danjiangsunseeker.domain.model.TideKind
 import studio.freestyle.labs.danjiangsunseeker.domain.model.TowerTarget
 import studio.freestyle.labs.danjiangsunseeker.R
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.GoldenDate
+import studio.freestyle.labs.danjiangsunseeker.presentation.common.MoonPhaseIcon
 import studio.freestyle.labs.danjiangsunseeker.presentation.common.TowerTargetSelector
 import studio.freestyle.labs.danjiangsunseeker.presentation.common.towerTargetLabel
 import java.time.LocalDate
@@ -52,7 +57,7 @@ import java.util.Locale
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun GoldenCalendarScreen(
-    onGoToSimulator: (hotspotId: String, date: LocalDate, towerTarget: TowerTarget) -> Unit = { _, _, _ -> },
+    onGoToSimulator: (hotspotId: String, date: LocalDate, towerTarget: TowerTarget, useMoon: Boolean) -> Unit = { _, _, _, _ -> },
     vm: GoldenCalendarViewModel = hiltViewModel(),
 ) {
     val state by vm.state.collectAsState()
@@ -81,17 +86,43 @@ fun GoldenCalendarScreen(
                 Text(stringResource(R.string.calendar_title), style = MaterialTheme.typography.headlineMedium)
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    stringResource(R.string.calendar_subtitle),
+                    stringResource(
+                        if (state.mode == CalendarMode.MOON) R.string.calendar_moon_subtitle
+                        else R.string.calendar_subtitle,
+                    ),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
         Spacer(Modifier.height(12.dp))
-        TowerTargetSelector(
-            selected = state.towerTarget,
-            onSelect = vm::setTowerTarget,
-        )
+        // 塔頂/塔基 與 夕陽日/月亮日 同一列（月亮模式為付費功能；鎖定時不顯示切換）
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            // 各元件高度不同 (塔頂/塔基 32dp、FilterChip 含 48dp 觸控區)，逐一垂直置中對齊
+            TowerTargetSelector(
+                selected = state.towerTarget,
+                onSelect = vm::setTowerTarget,
+                modifier = Modifier.align(Alignment.CenterVertically),
+            )
+            if (state.premiumUnlocked) {
+                FilterChip(
+                    selected = state.mode == CalendarMode.SUN,
+                    onClick = { vm.setMode(CalendarMode.SUN) },
+                    label = { Text(stringResource(R.string.calendar_mode_sun)) },
+                    modifier = Modifier.align(Alignment.CenterVertically),
+                )
+                FilterChip(
+                    selected = state.mode == CalendarMode.MOON,
+                    onClick = { vm.setMode(CalendarMode.MOON) },
+                    label = { Text(stringResource(R.string.calendar_mode_moon)) },
+                    modifier = Modifier.align(Alignment.CenterVertically),
+                )
+            }
+        }
         Spacer(Modifier.height(8.dp))
 
         // FlowRow：大字體下空間不足會自動換到下一行，不會被裁切
@@ -150,7 +181,7 @@ fun GoldenCalendarScreen(
                         }
                     },
                     onGoToSimulator = {
-                        onGoToSimulator(golden.hotspot.id, golden.date, golden.towerTarget)
+                        onGoToSimulator(golden.hotspot.id, golden.date, golden.towerTarget, golden.isMoon)
                     },
                 )
             }
@@ -178,13 +209,40 @@ private fun GoldenDateRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    golden.date.format(DATE_FMT),
-                    fontWeight = FontWeight.SemiBold,
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                Spacer(Modifier.height(2.dp))
-                Text(name, style = MaterialTheme.typography.bodyMedium)
+                // 第一行：日期 + 熱點名稱（省垂直空間）
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        golden.date.format(DATE_FMT),
+                        fontWeight = FontWeight.SemiBold,
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        name,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                }
+                // 第二行（月亮模式）：月相圖案 + 亮面百分比
+                if (golden.isMoon && golden.moonFractionLit != null) {
+                    Spacer(Modifier.height(2.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        MoonPhaseIcon(
+                            fractionLit = golden.moonFractionLit.toFloat(),
+                            waxing = golden.moonWaxing,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            stringResource(R.string.moon_lit, "%.0f".format(golden.moonFractionLit * 100)),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
                 Spacer(Modifier.height(2.dp))
                 Text(
                     stringResource(
@@ -196,6 +254,22 @@ private fun GoldenDateRow(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.outline,
                 )
+                // 潮汐標註 (付費功能；鎖定時 tideInfo 為 null)
+                val tide = golden.tideInfo
+                if (tide != null && tide.extremes.isNotEmpty()) {
+                    val highLabel = stringResource(R.string.tide_high)
+                    val lowLabel = stringResource(R.string.tide_low)
+                    val tideLine = tide.extremes.joinToString("  ") { ex ->
+                        (if (ex.kind == TideKind.HIGH) highLabel else lowLabel) +
+                            " %02d:%02d".format(ex.time.hour, ex.time.minute)
+                    }
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        tideLine,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.secondary,
+                    )
+                }
             }
             TextButton(onClick = onAddToCalendar) {
                 Icon(Icons.Outlined.CalendarMonth, contentDescription = null)

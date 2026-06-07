@@ -17,19 +17,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuAnchorType
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -44,12 +42,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
@@ -57,10 +57,14 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import studio.freestyle.labs.danjiangsunseeker.R
 import studio.freestyle.labs.danjiangsunseeker.domain.model.BridgeTower
 import studio.freestyle.labs.danjiangsunseeker.domain.model.Hotspot
+import studio.freestyle.labs.danjiangsunseeker.domain.model.TideKind
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.SensorSpec
+import studio.freestyle.labs.danjiangsunseeker.presentation.common.MoonPhaseIcon
 import studio.freestyle.labs.danjiangsunseeker.presentation.common.TowerTargetSelector
+import studio.freestyle.labs.danjiangsunseeker.presentation.common.lunarPhaseLabel
 import java.time.Instant
 import java.time.ZoneId
+import kotlin.math.abs
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -115,9 +119,24 @@ fun FocalSimulatorScreen(vm: FocalSimulatorViewModel = hiltViewModel()) {
                     onSelect = vm::setTowerTarget,
                 )
             }
+            // 感光元件（緊湊 chip；放在「太陽/月亮」左邊）
+            SensorPicker(current = state.sensor, onPick = vm::setSensor)
+            // 太陽 / 月亮切換（付費功能；鎖定時不顯示）
+            if (state.premiumUnlocked) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(
+                        selected = state.body == CelestialBody.SUN,
+                        onClick = { vm.setBody(CelestialBody.SUN) },
+                        label = { Text(stringResource(R.string.focal_body_sun)) },
+                    )
+                    FilterChip(
+                        selected = state.body == CelestialBody.MOON,
+                        onClick = { vm.setBody(CelestialBody.MOON) },
+                        label = { Text(stringResource(R.string.focal_body_moon)) },
+                    )
+                }
+            }
         }
-
-        SensorPicker(current = state.sensor, onPick = vm::setSensor)
 
         CompactFocalSlider(
             focalLengthMm = state.focalLengthMm,
@@ -132,7 +151,8 @@ fun FocalSimulatorScreen(vm: FocalSimulatorViewModel = hiltViewModel()) {
             sunsetLabel = state.sunsetTime?.let { "%02d:%02d".format(it.hour, it.minute) },
             timeMinuteOfDay = state.timeMinuteOfDay,
             sunsetMin = sunsetMin,
-            onChange = { vm.setMinuteOfDay(sliderFractionToMinute(it, sunsetMin)) },
+            body = state.body,
+            onChange = { vm.setMinuteOfDay(sliderFractionToMinute(it, sunsetMin, state.body)) },
         )
 
         FrameCanvas(state)
@@ -148,13 +168,50 @@ fun FocalSimulatorScreen(vm: FocalSimulatorViewModel = hiltViewModel()) {
         )
         Text(
             stringResource(
-                R.string.focal_sun_info,
+                if (state.body == CelestialBody.MOON) R.string.focal_moon_info else R.string.focal_sun_info,
                 "%.2f".format(state.sunAzimuthDegrees),
                 "%+.2f".format(state.sunAltitudeDegrees),
             ),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.outline,
         )
+        // 月亮模式：顯示月象（圖示 + 名稱）與亮面百分比
+        if (state.body == CelestialBody.MOON) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                MoonPhaseIcon(
+                    fractionLit = state.moonFractionLit.toFloat(),
+                    waxing = state.moonWaxing,
+                    modifier = Modifier.size(18.dp),
+                )
+                Text(
+                    stringResource(
+                        R.string.moon_summary,
+                        lunarPhaseLabel(state.moonPhase),
+                        "%.0f".format(state.moonFractionLit * 100),
+                    ),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            // 潮汐：與月相一起顯示當日高低潮
+            val tide = state.tideInfo
+            if (tide != null && tide.extremes.isNotEmpty()) {
+                val highLabel = stringResource(R.string.tide_high)
+                val lowLabel = stringResource(R.string.tide_low)
+                val tideLine = tide.extremes.joinToString("  ") { ex ->
+                    (if (ex.kind == TideKind.HIGH) highLabel else lowLabel) +
+                        " %02d:%02d".format(ex.time.hour, ex.time.minute)
+                }
+                Text(
+                    tideLine,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.secondary,
+                )
+            }
+        }
     }
 
     if (showDatePicker) {
@@ -217,6 +274,7 @@ private fun CompactTimeSlider(
     sunsetLabel: String?,
     timeMinuteOfDay: Int,
     sunsetMin: Int?,
+    body: CelestialBody,
     onChange: (Float) -> Unit,
 ) {
     Row(
@@ -244,12 +302,12 @@ private fun CompactTimeSlider(
         BoxWithConstraints(modifier = Modifier.weight(1f)) {
             val thumbRadius = 10.dp
             Slider(
-                value = minuteToSliderFraction(timeMinuteOfDay, sunsetMin),
+                value = minuteToSliderFraction(timeMinuteOfDay, sunsetMin, body),
                 onValueChange = onChange,
                 valueRange = 0f..1f,
             )
             sunsetMin?.let { sm ->
-                val frac = minuteToSliderFraction(sm, sunsetMin)
+                val frac = minuteToSliderFraction(sm, sunsetMin, body)
                 val markerCenterX = thumbRadius + (maxWidth - thumbRadius * 2f) * frac
                 Box(
                     modifier = Modifier
@@ -804,6 +862,14 @@ private const val ULTRA_WINDOW_MINUTE = 10           // 日落前 10 分鐘進�
 private const val COARSE_TRACK_FRACTION = 0.30f      // 粗調區佔軌道
 private const val FINE_TRACK_FRACTION = 0.35f        // 細調區佔軌道（超細區 = 0.35）
 
+// ── 月亮模式時間軸（00:00 → 隔日 07:00）三段非線性 ───────────────────────
+//   白天 09:00–17:00 月亮通常不是主角，壓縮成一小段軌道（拉動時快速通過）。
+private const val MOON_DAY_START_MINUTE = 9 * 60     // 540 = 09:00
+private const val MOON_DAY_END_MINUTE = 17 * 60      // 1020 = 17:00
+private const val MOON_NIGHT1_FRACTION = 0.35f       // 00:00–09:00 佔軌道
+private const val MOON_DAY_FRACTION = 0.10f          // 09:00–17:00 佔軌道（壓縮、快）
+// 其餘 17:00–隔日07:00 = 1 − 0.35 − 0.10 = 0.55
+
 /** 滑桿各分界（分鐘），由日落時間動態推算並保證遞增。 */
 private data class TimeSliderBounds(
     val minMinute: Int,
@@ -815,14 +881,29 @@ private data class TimeSliderBounds(
 private fun timeSliderBounds(sunsetMinute: Int?): TimeSliderBounds {
     val sunset = sunsetMinute ?: FALLBACK_SUNSET_MINUTE
     val min = TIME_MIN_MINUTE
-    val end = sunset + END_AFTER_SUNSET_MINUTE
+    // 防呆：日落時間異常偏早時（例如觀察者在國外，日落換算成台北時間落在中午前）仍須保證
+    // min < fineStart < ultraStart < end，否則下方 coerceIn 會出現 max < min 而崩潰。
+    val end = (sunset + END_AFTER_SUNSET_MINUTE).coerceAtLeast(min + 30)
     val ultraStart = (sunset - ULTRA_WINDOW_MINUTE).coerceIn(min + 2, end - 1)
     val fineStart = (sunset - FINE_WINDOW_MINUTE).coerceIn(min + 1, ultraStart - 1)
     return TimeSliderBounds(min, fineStart, ultraStart, end)
 }
 
-/** 分鐘 → 滑桿 0..1（三段式，越接近日落越細）。 */
-private fun minuteToSliderFraction(minute: Int, sunsetMinute: Int?): Float {
+/** 分鐘 → 滑桿 0..1。月亮模式：[00:00, 隔日 07:00] 三段（白天壓縮）；太陽模式：三段式越接近日落越細。 */
+private fun minuteToSliderFraction(minute: Int, sunsetMinute: Int?, body: CelestialBody): Float {
+    if (body == CelestialBody.MOON) {
+        val m = minute.coerceIn(MOON_MIN_MINUTE, MOON_MAX_MINUTE)
+        val a = MOON_NIGHT1_FRACTION
+        val day = MOON_DAY_FRACTION
+        return when {
+            m <= MOON_DAY_START_MINUTE ->
+                a * (m - MOON_MIN_MINUTE).toFloat() / (MOON_DAY_START_MINUTE - MOON_MIN_MINUTE)
+            m <= MOON_DAY_END_MINUTE ->
+                a + day * (m - MOON_DAY_START_MINUTE).toFloat() / (MOON_DAY_END_MINUTE - MOON_DAY_START_MINUTE)
+            else ->
+                a + day + (1f - a - day) * (m - MOON_DAY_END_MINUTE).toFloat() / (MOON_MAX_MINUTE - MOON_DAY_END_MINUTE)
+        }.coerceIn(0f, 1f)
+    }
     val b = timeSliderBounds(sunsetMinute)
     val m = minute.coerceIn(b.minMinute, b.maxMinute)
     val coarse = COARSE_TRACK_FRACTION
@@ -838,8 +919,22 @@ private fun minuteToSliderFraction(minute: Int, sunsetMinute: Int?): Float {
     }
 }
 
-/** 滑桿 0..1 → 分鐘。 */
-private fun sliderFractionToMinute(fraction: Float, sunsetMinute: Int?): Int {
+/** 滑桿 0..1 → 分鐘。月亮模式：三段反映射 [00:00, 隔日 07:00]（白天 09:00–17:00 壓縮）。 */
+private fun sliderFractionToMinute(fraction: Float, sunsetMinute: Int?, body: CelestialBody): Int {
+    if (body == CelestialBody.MOON) {
+        val f = fraction.coerceIn(0f, 1f)
+        val a = MOON_NIGHT1_FRACTION
+        val day = MOON_DAY_FRACTION
+        val minute = when {
+            f <= a ->
+                MOON_MIN_MINUTE + (MOON_DAY_START_MINUTE - MOON_MIN_MINUTE) * (f / a)
+            f <= a + day ->
+                MOON_DAY_START_MINUTE + (MOON_DAY_END_MINUTE - MOON_DAY_START_MINUTE) * ((f - a) / day)
+            else ->
+                MOON_DAY_END_MINUTE + (MOON_MAX_MINUTE - MOON_DAY_END_MINUTE) * ((f - a - day) / (1f - a - day))
+        }
+        return minute.toInt()
+    }
     val b = timeSliderBounds(sunsetMinute)
     val f = fraction.coerceIn(0f, 1f)
     val coarse = COARSE_TRACK_FRACTION
@@ -857,15 +952,17 @@ private fun sliderFractionToMinute(fraction: Float, sunsetMinute: Int?): Int {
 }
 
 private fun DrawScope.drawSunTrail(state: FocalSimulatorState, w: Float, h: Float) {
+    // 月亮模式以銀藍色軌跡，與太陽的暖黃區隔。
+    val base = if (state.body == CelestialBody.MOON) Color(0xFFCAD6FF) else Color(0xFFFFD66B)
     state.sunTrail.forEach { p ->
         if (!p.inFrame) return@forEach
         val x = (p.xFrac.toFloat() * w)
         val y = (p.yFrac.toFloat() * h)
         val isCurrent = p.timeOffsetMinutes == 0
         val color = when {
-            isCurrent -> Color(0xFFFFD66B)
-            p.timeOffsetMinutes < 0 -> Color(0xFFFFD66B).copy(alpha = 0.25f)
-            else -> Color(0xFFFFD66B).copy(alpha = 0.45f)
+            isCurrent -> base
+            p.timeOffsetMinutes < 0 -> base.copy(alpha = 0.25f)
+            else -> base.copy(alpha = 0.45f)
         }
         drawCircle(color = color, radius = 4f, center = Offset(x, y))
     }
@@ -874,19 +971,78 @@ private fun DrawScope.drawSunTrail(state: FocalSimulatorState, w: Float, h: Floa
 private fun DrawScope.drawSun(state: FocalSimulatorState, w: Float, h: Float) {
     val sun = state.sun
     if (!sun.inFrame) return
+    val moon = state.body == CelestialBody.MOON
     val x = (sun.xFrac.toFloat() * w).coerceIn(0f, w)
     val y = (sun.yFrac.toFloat() * h).coerceIn(0f, h)
     val radiusPx = (state.sunRadiusFrac.toFloat() * w).coerceAtLeast(3f)
+
+    if (moon) {
+        // 月亮：銀藍微光暈 + 依亮面比例/盈虧繪製的月相圖案（與「日曆」月相圖示一致的繪法）
+        drawCircle(color = Color(0xFFCAD6FF).copy(alpha = 0.30f), radius = radiusPx * 1.8f, center = Offset(x, y))
+        drawCircle(color = Color(0xFFCAD6FF).copy(alpha = 0.45f), radius = radiusPx * 1.3f, center = Offset(x, y))
+        drawMoonPhase(
+            center = Offset(x, y),
+            radius = radiusPx,
+            fractionLit = state.moonFractionLit.toFloat(),
+            waxing = state.moonWaxing,
+        )
+        return
+    }
+
+    val glow = Color(0xFFFFD66B)
+    val core = Color(0xFFFFE19A)
     // 光暈
-    drawCircle(color = Color(0xFFFFD66B).copy(alpha = 0.35f), radius = radiusPx * 2.2f, center = Offset(x, y))
-    drawCircle(color = Color(0xFFFFD66B).copy(alpha = 0.55f), radius = radiusPx * 1.5f, center = Offset(x, y))
-    drawCircle(color = Color(0xFFFFE19A), radius = radiusPx, center = Offset(x, y))
+    drawCircle(color = glow.copy(alpha = 0.35f), radius = radiusPx * 2.2f, center = Offset(x, y))
+    drawCircle(color = glow.copy(alpha = 0.55f), radius = radiusPx * 1.5f, center = Offset(x, y))
+    drawCircle(color = core, radius = radiusPx, center = Offset(x, y))
     drawCircle(
         color = Color.White.copy(alpha = 0.7f),
         radius = radiusPx,
         center = Offset(x, y),
         style = Stroke(width = 1.2f),
     )
+}
+
+/**
+ * 月相圖案（Canvas）：依亮面比例 [fractionLit] 與盈虧 [waxing] 畫出明暗界線。
+ * 與 [studio.freestyle.labs.danjiangsunseeker.presentation.common.MoonPhaseIcon] 同一套繪法：
+ *  暗面整圓 → 裁切於圓內畫亮側半圓 → 以水平半徑 r·|1−2f| 的橢圓修正明暗界線。
+ */
+private fun DrawScope.drawMoonPhase(
+    center: Offset,
+    radius: Float,
+    fractionLit: Float,
+    waxing: Boolean,
+) {
+    val r = radius
+    val f = fractionLit.coerceIn(0f, 1f)
+    val darkColor = Color(0xFF2A2F45)
+    val litColor = Color(0xFFEDF0FA)
+    val rect = Rect(center.x - r, center.y - r, center.x + r, center.y + r)
+
+    // 1) 暗面整圓
+    drawCircle(color = darkColor, radius = r, center = center)
+    // 2) + 3) 亮面（裁切於圓內）
+    clipPath(Path().apply { addOval(rect) }) {
+        val litStart = if (waxing) -90f else 90f
+        drawArc(
+            color = litColor,
+            startAngle = litStart,
+            sweepAngle = 180f,
+            useCenter = true,
+            topLeft = Offset(center.x - r, center.y - r),
+            size = Size(2 * r, 2 * r),
+        )
+        val a = r * abs(1f - 2f * f)
+        val terminatorColor = if (f < 0.5f) darkColor else litColor
+        drawOval(
+            color = terminatorColor,
+            topLeft = Offset(center.x - a, center.y - r),
+            size = Size(2 * a, 2 * r),
+        )
+    }
+    // 邊框（讓新月仍可見輪廓）
+    drawCircle(color = Color.White.copy(alpha = 0.7f), radius = r, center = center, style = Stroke(width = 1.2f))
 }
 
 private fun DrawScope.drawOffFrameArrows(sun: SunFramePosition, w: Float, h: Float) {
@@ -913,24 +1069,16 @@ private fun DrawScope.drawArrow(tip: Offset, angleRad: Float, size: Float, color
     drawPath(path = path, color = color)
 }
 
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+/** 感光元件選擇：緊湊 AssistChip + 下拉選單（取代原本全寬的 OutlinedTextField，降低控制列高度）。 */
 @Composable
 private fun SensorPicker(current: SensorSpec, onPick: (SensorSpec) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
-
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = !expanded },
-    ) {
-        OutlinedTextField(
-            value = stringResource(current.labelRes),
-            onValueChange = {},
-            readOnly = true,
-            label = { Text(stringResource(R.string.focal_sensor_label)) },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable, true),
+    Box {
+        AssistChip(
+            onClick = { expanded = true },
+            label = { Text(stringResource(current.labelRes)) },
         )
-        ExposedDropdownMenu(
+        androidx.compose.material3.DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
         ) {

@@ -142,9 +142,10 @@ fun DanjiangApp() {
             composable(TopLevelDestination.Hotspots.route) {
                 HotspotListScreen(
                     onHotspotClick = { id -> navController.navigate("hotspot_detail/$id") },
-                    onGoToSimulator = { hotspotId, date, towerTarget ->
+                    onGoToSimulator = { hotspotId, date, towerTarget, useMoon ->
                         navController.navigate(
-                            "simulator?hotspotId=$hotspotId&date=$date&towerTarget=${towerTarget.name}"
+                            "simulator?hotspotId=$hotspotId&date=$date&towerTarget=${towerTarget.name}" +
+                                "&body=${if (useMoon) "MOON" else "SUN"}"
                         )
                     },
                 )
@@ -155,19 +156,21 @@ fun DanjiangApp() {
             }
             composable(TopLevelDestination.Map.route) { MapScreen() }
             composable(
-                route = "${TopLevelDestination.Simulator.route}?hotspotId={hotspotId}&date={date}&towerTarget={towerTarget}",
+                route = "${TopLevelDestination.Simulator.route}?hotspotId={hotspotId}&date={date}&towerTarget={towerTarget}&body={body}",
                 arguments = listOf(
                     navArgument("hotspotId") { defaultValue = ""; type = NavType.StringType },
                     navArgument("date")      { defaultValue = ""; type = NavType.StringType },
                     navArgument("towerTarget") { defaultValue = ""; type = NavType.StringType },
+                    navArgument("body")      { defaultValue = ""; type = NavType.StringType },
                 ),
             ) { FocalSimulatorScreen() }
             composable(TopLevelDestination.Ar.route) { ARScreen() }
             composable(TopLevelDestination.Calendar.route) {
                 GoldenCalendarScreen(
-                    onGoToSimulator = { hotspotId, date, towerTarget ->
+                    onGoToSimulator = { hotspotId, date, towerTarget, useMoon ->
                         navController.navigate(
-                            "simulator?hotspotId=$hotspotId&date=$date&towerTarget=${towerTarget.name}"
+                            "simulator?hotspotId=$hotspotId&date=$date&towerTarget=${towerTarget.name}" +
+                                "&body=${if (useMoon) "MOON" else "SUN"}"
                         )
                     },
                 )

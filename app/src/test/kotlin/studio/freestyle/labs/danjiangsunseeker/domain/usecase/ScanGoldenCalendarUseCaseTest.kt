@@ -1,6 +1,7 @@
 package studio.freestyle.labs.danjiangsunseeker.domain.usecase
 
 import studio.freestyle.labs.danjiangsunseeker.data.astro.SunCalcDataSource
+import studio.freestyle.labs.danjiangsunseeker.data.astro.TideDataSource
 import studio.freestyle.labs.danjiangsunseeker.domain.model.BridgeTower
 import studio.freestyle.labs.danjiangsunseeker.domain.model.DailySunEvents
 import studio.freestyle.labs.danjiangsunseeker.domain.model.DefaultHotspots
@@ -19,6 +20,7 @@ import kotlin.math.abs
 class ScanGoldenCalendarUseCaseTest {
 
     private val sunCalc: SunCalcDataSource = mockk()
+    private val tideDataSource: TideDataSource = mockk(relaxed = true)
     private val targetSunResolver: TowerTargetSunResolver = mockk()
     private lateinit var useCase: ScanGoldenCalendarUseCase
 
@@ -43,7 +45,7 @@ class ScanGoldenCalendarUseCaseTest {
 
     @Before
     fun setUp() {
-        useCase = ScanGoldenCalendarUseCase(sunCalc, targetSunResolver)
+        useCase = ScanGoldenCalendarUseCase(sunCalc, tideDataSource, targetSunResolver)
     }
 
     private fun stubTarget(date: LocalDate, observer: GeoPoint, azimuth: Double?) {
