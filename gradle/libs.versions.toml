@@ -24,7 +24,7 @@ datastore = "1.1.1"
 
 coil = "2.7.0"
 suncalc = "3.11"
-maplibre = "11.5.2"
+maplibre = "11.8.0"
 arcore = "1.45.0"
 cameraX = "1.4.1"
 playServicesLocation = "21.3.0"
