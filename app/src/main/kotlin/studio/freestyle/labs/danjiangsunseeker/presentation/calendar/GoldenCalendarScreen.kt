@@ -95,12 +95,16 @@ fun GoldenCalendarScreen(
                 )
             }
         }
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(6.dp))
+        // 取消 Material 對 chip 的 48dp 最小觸控高度，讓功能列壓低到 chip 本身高度
+        androidx.compose.runtime.CompositionLocalProvider(
+            androidx.compose.material3.LocalMinimumInteractiveComponentSize provides androidx.compose.ui.unit.Dp.Unspecified,
+        ) {
         // 塔頂/塔基 與 夕陽日/月亮日 同一列（月亮模式為付費功能；鎖定時不顯示切換）
         FlowRow(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             // 各元件高度不同 (塔頂/塔基 32dp、FilterChip 含 48dp 觸控區)，逐一垂直置中對齊
             TowerTargetSelector(
@@ -123,13 +127,13 @@ fun GoldenCalendarScreen(
                 )
             }
         }
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(4.dp))
 
         // FlowRow：大字體下空間不足會自動換到下一行，不會被裁切
         FlowRow(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             listOf(0.5, 1.0, 2.0, 5.0).forEach { tol ->
                 FilterChip(
@@ -144,8 +148,9 @@ fun GoldenCalendarScreen(
                 )
             }
         }
+        }
 
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(8.dp))
 
         if (state.loading) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

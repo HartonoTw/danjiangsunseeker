@@ -178,19 +178,24 @@ fun HotspotListScreen(
                 },
                 onAdd = { vm.showEditor() },
             )
-            Spacer(Modifier.height(12.dp))
-            DateChipRow(
-                selectedDate = state.date,
-                today = today,
-                onPickQuick = { vm.loadFor(it) },
-                onOpenPicker = { showDatePicker = true },
-                selectedTowerTarget = state.towerTarget,
-                onSelectTowerTarget = vm::setTowerTarget,
-                premiumUnlocked = state.premiumUnlocked,
-                body = state.body,
-                onSelectBody = vm::setBody,
-            )
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(6.dp))
+            // 取消 Material 對 chip 的 48dp 最小觸控高度，讓功能列真正壓低到 chip 本身高度 (32dp)
+            androidx.compose.runtime.CompositionLocalProvider(
+                androidx.compose.material3.LocalMinimumInteractiveComponentSize provides androidx.compose.ui.unit.Dp.Unspecified,
+            ) {
+                DateChipRow(
+                    selectedDate = state.date,
+                    today = today,
+                    onPickQuick = { vm.loadFor(it) },
+                    onOpenPicker = { showDatePicker = true },
+                    selectedTowerTarget = state.towerTarget,
+                    onSelectTowerTarget = vm::setTowerTarget,
+                    premiumUnlocked = state.premiumUnlocked,
+                    body = state.body,
+                    onSelectBody = vm::setBody,
+                )
+            }
+            Spacer(Modifier.height(4.dp))
 
             if (state.loading) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -395,10 +400,9 @@ private fun DateChipRow(
     //   不再用 horizontalScroll 強迫使用者手動橫滑
     androidx.compose.foundation.layout.FlowRow(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 6.dp),
+            .fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         quickDates.forEach { (label, date) ->
             FilterChip(

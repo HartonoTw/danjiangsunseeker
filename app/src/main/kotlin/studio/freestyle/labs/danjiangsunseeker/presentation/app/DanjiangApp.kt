@@ -1,6 +1,11 @@
 package studio.freestyle.labs.danjiangsunseeker.presentation.app
 
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.CameraAlt
@@ -52,6 +57,12 @@ private sealed class TopLevelDestination(
     data object Calendar : TopLevelDestination("calendar", R.string.tab_calendar, Icons.Outlined.CalendarMonth)
 }
 
+/**
+ * 功能列內容高度（不含系統導覽列 inset）。Material3 預設為 80dp，這裡壓低以節省畫面空間；
+ * 64dp 是「圖示 + 文字標籤」不被裁切的實際下限（指示丸 32dp + 間距 + 標籤約需 ~60dp）。
+ */
+private val BAR_CONTENT_HEIGHT = 64.dp
+
 private val TopLevelDestinations = listOf(
     TopLevelDestination.Hotspots,
     TopLevelDestination.Map,
@@ -79,7 +90,11 @@ fun DanjiangApp() {
     Scaffold(
         containerColor = androidx.compose.material3.MaterialTheme.colorScheme.background,
         bottomBar = {
+            // 壓低功能列：把內容高度從預設 80dp 降到 BAR_CONTENT_HEIGHT，
+            //   另外加上系統導覽列 inset，避免內容被手勢/三鍵導覽列遮住。
+            val navBarInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
             NavigationBar(
+                modifier = Modifier.height(BAR_CONTENT_HEIGHT + navBarInset),
                 containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface,
                 tonalElevation = 8.dp,
                 windowInsets = NavigationBarDefaults.windowInsets,
@@ -100,7 +115,7 @@ fun DanjiangApp() {
                             }
                         },
                         enabled = enabled,
-                        icon = { Icon(dest.icon, contentDescription = null) },
+                        icon = { Icon(dest.icon, contentDescription = null, modifier = Modifier.size(22.dp)) },
                         label = { Text(stringResource(dest.titleRes), maxLines = 1, softWrap = false) },
                         colors = NavigationBarItemDefaults.colors(
                             indicatorColor = androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer,
@@ -120,6 +135,7 @@ fun DanjiangApp() {
                         Icon(
                             imageVector = Icons.Outlined.Info,
                             contentDescription = null,
+                            modifier = Modifier.size(22.dp),
                         )
                     },
                     label = { Text(stringResource(R.string.about_title), maxLines = 1, softWrap = false) },

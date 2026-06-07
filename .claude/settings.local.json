@@ -41,7 +41,8 @@
       "PowerShell($out = .\\\\gradlew.bat :app:compileDebugKotlin --offline --console=plain 2>&1 | Out-String; Write-Output \"EXIT=$LASTEXITCODE\"; \\($out -split \"`n\" | Where-Object { $_ -match \"error:|e: |BUILD |FAILED|compileDebugKotlin\" } | Select-Object -Last 40\\) -join \"`n\")",
       "PowerShell($out = .\\\\gradlew.bat :app:hiltJavaCompileDebug --offline --console=plain 2>&1 | Out-String; Write-Output \"EXIT=$LASTEXITCODE\"; \\($out -split \"`n\" | Where-Object { $_ -match \"error|Error|BUILD |FAILED|hiltJavaCompileDebug|kspDebugKotlin\" } | Select-Object -Last 40\\) -join \"`n\")",
       "PowerShell($out = .\\\\gradlew.bat :app:hiltJavaCompileDebug --offline --console=plain 2>&1 | Out-String; Write-Output \"EXIT=$LASTEXITCODE\"; \\($out -split \"`n\" | Where-Object { $_ -match \"error|Error|BUILD |FAILED|hiltJavaCompileDebug\" } | Select-Object -Last 30\\) -join \"`n\")",
-      "PowerShell($out = .\\\\gradlew.bat :app:compileDebugKotlin --offline --console=plain 2>&1 | Out-String; Write-Output \"EXIT=$LASTEXITCODE\"; \\($out -split \"`n\" | Where-Object { $_ -match \"error:|e: |BUILD |FAILED|compileDebugKotlin\" } | Select-Object -Last 20\\) -join \"`n\")"
+      "PowerShell($out = .\\\\gradlew.bat :app:compileDebugKotlin --offline --console=plain 2>&1 | Out-String; Write-Output \"EXIT=$LASTEXITCODE\"; \\($out -split \"`n\" | Where-Object { $_ -match \"error:|e: |BUILD |FAILED|compileDebugKotlin\" } | Select-Object -Last 20\\) -join \"`n\")",
+      "PowerShell($out = .\\\\gradlew.bat :app:compileDebugKotlin --offline --console=plain 2>&1 | Out-String; Write-Output \"EXIT=$LASTEXITCODE\"; \\($out -split \"`n\" | Where-Object { $_ -match \"error:|e: |unresolved|BUILD |FAILED|compileDebugKotlin\" } | Select-Object -Last 25\\) -join \"`n\")"
     ]
   }
 }

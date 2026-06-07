@@ -85,13 +85,17 @@ fun FocalSimulatorScreen(vm: FocalSimulatorViewModel = hiltViewModel()) {
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Text(stringResource(R.string.focal_title), style = MaterialTheme.typography.headlineMedium)
 
+        // 取消 Material 對 chip 的 48dp 最小觸控高度，讓功能列壓低到 chip 本身高度
+        androidx.compose.runtime.CompositionLocalProvider(
+            androidx.compose.material3.LocalMinimumInteractiveComponentSize provides androidx.compose.ui.unit.Dp.Unspecified,
+        ) {
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             HotspotPicker(
                 current = state.hotspot,
@@ -136,6 +140,7 @@ fun FocalSimulatorScreen(vm: FocalSimulatorViewModel = hiltViewModel()) {
                     )
                 }
             }
+        }
         }
 
         CompactFocalSlider(
