@@ -41,6 +41,11 @@ private data class ChangelogEntry(
 /** 由新到舊排列；最新版本在最上方。 */
 private val changelog: List<ChangelogEntry> = listOf(
     ChangelogEntry(
+        version = "0.12",
+        date = "2026-06-07",
+        changesRes = R.array.changelog_0_12,
+    ),
+    ChangelogEntry(
         version = "0.11",
         date = "2026-06-01",
         changesRes = R.array.changelog_0_11,

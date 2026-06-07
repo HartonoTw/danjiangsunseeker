@@ -258,6 +258,10 @@
 
     <!-- Changelog page -->
     <string name="changelog_title">更新日誌</string>
+    <string-array name="changelog_0_12">
+        <item>新增付費功能：月亮與潮汐。</item>
+        <item>調整頁面配置。</item>
+    </string-array>
     <string-array name="changelog_0_11">
         <item>UI優化。</item>
         <item>「關於」介面優化。</item>

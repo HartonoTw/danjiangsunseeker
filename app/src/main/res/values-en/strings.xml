@@ -258,6 +258,10 @@
 
     <!-- Changelog page -->
     <string name="changelog_title">Changelog</string>
+    <string-array name="changelog_0_12">
+        <item>Added premium feature: moon &amp; tide.</item>
+        <item>Adjusted page layout.</item>
+    </string-array>
     <string-array name="changelog_0_11">
         <item>UI improvements.</item>
         <item>About page UI improvements.</item>
