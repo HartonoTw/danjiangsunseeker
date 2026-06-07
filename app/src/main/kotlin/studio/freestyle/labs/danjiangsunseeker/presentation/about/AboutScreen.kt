@@ -167,16 +167,16 @@ fun AboutScreen(
 
             Spacer(Modifier.height(8.dp))
 
-            // ── 開放原始碼授權（左）＋ 更新日誌（右）同一行 ────────────────
+            // ── 開放原始碼授權（左）＋ 更新日誌（右）同一行，等寬避免折行 ──
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                FilledTonalButton(onClick = onShowLicenses) {
-                    Text(stringResource(R.string.about_open_source_licenses))
+                FilledTonalButton(onClick = onShowLicenses, modifier = Modifier.weight(1f)) {
+                    Text(stringResource(R.string.about_open_source_licenses), maxLines = 1)
                 }
-                FilledTonalButton(onClick = onShowChangelog) {
-                    Text(stringResource(R.string.about_changelog))
+                FilledTonalButton(onClick = onShowChangelog, modifier = Modifier.weight(1f)) {
+                    Text(stringResource(R.string.about_changelog), maxLines = 1)
                 }
             }
 
@@ -209,20 +209,24 @@ private fun LanguageSelector() {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(6.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            options.forEach { (lang, labelRes) ->
-                FilterChip(
-                    selected = current == lang,
-                    onClick = {
-                        if (current != lang) {
-                            current = lang
-                            LocaleManager.setLanguage(ctx, lang)
-                            // 重建 Activity 讓新語系立即套用
-                            ctx.findActivity()?.recreate()
-                        }
-                    },
-                    label = { Text(stringResource(labelRes)) },
-                )
+        androidx.compose.runtime.CompositionLocalProvider(
+            androidx.compose.material3.LocalMinimumInteractiveComponentSize provides androidx.compose.ui.unit.Dp.Unspecified,
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                options.forEach { (lang, labelRes) ->
+                    FilterChip(
+                        selected = current == lang,
+                        onClick = {
+                            if (current != lang) {
+                                current = lang
+                                LocaleManager.setLanguage(ctx, lang)
+                                // 重建 Activity 讓新語系立即套用
+                                ctx.findActivity()?.recreate()
+                            }
+                        },
+                        label = { Text(stringResource(labelRes)) },
+                    )
+                }
             }
         }
     }

@@ -61,11 +61,11 @@
     <string name="cd_close">Close</string>
     <string name="cd_fly_to_current_location">Fly to current location</string>
     <string name="toast_location_permission_denied">Location permission denied</string>
-    <string name="tower_target_upper">Tower top</string>
-    <string name="tower_target_lower">Tower base</string>
+    <string name="tower_target_upper">Top</string>
+    <string name="tower_target_lower">Base</string>
 
     <!-- Map page -->
-    <string name="map_pick_date">Pick date</string>
+    <string name="map_pick_date">Date</string>
     <string name="cd_step_prev_continuous">Play backward</string>
     <string name="cd_step_prev_day">Previous day</string>
     <string name="cd_step_next_day">Next day</string>
@@ -88,7 +88,7 @@
     <string name="coords_lat_lon">%1$s°N, %2$s°E</string>
 
     <!-- Verdict levels -->
-    <string name="verdict_top">Prime shooting day</string>
+    <string name="verdict_top">Prime day</string>
     <string name="verdict_good">Good</string>
     <string name="verdict_medium">Fair</string>
     <string name="verdict_fair">So-so</string>
@@ -107,7 +107,7 @@
     <string name="focal_advice_ok">Composition looks balanced</string>
 
     <!-- Focal simulator page -->
-    <string name="focal_title">Focal-length composition</string>
+    <string name="focal_title">Focal Simulator</string>
     <string name="focal_focal_length">Focal length: %1$d mm</string>
     <string name="focal_time">Time: %1$s</string>
     <string name="focal_sunset_label">Sunset %1$s</string>
@@ -118,7 +118,7 @@
     <string name="bridge_label_bali">Bali</string>
     <string name="bridge_label_tamsui">Tamsui</string>
     <string name="gps_hotspot_name">📍 Current location</string>
-    <string name="gps_hotspot_enable">📍 Current location (tap to enable)</string>
+    <string name="gps_hotspot_enable">📍 Enable GPS location</string>
 
     <!-- Hotspot list page -->
     <string name="cd_import">Import</string>
@@ -127,9 +127,9 @@
     <string name="cd_navigate">Navigate in Google Maps</string>
     <string name="toast_export_done">Export complete</string>
     <string name="date_today">Today</string>
-    <string name="date_tomorrow">Tomorrow</string>
-    <string name="date_day_after">Day after</string>
-    <string name="date_weekend">Weekend</string>
+    <string name="date_tomorrow">Tmrw</string>
+    <string name="date_day_after">+2d</string>
+    <string name="date_weekend">Wknd</string>
     <string name="header_today">Today</string>
     <string name="header_tomorrow">Tomorrow</string>
     <string name="header_day_after">In 2 days</string>
@@ -161,7 +161,7 @@
     <string name="detail_alignment">Alignment</string>
 
     <!-- Golden calendar page -->
-    <string name="calendar_title">365-day golden calendar</string>
+    <string name="calendar_title">365-Day Golden Calendar</string>
     <string name="calendar_subtitle">Days in the coming year when the sunset bearing nearly aligns with the tower</string>
     <string name="calendar_none_found">No aligned days within ±%1$s° in the coming year; try widening to ±5°.</string>
     <string name="calendar_found_count">Found %1$d opportunities</string>
@@ -192,8 +192,8 @@
     <string name="ar_turn_right">Turn right %1$s°</string>
     <string name="ar_turn_left">Turn left %1$s°</string>
     <string name="ar_facing">Facing the right way</string>
-    <string name="ar_sunset_azimuth_hint">(sunset bearing %1$s°)</string>
-    <string name="ar_find_sun_trail">%1$s %2$s to find the sun trail</string>
+    <string name="ar_sunset_azimuth_hint">(%1$s°)</string>
+    <string name="ar_find_sun_trail">%1$s %2$s · sun trail</string>
     <string name="ar_almost_aligned">Almost perfectly aligned (%1$s°)</string>
     <string name="ar_near_golden">Near golden (%1$s°)</string>
     <string name="ar_sun_off_minor">Sun off by %1$s°</string>
@@ -243,7 +243,7 @@
 
     <!-- Language -->
     <string name="settings_language">Language</string>
-    <string name="language_system">System default</string>
+    <string name="language_system">System</string>
     <string name="language_chinese">中文</string>
     <string name="language_english">English</string>
 
@@ -251,7 +251,7 @@
     <string name="about_title">About</string>
     <string name="about_version_label">Version %s</string>
     <string name="about_description">Danjiang SunSeeker predicts the best time and location to photograph the sunset through Danjiang Bridge\'s main tower, combining astronomical calculations, GIS data, and AR guidance for golden-hour photography.</string>
-    <string name="about_open_source_licenses">Open Source Licenses</string>
+    <string name="about_open_source_licenses">Licenses</string>
     <string name="about_changelog">Changelog</string>
     <string name="about_copyright">© 2024–2026 Freestyle Labs</string>
     <string name="navigate_back">Back</string>
@@ -336,12 +336,12 @@
 
     <!-- AR: moon -->
     <string name="ar_hud_moon">Moon: az %1$s° · alt %2$s°</string>
-    <string name="ar_moon_azimuth_hint">(moon bearing %1$s°)</string>
-    <string name="ar_find_moon_trail">%1$s %2$s to find the moon trail</string>
+    <string name="ar_moon_azimuth_hint">(🌙 %1$s°)</string>
+    <string name="ar_find_moon_trail">%1$s %2$s · moon trail</string>
 
     <!-- Calendar: sun / moon mode -->
-    <string name="calendar_mode_sun">Sun days</string>
-    <string name="calendar_mode_moon">Moon days</string>
+    <string name="calendar_mode_sun">Sun</string>
+    <string name="calendar_mode_moon">Moon</string>
     <string name="calendar_moon_subtitle">Days in the next year when the moonset azimuth nearly aligns with the tower</string>
     <string name="calendar_moon_row_detail">%1$s %2$s · offset %3$s° · %4$s</string>
 </resources>
