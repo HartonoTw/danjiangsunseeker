@@ -8,7 +8,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.view.WindowCompat
 import studio.freestyle.labs.danjiangsunseeker.data.notifications.NotificationHelper
 import studio.freestyle.labs.danjiangsunseeker.data.settings.LocaleManager
 import studio.freestyle.labs.danjiangsunseeker.presentation.app.DanjiangApp as DanjiangAppRoot

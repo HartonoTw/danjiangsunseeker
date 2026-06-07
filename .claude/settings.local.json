@@ -47,7 +47,9 @@
       "PowerShell($out = .\\\\gradlew.bat :app:processDebugResources --offline --console=plain 2>&1 | Out-String; Write-Output \"EXIT=$LASTEXITCODE\"; \\($out -split \"`n\" | Where-Object { $_ -match \"error|Error|BUILD |FAILED\" } | Select-Object -Last 20\\) -join \"`n\")",
       "Bash(curl -s --max-time 30 https://repo1.maven.org/maven2/org/maplibre/gl/android-sdk/maven-metadata.xml)",
       "PowerShell($out = .\\\\gradlew.bat :app:assembleDebug --console=plain 2>&1 | Out-String; Write-Output \"EXIT=$LASTEXITCODE\"; \\($out -split \"`n\" | Where-Object { $_ -match \"error:|e: |FAILED|BUILD |Could not|Unresolved|download\" } | Select-Object -Last 40\\) -join \"`n\")",
-      "PowerShell($out = .\\\\gradlew.bat :app:processDebugResources --offline --console=plain 2>&1 | Out-String; Write-Output \"EXIT=$LASTEXITCODE\"; \\($out -split \"`n\" | Where-Object { $_ -match \"error|Error|BUILD |FAILED\" } | Select-Object -Last 15\\) -join \"`n\")"
+      "PowerShell($out = .\\\\gradlew.bat :app:processDebugResources --offline --console=plain 2>&1 | Out-String; Write-Output \"EXIT=$LASTEXITCODE\"; \\($out -split \"`n\" | Where-Object { $_ -match \"error|Error|BUILD |FAILED\" } | Select-Object -Last 15\\) -join \"`n\")",
+      "Bash(xargs grep -l \"enableEdgeToEdge\\\\|EdgeToEdge\\\\|WindowInsets\\\\|systemBarsPadding\\\\|navigationBarsPadding\")",
+      "PowerShell($out = .\\\\gradlew.bat :app:compileDebugKotlin --offline --console=plain 2>&1 | Out-String; Write-Output \"EXIT=$LASTEXITCODE\"; \\($out -split \"`n\" | Where-Object { $_ -match \"error:|e: |BUILD |FAILED\" } | Select-Object -Last 10\\) -join \"`n\")"
     ]
   }
 }
