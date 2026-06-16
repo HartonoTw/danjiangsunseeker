@@ -122,7 +122,7 @@ class FocalSimulatorViewModel @Inject constructor(
             }
             .launchIn(viewModelScope)
 
-        premiumGate.isPremium
+        premiumGate.isPremium(studio.freestyle.labs.danjiangsunseeker.domain.premium.PremiumPage.SIMULATOR)
             .onEach { unlocked ->
                 // 鎖定時強制回到太陽，避免殘留在月亮模式；解鎖時若有跳轉帶入的天體選擇，套用一次。
                 val body = when {

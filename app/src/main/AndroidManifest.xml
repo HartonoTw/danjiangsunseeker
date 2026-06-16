@@ -10,6 +10,9 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.READ_CALENDAR" />
     <uses-permission android:name="android.permission.WRITE_CALENDAR" />
+    <!-- Google Play 應用程式內購買（升級專業版）。改用 Play Billing Library 後本權限亦會自動 merge；
+         此處先行宣告以利付費功能規劃。 -->
+    <uses-permission android:name="com.android.vending.BILLING" />
 
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.camera.ar" android:required="false" />
@@ -29,16 +32,44 @@
         android:localeConfig="@xml/locales_config"
         tools:targetApi="33">
 
+        <!-- 真正的 Activity 不再直接掛 LAUNCHER；改由兩個 activity-alias 提供桌面圖示，
+             付費後在執行期切換 alias 以更換成「尊榮版」圖示。 -->
         <activity
             android:name=".MainActivity"
-            android:exported="true"
+            android:exported="false"
             android:label="@string/app_name"
-            android:theme="@style/Theme.DanjiangSunSeeker">
+            android:theme="@style/Theme.DanjiangSunSeeker" />
+
+        <!-- 預設（免費版）桌面圖示，預設啟用。 -->
+        <activity-alias
+            android:name=".MainActivityDefault"
+            android:targetActivity=".MainActivity"
+            android:exported="true"
+            android:enabled="true"
+            android:icon="@mipmap/ic_launcher"
+            android:roundIcon="@mipmap/ic_launcher_round"
+            android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
+        </activity-alias>
+
+        <!-- Pro 桌面入口，預設停用；付費後由 ProIconManager 啟用、並停用預設 alias。
+             圖示與預設同底色，僅多疊「PRO」徽章；App 名稱（label）不變。 -->
+        <activity-alias
+            android:name=".MainActivityPro"
+            android:targetActivity=".MainActivity"
+            android:exported="true"
+            android:enabled="false"
+            android:icon="@mipmap/ic_launcher_pro"
+            android:roundIcon="@mipmap/ic_launcher_pro_round"
+            android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
 
         <!-- WorkManager 採用 on-demand 初始化 (DanjiangApp 實作 Configuration.Provider)，
              需移除 androidx.startup 的預設 WorkManagerInitializer，否則會重複初始化。 -->
@@ -60,5 +91,10 @@
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="${googleMapsApiKey}" />
+
+        <!-- AdMob App ID。目前為 Google 官方「測試」App ID；上架前須換成正式 App ID。 -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3940256099942544~3347511713" />
     </application>
 </manifest>

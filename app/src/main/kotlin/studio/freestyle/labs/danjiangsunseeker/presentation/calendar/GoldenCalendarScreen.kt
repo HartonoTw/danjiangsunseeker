@@ -34,6 +34,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -47,7 +50,9 @@ import studio.freestyle.labs.danjiangsunseeker.domain.model.TideKind
 import studio.freestyle.labs.danjiangsunseeker.domain.model.TowerTarget
 import studio.freestyle.labs.danjiangsunseeker.R
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.GoldenDate
+import studio.freestyle.labs.danjiangsunseeker.presentation.common.MoonModeChip
 import studio.freestyle.labs.danjiangsunseeker.presentation.common.MoonPhaseIcon
+import studio.freestyle.labs.danjiangsunseeker.presentation.common.PremiumUnlockDialogHost
 import studio.freestyle.labs.danjiangsunseeker.presentation.common.TowerTargetSelector
 import studio.freestyle.labs.danjiangsunseeker.presentation.common.towerTargetLabel
 import java.time.LocalDate
@@ -62,6 +67,12 @@ fun GoldenCalendarScreen(
 ) {
     val state by vm.state.collectAsState()
     val ctx = LocalContext.current
+    var showUnlockDialog by remember { mutableStateOf(false) }
+    PremiumUnlockDialogHost(
+        visible = showUnlockDialog,
+        page = studio.freestyle.labs.danjiangsunseeker.domain.premium.PremiumPage.CALENDAR,
+        onDismiss = { showUnlockDialog = false },
+    )
 
     Column(
         modifier = Modifier
@@ -100,7 +111,7 @@ fun GoldenCalendarScreen(
         androidx.compose.runtime.CompositionLocalProvider(
             androidx.compose.material3.LocalMinimumInteractiveComponentSize provides androidx.compose.ui.unit.Dp.Unspecified,
         ) {
-        // 塔頂/塔基 與 夕陽日/月亮日 同一列（月亮模式為付費功能；鎖定時不顯示切換）
+        // 塔頂/塔基 與 夕陽日/月亮日 同一列（月亮日為付費功能；鎖定時月亮 chip 顯示小鎖頭並跳出解鎖視窗）
         FlowRow(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -112,20 +123,23 @@ fun GoldenCalendarScreen(
                 onSelect = vm::setTowerTarget,
                 modifier = Modifier.align(Alignment.CenterVertically),
             )
-            if (state.premiumUnlocked) {
-                FilterChip(
-                    selected = state.mode == CalendarMode.SUN,
-                    onClick = { vm.setMode(CalendarMode.SUN) },
-                    label = { Text(stringResource(R.string.calendar_mode_sun)) },
-                    modifier = Modifier.align(Alignment.CenterVertically),
-                )
-                FilterChip(
-                    selected = state.mode == CalendarMode.MOON,
-                    onClick = { vm.setMode(CalendarMode.MOON) },
-                    label = { Text(stringResource(R.string.calendar_mode_moon)) },
-                    modifier = Modifier.align(Alignment.CenterVertically),
-                )
-            }
+            FilterChip(
+                selected = state.mode == CalendarMode.SUN,
+                onClick = { vm.setMode(CalendarMode.SUN) },
+                label = { Text(stringResource(R.string.calendar_mode_sun)) },
+                modifier = Modifier.align(Alignment.CenterVertically),
+            )
+            // 月亮日（付費功能）：鎖定時顯示小鎖頭，點擊跳出解鎖視窗
+            MoonModeChip(
+                selected = state.mode == CalendarMode.MOON,
+                locked = !state.premiumUnlocked,
+                onClick = {
+                    if (state.premiumUnlocked) vm.setMode(CalendarMode.MOON)
+                    else showUnlockDialog = true
+                },
+                labelRes = R.string.calendar_mode_moon,
+                modifier = Modifier.align(Alignment.CenterVertically),
+            )
         }
         Spacer(Modifier.height(4.dp))
 

@@ -127,6 +127,11 @@ dependencies {
     // Location
     implementation(libs.play.services.location)
 
+    // Ads (AdMob)
+    implementation(libs.play.services.ads)
+    // play-services-ads 會把 listenablefuture 改為空 stub；補回完整 Guava 供 CameraX 使用
+    implementation(libs.guava)
+
     // Tests
     testImplementation(libs.junit)
     testImplementation(libs.truth)

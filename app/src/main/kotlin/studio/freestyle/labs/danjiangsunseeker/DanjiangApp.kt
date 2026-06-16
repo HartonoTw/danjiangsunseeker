@@ -7,6 +7,7 @@ import androidx.work.Configuration
 import studio.freestyle.labs.danjiangsunseeker.data.notifications.DailyScoreWorker
 import studio.freestyle.labs.danjiangsunseeker.data.notifications.NotificationHelper
 import studio.freestyle.labs.danjiangsunseeker.data.settings.LocaleManager
+import com.google.android.gms.ads.MobileAds
 import dagger.hilt.android.HiltAndroidApp
 import org.maplibre.android.MapLibre
 import org.maplibre.android.WellKnownTileServer
@@ -35,5 +36,8 @@ class DanjiangApp : Application(), Configuration.Provider {
         // 通知頻道 + 每日掃描排程
         NotificationHelper.ensureChannel(this)
         DailyScoreWorker.schedule(this)
+
+        // AdMob：背景初始化 (底部橫幅廣告用)
+        MobileAds.initialize(this) {}
     }
 }

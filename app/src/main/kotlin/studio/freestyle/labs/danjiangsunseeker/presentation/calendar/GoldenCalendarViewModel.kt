@@ -58,7 +58,7 @@ class GoldenCalendarViewModel @Inject constructor(
                 fullScan(_state.value.toleranceDegrees)
             }
             .launchIn(viewModelScope)
-        premiumGate.isPremium
+        premiumGate.isPremium(studio.freestyle.labs.danjiangsunseeker.domain.premium.PremiumPage.CALENDAR)
             .onEach { unlocked ->
                 if (unlocked != _state.value.premiumUnlocked) {
                     // 鎖定時強制回到太陽模式

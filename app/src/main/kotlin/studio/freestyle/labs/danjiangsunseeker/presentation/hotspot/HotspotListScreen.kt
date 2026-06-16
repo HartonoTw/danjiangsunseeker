@@ -66,7 +66,9 @@ import studio.freestyle.labs.danjiangsunseeker.domain.model.BridgeTower
 import studio.freestyle.labs.danjiangsunseeker.domain.model.SunTrailPoint
 import studio.freestyle.labs.danjiangsunseeker.domain.model.TideKind
 import studio.freestyle.labs.danjiangsunseeker.domain.model.TowerTarget
+import studio.freestyle.labs.danjiangsunseeker.presentation.common.MoonModeChip
 import studio.freestyle.labs.danjiangsunseeker.presentation.common.MoonPhaseIcon
+import studio.freestyle.labs.danjiangsunseeker.presentation.common.PremiumUnlockDialogHost
 import studio.freestyle.labs.danjiangsunseeker.presentation.common.lunarPhaseLabel
 import studio.freestyle.labs.danjiangsunseeker.presentation.map.ComposeMapLibre
 import androidx.compose.ui.geometry.Offset
@@ -120,6 +122,12 @@ fun HotspotListScreen(
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     var showDatePicker by remember { mutableStateOf(false) }
+    var showUnlockDialog by remember { mutableStateOf(false) }
+    PremiumUnlockDialogHost(
+        visible = showUnlockDialog,
+        page = studio.freestyle.labs.danjiangsunseeker.domain.premium.PremiumPage.HOTSPOTS,
+        onDismiss = { showUnlockDialog = false },
+    )
     val today = remember { LocalDate.now(ZoneId.of("Asia/Taipei")) }
 
     val exportLauncher = rememberLauncherForActivityResult(
@@ -193,6 +201,7 @@ fun HotspotListScreen(
                     premiumUnlocked = state.premiumUnlocked,
                     body = state.body,
                     onSelectBody = vm::setBody,
+                    onMoonLockedClick = { showUnlockDialog = true },
                 )
             }
             Spacer(Modifier.height(4.dp))
@@ -389,6 +398,7 @@ private fun DateChipRow(
     premiumUnlocked: Boolean,
     body: HotspotBody,
     onSelectBody: (HotspotBody) -> Unit,
+    onMoonLockedClick: () -> Unit,
 ) {
     val quickDates = listOf(
         stringResource(R.string.date_today) to today,
@@ -439,19 +449,22 @@ private fun DateChipRow(
                 selected = selectedTowerTarget,
                 onSelect = onSelectTowerTarget,
             )
-            // 太陽 / 月亮切換（付費功能；鎖定時不顯示）— 月亮模式改以「月亮升起穿塔」為對齊基準。
-            if (premiumUnlocked) {
-                FilterChip(
-                    selected = body == HotspotBody.SUN,
-                    onClick = { onSelectBody(HotspotBody.SUN) },
-                    label = { Text(stringResource(R.string.focal_body_sun)) },
-                )
-                FilterChip(
-                    selected = body == HotspotBody.MOON,
-                    onClick = { onSelectBody(HotspotBody.MOON) },
-                    label = { Text(stringResource(R.string.focal_body_moon)) },
-                )
-            }
+            // 太陽 / 月亮切換 — 月亮為付費功能（鎖定時顯示小鎖頭並跳出解鎖視窗）；
+            //   月亮模式以「月亮升起穿塔」為對齊基準。
+            FilterChip(
+                selected = body == HotspotBody.SUN,
+                onClick = { onSelectBody(HotspotBody.SUN) },
+                label = { Text(stringResource(R.string.focal_body_sun)) },
+            )
+            MoonModeChip(
+                selected = body == HotspotBody.MOON,
+                locked = !premiumUnlocked,
+                onClick = {
+                    if (premiumUnlocked) onSelectBody(HotspotBody.MOON)
+                    else onMoonLockedClick()
+                },
+                labelRes = R.string.focal_body_moon,
+            )
         }
     }
 }

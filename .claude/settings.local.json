@@ -49,7 +49,13 @@
       "PowerShell($out = .\\\\gradlew.bat :app:assembleDebug --console=plain 2>&1 | Out-String; Write-Output \"EXIT=$LASTEXITCODE\"; \\($out -split \"`n\" | Where-Object { $_ -match \"error:|e: |FAILED|BUILD |Could not|Unresolved|download\" } | Select-Object -Last 40\\) -join \"`n\")",
       "PowerShell($out = .\\\\gradlew.bat :app:processDebugResources --offline --console=plain 2>&1 | Out-String; Write-Output \"EXIT=$LASTEXITCODE\"; \\($out -split \"`n\" | Where-Object { $_ -match \"error|Error|BUILD |FAILED\" } | Select-Object -Last 15\\) -join \"`n\")",
       "Bash(xargs grep -l \"enableEdgeToEdge\\\\|EdgeToEdge\\\\|WindowInsets\\\\|systemBarsPadding\\\\|navigationBarsPadding\")",
-      "PowerShell($out = .\\\\gradlew.bat :app:compileDebugKotlin --offline --console=plain 2>&1 | Out-String; Write-Output \"EXIT=$LASTEXITCODE\"; \\($out -split \"`n\" | Where-Object { $_ -match \"error:|e: |BUILD |FAILED\" } | Select-Object -Last 10\\) -join \"`n\")"
+      "PowerShell($out = .\\\\gradlew.bat :app:compileDebugKotlin --offline --console=plain 2>&1 | Out-String; Write-Output \"EXIT=$LASTEXITCODE\"; \\($out -split \"`n\" | Where-Object { $_ -match \"error:|e: |BUILD |FAILED\" } | Select-Object -Last 10\\) -join \"`n\")",
+      "Bash(./gradlew :app:compileDebugKotlin :app:processDebugManifest --console=plain)",
+      "Bash(./gradlew :app:dependencies --configuration debugCompileClasspath --console=plain)",
+      "Bash(./gradlew :app:compileDebugKotlin --console=plain)",
+      "Bash(./gradlew :app:compileDebugKotlin :app:testDebugUnitTest --tests \"*PremiumGateTest\" --console=plain)",
+      "Bash(./gradlew :app:compileDebugKotlin :app:processDebugResources --console=plain)",
+      "Bash(./gradlew :app:processDebugResources :app:processDebugManifest --console=plain)"
     ]
   }
 }

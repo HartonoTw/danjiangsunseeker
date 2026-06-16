@@ -59,7 +59,9 @@ import studio.freestyle.labs.danjiangsunseeker.domain.model.BridgeTower
 import studio.freestyle.labs.danjiangsunseeker.domain.model.Hotspot
 import studio.freestyle.labs.danjiangsunseeker.domain.model.TideKind
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.SensorSpec
+import studio.freestyle.labs.danjiangsunseeker.presentation.common.MoonModeChip
 import studio.freestyle.labs.danjiangsunseeker.presentation.common.MoonPhaseIcon
+import studio.freestyle.labs.danjiangsunseeker.presentation.common.PremiumUnlockDialogHost
 import studio.freestyle.labs.danjiangsunseeker.presentation.common.TowerTargetSelector
 import studio.freestyle.labs.danjiangsunseeker.presentation.common.lunarPhaseLabel
 import java.time.Instant
@@ -72,6 +74,12 @@ fun FocalSimulatorScreen(vm: FocalSimulatorViewModel = hiltViewModel()) {
     val state by vm.state.collectAsState()
     val ctx = androidx.compose.ui.platform.LocalContext.current
     var showDatePicker by remember { mutableStateOf(false) }
+    var showUnlockDialog by remember { mutableStateOf(false) }
+    PremiumUnlockDialogHost(
+        visible = showUnlockDialog,
+        page = studio.freestyle.labs.danjiangsunseeker.domain.premium.PremiumPage.SIMULATOR,
+        onDismiss = { showUnlockDialog = false },
+    )
 
     // 位置權限：拿到後立刻重試 loadGps()，讓「目前位置」選項可用
     val locationPermLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
@@ -125,20 +133,22 @@ fun FocalSimulatorScreen(vm: FocalSimulatorViewModel = hiltViewModel()) {
             }
             // 感光元件（緊湊 chip；放在「太陽/月亮」左邊）
             SensorPicker(current = state.sensor, onPick = vm::setSensor)
-            // 太陽 / 月亮切換（付費功能；鎖定時不顯示）
-            if (state.premiumUnlocked) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(
-                        selected = state.body == CelestialBody.SUN,
-                        onClick = { vm.setBody(CelestialBody.SUN) },
-                        label = { Text(stringResource(R.string.focal_body_sun)) },
-                    )
-                    FilterChip(
-                        selected = state.body == CelestialBody.MOON,
-                        onClick = { vm.setBody(CelestialBody.MOON) },
-                        label = { Text(stringResource(R.string.focal_body_moon)) },
-                    )
-                }
+            // 太陽 / 月亮切換；月亮為付費功能，鎖定時顯示小鎖頭並跳出解鎖視窗
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(
+                    selected = state.body == CelestialBody.SUN,
+                    onClick = { vm.setBody(CelestialBody.SUN) },
+                    label = { Text(stringResource(R.string.focal_body_sun)) },
+                )
+                MoonModeChip(
+                    selected = state.body == CelestialBody.MOON,
+                    locked = !state.premiumUnlocked,
+                    onClick = {
+                        if (state.premiumUnlocked) vm.setBody(CelestialBody.MOON)
+                        else showUnlockDialog = true
+                    },
+                    labelRes = R.string.focal_body_moon,
+                )
             }
         }
         }

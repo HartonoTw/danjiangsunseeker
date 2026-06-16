@@ -50,7 +50,8 @@ class ARViewModel @Inject constructor(
 
     init {
         // 月相/潮汐付費解鎖狀態（決定是否疊加月亮軌跡）。
-        premiumGate.isPremium
+        // AR 無自己的解鎖入口：只要有任一頁解鎖（或已付費）即視為解鎖。
+        premiumGate.isAnyUnlocked
             .onEach {
                 premiumUnlockedFlag = it
                 _state.value = _state.value.copy(premiumUnlocked = it)

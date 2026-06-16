@@ -297,6 +297,17 @@
     <string name="premium_unlock_progress">Tap %1$d more to unlock premium</string>
     <string name="premium_status_unlocked">Premium: unlocked</string>
     <string name="premium_status_locked">Premium: locked</string>
+    <!-- Premium unlock dialog -->
+    <string name="premium_dialog_title">🌕 Unlock Moon &amp; Tide</string>
+    <string name="premium_dialog_body">Pinpoint moonrise/moonset bearings and nail the killer shots — "full moon through the tower" and "supermoon with the cable-stayed bridge"!</string>
+    <string name="premium_dialog_upgrade">👑 Upgrade to Pro</string>
+    <string name="premium_dialog_upgrade_desc">NT$150 / Unlock everything forever, completely ad-free</string>
+    <string name="premium_dialog_watch_ad">📺 Watch ad to unlock free</string>
+    <string name="premium_dialog_watch_ad_desc">Watch a 30s video to try Moon &amp; Tide features free for 2 hours</string>
+    <string name="premium_dialog_dismiss">Not now</string>
+    <string name="premium_unlocked_pro_toast">Upgraded to Pro — thank you!</string>
+    <string name="premium_unlocked_ad_toast">Moon &amp; Tide unlocked free on this page for 2 hours</string>
+    <string name="premium_ad_unavailable">Ad unavailable right now, please try again later</string>
 
     <!-- Moon phases -->
     <string name="moon_phase_new">New moon</string>

@@ -1,10 +1,17 @@
 package studio.freestyle.labs.danjiangsunseeker.presentation.app
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarMonth
@@ -21,11 +28,16 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -40,6 +52,10 @@ import studio.freestyle.labs.danjiangsunseeker.presentation.about.ChangelogScree
 import studio.freestyle.labs.danjiangsunseeker.presentation.about.LicenseDetailScreen
 import studio.freestyle.labs.danjiangsunseeker.presentation.ar.ARScreen
 import studio.freestyle.labs.danjiangsunseeker.presentation.calendar.GoldenCalendarScreen
+import studio.freestyle.labs.danjiangsunseeker.presentation.common.BannerAd
+import studio.freestyle.labs.danjiangsunseeker.presentation.common.PremiumViewModel
+import studio.freestyle.labs.danjiangsunseeker.presentation.common.ProBadge
+import studio.freestyle.labs.danjiangsunseeker.presentation.common.ProIconManager
 import studio.freestyle.labs.danjiangsunseeker.presentation.hotspot.HotspotDetailScreen
 import studio.freestyle.labs.danjiangsunseeker.presentation.hotspot.HotspotListScreen
 import studio.freestyle.labs.danjiangsunseeker.presentation.map.MapScreen
@@ -87,9 +103,26 @@ fun DanjiangApp() {
         currentRoute == "changelog" ||
         currentRoute == "license_detail"
 
+    // 底部橫幅廣告：除「AR」與「關於」(含子頁) 外的分頁都顯示；已付費(專業版)則完全移除。
+    //   注意：看廣告免費解鎖屬暫時解鎖，不移除廣告 — 只有 isPaid 才移除。
+    val premiumVm: PremiumViewModel = hiltViewModel()
+    val isPaid by premiumVm.isPaid.collectAsState()
+
+    // 付費（專業版）後切換桌面圖示為「尊榮版」；取消付費則切回預設。
+    val context = LocalContext.current
+    LaunchedEffect(isPaid) { ProIconManager.apply(context, isPaid) }
+    val isArScreen = currentRoute == TopLevelDestination.Ar.route
+    val showBannerAd = !isArScreen && !isAboutSection && !isPaid
+
     Scaffold(
         containerColor = androidx.compose.material3.MaterialTheme.colorScheme.background,
         bottomBar = {
+          Column(modifier = Modifier.fillMaxWidth()) {
+            if (showBannerAd) {
+                BannerAd(
+                    modifier = Modifier.background(androidx.compose.material3.MaterialTheme.colorScheme.surface),
+                )
+            }
             // 壓低功能列：把內容高度從預設 80dp 降到 BAR_CONTENT_HEIGHT，
             //   另外加上系統導覽列 inset，避免內容被手勢/三鍵導覽列遮住。
             val navBarInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
@@ -148,8 +181,10 @@ fun DanjiangApp() {
                     ),
                 )
             }
+          }
         },
     ) { padding ->
+      Box(modifier = Modifier.fillMaxSize()) {
         NavHost(
             navController = navController,
             startDestination = TopLevelDestination.Hotspots.route,
@@ -206,5 +241,16 @@ fun DanjiangApp() {
                 ChangelogScreen(onBack = { navController.popBackStack() })
             }
         }
+
+        // 付費後於各頁右上角顯示 PRO 徽章（避開系統狀態列）；AR 為全螢幕相機，不顯示。
+        if (isPaid && !isArScreen) {
+            ProBadge(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .windowInsetsPadding(WindowInsets.statusBars)
+                    .padding(top = 6.dp, end = 12.dp),
+            )
+        }
+      }
     }
 }

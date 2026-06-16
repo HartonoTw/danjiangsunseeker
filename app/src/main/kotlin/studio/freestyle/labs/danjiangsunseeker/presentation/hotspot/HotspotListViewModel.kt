@@ -77,7 +77,7 @@ class HotspotListViewModel @Inject constructor(
                 loadFor(_state.value.date)
             }
             .launchIn(viewModelScope)
-        premiumGate.isPremium
+        premiumGate.isPremium(studio.freestyle.labs.danjiangsunseeker.domain.premium.PremiumPage.HOTSPOTS)
             .onEach { unlocked ->
                 if (unlocked != _state.value.premiumUnlocked) {
                     // 鎖定時強制回到太陽模式，避免殘留在月亮模式

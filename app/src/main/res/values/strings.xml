@@ -297,6 +297,17 @@
     <string name="premium_unlock_progress">再點 %1$d 下解鎖進階功能</string>
     <string name="premium_status_unlocked">進階功能：已解鎖</string>
     <string name="premium_status_locked">進階功能：未解鎖</string>
+    <!-- Premium unlock dialog -->
+    <string name="premium_dialog_title">🌕 解鎖月相與潮汐功能</string>
+    <string name="premium_dialog_body">精準預測月出月落方位，捕捉「滿月穿塔」與「超級月亮配斜張橋」的絕殺大景！</string>
+    <string name="premium_dialog_upgrade">👑 升級專業版</string>
+    <string name="premium_dialog_upgrade_desc">NT$ 150 / 永久解鎖所有功能，徹底告別廣告</string>
+    <string name="premium_dialog_watch_ad">📺 看廣告免費解鎖</string>
+    <string name="premium_dialog_watch_ad_desc">觀看 30 秒影片，免費體驗月亮及潮汐相關功能 2 小時</string>
+    <string name="premium_dialog_dismiss">先不用</string>
+    <string name="premium_unlocked_pro_toast">已升級專業版，感謝支持！</string>
+    <string name="premium_unlocked_ad_toast">已免費解鎖本頁月相・潮汐功能 2 小時</string>
+    <string name="premium_ad_unavailable">廣告暫時無法載入，請稍後再試</string>
 
     <!-- Moon phases -->
     <string name="moon_phase_new">朔（新月）</string>

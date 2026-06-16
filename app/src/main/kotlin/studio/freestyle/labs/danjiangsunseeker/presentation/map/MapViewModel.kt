@@ -81,7 +81,8 @@ class MapViewModel @Inject constructor(
                 setDate(_state.value.selectedDate)
             }
             .launchIn(viewModelScope)
-        premiumGate.isPremium
+        // 地圖無自己的解鎖入口：任一頁解鎖（或已付費）即顯示月相/潮汐/月亮黃金帶。
+        premiumGate.isAnyUnlocked
             .onEach { unlocked ->
                 if (unlocked != _state.value.premiumUnlocked) {
                     _state.value = _state.value.copy(premiumUnlocked = unlocked)

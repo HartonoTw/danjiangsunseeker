@@ -10,24 +10,55 @@ import org.junit.Test
 import studio.freestyle.labs.danjiangsunseeker.data.settings.PremiumStore
 
 /**
- * PremiumGate 目前只是 PremiumStore.unlocked 的代理；驗證它如實反映解鎖狀態。
- * 日後接 Billing 時，這裡可加入「內部開關 OR 已購買」的合併邏輯測試。
+ * PremiumGate 整合「永久付費」與「每頁看廣告暫時解鎖」：
+ *  - isPremium(page) = 已付費 OR 該頁暫時解鎖未到期（每頁分開計算）
+ *  - isAnyUnlocked   = 已付費 OR 任一頁暫時解鎖未到期（供地圖 / AR）
+ *  - isPaid          = 已付費（決定是否移除底部廣告）
  */
 class PremiumGateTest {
 
-    @Test
-    fun `isPremium reflects unlocked store state`() = runTest {
-        val store: PremiumStore = mockk()
-        every { store.unlocked } returns flowOf(true)
-        val gate = PremiumGate(store)
-        assertThat(gate.isPremium.first()).isTrue()
+    private fun store(paid: Boolean, temp: Map<PremiumPage, Long>): PremiumStore = mockk {
+        every { this@mockk.paid } returns flowOf(paid)
+        every { tempUnlockUntil } returns flowOf(
+            PremiumPage.entries.associateWith { temp[it] ?: 0L },
+        )
     }
 
     @Test
-    fun `isPremium is false when store is locked`() = runTest {
-        val store: PremiumStore = mockk()
-        every { store.unlocked } returns flowOf(false)
-        val gate = PremiumGate(store)
-        assertThat(gate.isPremium.first()).isFalse()
+    fun `paid unlocks every page and removes ads`() = runTest {
+        val gate = PremiumGate(store(paid = true, temp = emptyMap()))
+        assertThat(gate.isPremium(PremiumPage.CALENDAR).first()).isTrue()
+        assertThat(gate.isAnyUnlocked.first()).isTrue()
+        assertThat(gate.isPaid.first()).isTrue()
+    }
+
+    @Test
+    fun `locked when nothing paid or unlocked`() = runTest {
+        val gate = PremiumGate(store(paid = false, temp = emptyMap()))
+        assertThat(gate.isPremium(PremiumPage.HOTSPOTS).first()).isFalse()
+        assertThat(gate.isAnyUnlocked.first()).isFalse()
+        assertThat(gate.isPaid.first()).isFalse()
+    }
+
+    @Test
+    fun `ad unlock is per-page and does not grant isPaid`() = runTest {
+        val future = System.currentTimeMillis() + 60_000L
+        val gate = PremiumGate(store(paid = false, temp = mapOf(PremiumPage.CALENDAR to future)))
+        // 解鎖的那頁可用
+        assertThat(gate.isPremium(PremiumPage.CALENDAR).first()).isTrue()
+        // 其他頁仍鎖定
+        assertThat(gate.isPremium(PremiumPage.HOTSPOTS).first()).isFalse()
+        // 任一頁解鎖 → 地圖/AR 視為解鎖
+        assertThat(gate.isAnyUnlocked.first()).isTrue()
+        // 但未移除廣告
+        assertThat(gate.isPaid.first()).isFalse()
+    }
+
+    @Test
+    fun `expired ad unlock does not grant access`() = runTest {
+        val past = System.currentTimeMillis() - 60_000L
+        val gate = PremiumGate(store(paid = false, temp = mapOf(PremiumPage.SIMULATOR to past)))
+        assertThat(gate.isPremium(PremiumPage.SIMULATOR).first()).isFalse()
+        assertThat(gate.isAnyUnlocked.first()).isFalse()
     }
 }

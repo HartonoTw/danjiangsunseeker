@@ -29,12 +29,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.SuggestionChipDefaults
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import android.widget.Toast
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,7 +40,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -60,10 +56,7 @@ fun AboutScreen(
     onBack: () -> Unit,
     onShowLicenses: () -> Unit,
     onShowChangelog: () -> Unit,
-    vm: AboutViewModel = hiltViewModel(),
 ) {
-    val ctx = LocalContext.current
-    val premiumUnlocked by vm.premiumUnlocked.collectAsState()
     Scaffold(
         topBar = {
             TopAppBar(
@@ -125,30 +118,6 @@ fun AboutScreen(
                     labelColor = MaterialTheme.colorScheme.onPrimaryContainer,
                 ),
             )
-
-            HorizontalDivider()
-
-            // ── 付費功能（月相・潮汐）開關 ────────────────────────────────
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(
-                    text = stringResource(R.string.premium_section),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Switch(
-                    checked = premiumUnlocked,
-                    onCheckedChange = { enabled ->
-                        vm.setUnlocked(enabled)
-                        if (enabled) {
-                            Toast.makeText(ctx, ctx.getString(R.string.premium_unlocked_toast), Toast.LENGTH_SHORT).show()
-                        }
-                    },
-                )
-            }
 
             HorizontalDivider()
 
