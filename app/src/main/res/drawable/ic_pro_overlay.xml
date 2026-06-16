@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 「PRO」徽章疊層：金色膠囊 + 深棕 PRO 字樣，置於圖示下半中央（落在 adaptive icon 安全區內）。 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 金色底牌 -->
+    <path
+        android:fillColor="#FFC107"
+        android:pathData="M32,62 L76,62 L76,78 L32,78 Z" />
+    <!-- 底牌描邊（深棕，增加對比） -->
+    <path
+        android:strokeColor="#4A340A"
+        android:strokeWidth="1"
+        android:fillColor="#00000000"
+        android:pathData="M32,62 L76,62 L76,78 L32,78 Z" />
+
+    <!-- P R O 字樣（以線條筆畫繪製） -->
+    <path
+        android:strokeColor="#4A340A"
+        android:strokeWidth="2.4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000"
+        android:pathData="M36,76 L36,64 L45,64 L45,70 L36,70
+                          M49,76 L49,64 L58,64 L58,70 L49,70 M53,70 L58,76
+                          M62,65 L72,65 L72,75 L62,75 Z" />
+</vector>
