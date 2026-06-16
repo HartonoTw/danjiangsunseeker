@@ -30,6 +30,7 @@ cameraX = "1.4.1"
 playServicesLocation = "21.3.0"
 playServicesAds = "23.6.0"
 guava = "33.3.1-android"
+billing = "7.1.1"
 
 junit = "4.13.2"
 androidxTestExt = "1.2.1"
@@ -111,6 +112,9 @@ play-services-ads = { group = "com.google.android.gms", name = "play-services-ad
 # Guava：play-services-ads 把 listenablefuture 強制成空 stub，須補回完整 Guava 提供
 # com.google.common.util.concurrent.ListenableFuture（CameraX 編譯需要）。
 guava = { group = "com.google.guava", name = "guava", version.ref = "guava" }
+
+# Billing：Google Play 應用程式內購買（升級專業版）。提供 Play 所需的 Billing Library 版本資訊。
+billing-ktx = { group = "com.android.billingclient", name = "billing-ktx", version.ref = "billing" }
 
 # Tests
 junit = { group = "junit", name = "junit", version.ref = "junit" }

@@ -10,9 +10,8 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.READ_CALENDAR" />
     <uses-permission android:name="android.permission.WRITE_CALENDAR" />
-    <!-- Google Play 應用程式內購買（升級專業版）。改用 Play Billing Library 後本權限亦會自動 merge；
-         此處先行宣告以利付費功能規劃。 -->
-    <uses-permission android:name="com.android.vending.BILLING" />
+    <!-- com.android.vending.BILLING 由 Play Billing Library (billing-ktx) 自動 merge，
+         並帶入 Play 所需的 Library 版本；不可在此手動宣告，否則會被視為舊版 AIDL Billing。 -->
 
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.camera.ar" android:required="false" />

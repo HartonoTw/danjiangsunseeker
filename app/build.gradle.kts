@@ -15,8 +15,8 @@ android {
         applicationId = "studio.freestyle.labs.danjiangsunseeker"
         minSdk = 26
         targetSdk = 35
-        versionCode = 90
-        versionName = "0.90"
+        versionCode = 93
+        versionName = "0.93"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -131,6 +131,9 @@ dependencies {
     implementation(libs.play.services.ads)
     // play-services-ads 會把 listenablefuture 改為空 stub；補回完整 Guava 供 CameraX 使用
     implementation(libs.guava)
+
+    // Billing (Google Play 應用程式內購買)
+    implementation(libs.billing.ktx)
 
     // Tests
     testImplementation(libs.junit)

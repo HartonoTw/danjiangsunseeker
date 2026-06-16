@@ -55,7 +55,8 @@
       "Bash(./gradlew :app:compileDebugKotlin --console=plain)",
       "Bash(./gradlew :app:compileDebugKotlin :app:testDebugUnitTest --tests \"*PremiumGateTest\" --console=plain)",
       "Bash(./gradlew :app:compileDebugKotlin :app:processDebugResources --console=plain)",
-      "Bash(./gradlew :app:processDebugResources :app:processDebugManifest --console=plain)"
+      "Bash(./gradlew :app:processDebugResources :app:processDebugManifest --console=plain)",
+      "Bash(./gradlew :app:processDebugManifest --console=plain)"
     ]
   }
 }
