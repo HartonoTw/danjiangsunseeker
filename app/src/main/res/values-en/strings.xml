@@ -308,6 +308,7 @@
     <string name="premium_unlocked_pro_toast">Upgraded to Pro — thank you!</string>
     <string name="premium_unlocked_ad_toast">Moon &amp; Tide unlocked free on this page for 2 hours</string>
     <string name="premium_ad_unavailable">Ad unavailable right now, please try again later</string>
+    <string name="premium_billing_unavailable">Purchase service not ready yet, please try again later</string>
 
     <!-- Moon phases -->
     <string name="moon_phase_new">New moon</string>

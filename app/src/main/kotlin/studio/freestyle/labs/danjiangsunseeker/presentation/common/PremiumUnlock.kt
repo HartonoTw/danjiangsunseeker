@@ -103,8 +103,15 @@ fun PremiumUnlockDialogHost(
     PremiumUnlockDialog(
         onDismiss = onDismiss,
         onUpgrade = {
-            vm.upgradeToPro()
-            Toast.makeText(ctx, ctx.getString(R.string.premium_unlocked_pro_toast), Toast.LENGTH_SHORT).show()
+            val activity = ctx.findActivity()
+            if (activity == null) {
+                Toast.makeText(ctx, ctx.getString(R.string.premium_billing_unavailable), Toast.LENGTH_SHORT).show()
+            } else {
+                // 開啟 Google Play 付款；成功後由 BillingManager 寫入付費狀態，UI 隨之解鎖。
+                vm.upgradeToPro(activity) {
+                    Toast.makeText(ctx, ctx.getString(R.string.premium_billing_unavailable), Toast.LENGTH_SHORT).show()
+                }
+            }
             onDismiss()
         },
         onWatchAd = {

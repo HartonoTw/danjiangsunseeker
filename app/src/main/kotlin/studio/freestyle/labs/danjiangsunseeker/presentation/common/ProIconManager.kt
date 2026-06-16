@@ -3,6 +3,7 @@ package studio.freestyle.labs.danjiangsunseeker.presentation.common
 import android.content.ComponentName
 import android.content.Context
 import android.content.pm.PackageManager
+import studio.freestyle.labs.danjiangsunseeker.BuildConfig
 
 /**
  * 依付費狀態切換桌面（launcher）圖示：免費版 alias ↔ 尊榮版（Pro）alias。
@@ -18,12 +19,20 @@ object ProIconManager {
     private const val ALIAS_DEFAULT = "studio.freestyle.labs.danjiangsunseeker.MainActivityDefault"
     private const val ALIAS_PRO = "studio.freestyle.labs.danjiangsunseeker.MainActivityPro"
 
-    /** 套用桌面圖示：[pro] = true 顯示尊榮版圖示，否則顯示預設圖示。已是目標狀態則不動作。 */
+    /**
+     * 套用桌面圖示：[pro] = true 顯示尊榮版圖示，否則顯示預設圖示。已是目標狀態則不動作。
+     *
+     * Debug build 一律維持「預設」alias 啟用（[effectivePro] 強制 false）：
+     * 因為 Android Studio 以元件名 `…MainActivityDefault` 啟動 App，若該 alias 被停用會回報
+     * 「Activity class … does not exist」。如此 debug 永遠可由 IDE 啟動，且能自我修復先前被切走的狀態；
+     * 真正的圖示切換只在 release build 生效（一般使用者由桌面圖示啟動，不受影響）。
+     */
     fun apply(context: Context, pro: Boolean) {
+        val effectivePro = pro && !BuildConfig.DEBUG
         val pm = context.packageManager
         val pkg = context.packageName
-        val enableName = if (pro) ALIAS_PRO else ALIAS_DEFAULT
-        val disableName = if (pro) ALIAS_DEFAULT else ALIAS_PRO
+        val enableName = if (effectivePro) ALIAS_PRO else ALIAS_DEFAULT
+        val disableName = if (effectivePro) ALIAS_DEFAULT else ALIAS_PRO
 
         val enableComponent = ComponentName(pkg, enableName)
         // 目標 alias 已是「明確啟用」就略過，避免重複呼叫（每次切換可能讓 launcher 重整）。

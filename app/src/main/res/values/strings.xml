@@ -308,6 +308,7 @@
     <string name="premium_unlocked_pro_toast">已升級專業版，感謝支持！</string>
     <string name="premium_unlocked_ad_toast">已免費解鎖本頁月相・潮汐功能 2 小時</string>
     <string name="premium_ad_unavailable">廣告暫時無法載入，請稍後再試</string>
+    <string name="premium_billing_unavailable">購買服務尚未就緒，請稍後再試</string>
 
     <!-- Moon phases -->
     <string name="moon_phase_new">朔（新月）</string>
