@@ -233,6 +233,11 @@
     <string name="calendar_event_tower_bearing">主塔方位: %1$s°</string>
     <string name="calendar_event_offset">對齊偏差: %1$s°</string>
     <string name="calendar_event_footer">由 淡江夕照通 (Danjiang SunSeeker) 預測</string>
+    <!-- Calendar event (moon mode) -->
+    <string name="calendar_event_title_moon">淡江大橋月落穿塔 · %1$s</string>
+    <string name="calendar_event_moonset_time">月落時間: %1$s</string>
+    <string name="calendar_event_moonset_az">月落方位: %1$s°</string>
+    <string name="calendar_event_moon_lit">月相亮面: %1$s%%</string>
 
     <!-- Notifications -->
     <string name="notif_channel_name">頂級拍攝日提醒</string>
@@ -316,8 +321,8 @@
 
     <!-- Tide fields -->
     <string name="tide_section">潮汐</string>
-    <string name="tide_high">高潮</string>
-    <string name="tide_low">低潮</string>
+    <string name="tide_high">滿潮</string>
+    <string name="tide_low">乾潮</string>
     <string name="tide_rising">漲潮</string>
     <string name="tide_falling">退潮</string>
     <string name="tide_extreme_row">%1$s %2$s · %3$s m</string>

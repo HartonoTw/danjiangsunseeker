@@ -20,17 +20,26 @@ object AddToCalendarHelper {
      */
     fun buildIntent(context: Context, golden: GoldenDate): Intent {
         val tz = ZoneId.of("Asia/Taipei")
-        val sunset = golden.sunsetTime ?: golden.date.atTime(18, 30).atZone(tz)
-        val startMillis = sunset.minusMinutes(30).toInstant().toEpochMilli()
-        val endMillis = sunset.plusMinutes(15).toInstant().toEpochMilli()
+        // 月亮模式下 sunsetTime/sunsetAzimuthDegrees 實為「月落」時刻與方位
+        val eventTime = golden.sunsetTime ?: golden.date.atTime(18, 30).atZone(tz)
+        val startMillis = eventTime.minusMinutes(30).toInstant().toEpochMilli()
+        val endMillis = eventTime.plusMinutes(15).toInstant().toEpochMilli()
 
         val name = golden.hotspot.nameRes?.let { context.getString(it) }
             ?: golden.hotspot.customName.orEmpty()
-        val title = context.getString(R.string.calendar_event_title, name)
+        val title = context.getString(
+            if (golden.isMoon) R.string.calendar_event_title_moon else R.string.calendar_event_title,
+            name,
+        )
+        val timeRes = if (golden.isMoon) R.string.calendar_event_moonset_time else R.string.calendar_event_sunset_time
+        val azRes = if (golden.isMoon) R.string.calendar_event_moonset_az else R.string.calendar_event_sunset_az
         val description = buildString {
             appendLine(context.getString(R.string.calendar_event_observer, name))
-            appendLine(context.getString(R.string.calendar_event_sunset_time, sunset.toLocalTime().toString()))
-            appendLine(context.getString(R.string.calendar_event_sunset_az, "%.2f".format(golden.sunsetAzimuthDegrees)))
+            appendLine(context.getString(timeRes, eventTime.toLocalTime().toString()))
+            appendLine(context.getString(azRes, "%.2f".format(golden.sunsetAzimuthDegrees)))
+            if (golden.isMoon && golden.moonFractionLit != null) {
+                appendLine(context.getString(R.string.calendar_event_moon_lit, "%.0f".format(golden.moonFractionLit * 100)))
+            }
             appendLine(context.getString(R.string.calendar_event_tower_bearing, "%.2f".format(golden.towerBearingDegrees)))
             appendLine(context.getString(R.string.calendar_event_offset, "%+.2f".format(golden.alignmentOffsetDegrees)))
             append(context.getString(R.string.calendar_event_footer))

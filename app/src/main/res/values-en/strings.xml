@@ -233,6 +233,11 @@
     <string name="calendar_event_tower_bearing">Tower bearing: %1$s°</string>
     <string name="calendar_event_offset">Offset: %1$s°</string>
     <string name="calendar_event_footer">Predicted by Danjiang SunSeeker</string>
+    <!-- Calendar event (moon mode) -->
+    <string name="calendar_event_title_moon">Danjiang Bridge moon-through-tower · %1$s</string>
+    <string name="calendar_event_moonset_time">Moonset: %1$s</string>
+    <string name="calendar_event_moonset_az">Moonset bearing: %1$s°</string>
+    <string name="calendar_event_moon_lit">Moon illumination: %1$s%%</string>
 
     <!-- Notifications -->
     <string name="notif_channel_name">Prime shooting-day alerts</string>
@@ -316,8 +321,8 @@
 
     <!-- Tide fields -->
     <string name="tide_section">Tide</string>
-    <string name="tide_high">High</string>
-    <string name="tide_low">Low</string>
+    <string name="tide_high">High Tide</string>
+    <string name="tide_low">Low Tide</string>
     <string name="tide_rising">Rising</string>
     <string name="tide_falling">Falling</string>
     <string name="tide_extreme_row">%1$s %2$s · %3$s m</string>
