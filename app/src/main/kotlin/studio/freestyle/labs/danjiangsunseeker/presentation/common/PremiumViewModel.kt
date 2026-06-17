@@ -32,6 +32,14 @@ class PremiumViewModel @Inject constructor(
         billingManager.start()
     }
 
+    /**
+     * 重新對帳購買狀態。需在每次 App 回到前景時呼叫，才能反映在 App 外部發生的
+     * 退費 / 撤銷（已撤銷的購買會由 [BillingManager.queryPurchases] 收回專業版）。
+     */
+    fun refresh() {
+        billingManager.start()
+    }
+
     /** 是否永久專業版 — 底部橫幅廣告只在「已付費」時移除。 */
     val isPaid: StateFlow<Boolean> = gate.isPaid
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)

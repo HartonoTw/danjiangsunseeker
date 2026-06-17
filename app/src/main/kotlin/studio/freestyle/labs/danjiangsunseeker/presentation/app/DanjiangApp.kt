@@ -55,6 +55,7 @@ import studio.freestyle.labs.danjiangsunseeker.presentation.calendar.GoldenCalen
 import studio.freestyle.labs.danjiangsunseeker.presentation.common.BannerAd
 import studio.freestyle.labs.danjiangsunseeker.presentation.common.PremiumViewModel
 import studio.freestyle.labs.danjiangsunseeker.presentation.common.ProBadge
+import studio.freestyle.labs.danjiangsunseeker.presentation.common.ScreenLifecycleEffect
 import studio.freestyle.labs.danjiangsunseeker.presentation.common.ProIconManager
 import studio.freestyle.labs.danjiangsunseeker.presentation.hotspot.HotspotDetailScreen
 import studio.freestyle.labs.danjiangsunseeker.presentation.hotspot.HotspotListScreen
@@ -107,6 +108,9 @@ fun DanjiangApp() {
     //   注意：看廣告免費解鎖屬暫時解鎖，不移除廣告 — 只有 isPaid 才移除。
     val premiumVm: PremiumViewModel = hiltViewModel()
     val isPaid by premiumVm.isPaid.collectAsState()
+
+    // 每次 App 回到前景重新對帳購買：在 App 外部發生的退費 / 撤銷會於此收回專業版。
+    ScreenLifecycleEffect(onStart = { premiumVm.refresh() })
 
     // 付費（專業版）後切換桌面圖示為「尊榮版」；取消付費則切回預設。
     val context = LocalContext.current
