@@ -90,8 +90,10 @@ data class GoldenDate(
     val towerBearingDegrees: Double,
     val alignmentOffsetDegrees: Double,
     val towerTarget: TowerTarget = TowerTarget.UpperY,
-    /** true = 月亮對齊日（月落穿塔）；false = 夕陽對齊日。 */
+    /** true = 月亮對齊日（月亮穿塔）；false = 夕陽對齊日。 */
     val isMoon: Boolean = false,
+    /** 月亮對齊屬月出段(true)或月落段(false)；僅月亮模式有值。 */
+    val moonAscending: Boolean? = null,
     /** 月相亮面比例 (僅月亮模式有值，供日曆顯示月相圖案)。 */
     val moonFractionLit: Double? = null,
     /** 月相盈虧 (僅月亮模式)。 */

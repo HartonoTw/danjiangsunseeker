@@ -19,6 +19,7 @@ import studio.freestyle.labs.danjiangsunseeker.domain.model.TowerTarget
 import studio.freestyle.labs.danjiangsunseeker.domain.physics.Geodesy
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.SensorSpec
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.SimulateFocalLengthUseCase
+import studio.freestyle.labs.danjiangsunseeker.domain.usecase.TowerTargetMoonResolver
 import studio.freestyle.labs.danjiangsunseeker.domain.usecase.TowerTargetSunResolver
 import studio.freestyle.labs.danjiangsunseeker.domain.premium.PremiumGate
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -32,6 +33,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -53,6 +55,7 @@ class FocalSimulatorViewModel @Inject constructor(
     private val customHotspotStore: CustomHotspotStore,
     private val towerTargetStore: TowerTargetStore,
     private val targetSunResolver: TowerTargetSunResolver,
+    private val targetMoonResolver: TowerTargetMoonResolver,
     private val tideDataSource: TideDataSource,
     private val premiumGate: PremiumGate,
     savedStateHandle: SavedStateHandle,
@@ -133,8 +136,11 @@ class FocalSimulatorViewModel @Inject constructor(
                     }
                     else -> _state.value.body
                 }
+                val bodyChanged = body != _state.value.body
                 _state.value = _state.value.copy(premiumUnlocked = unlocked, body = body)
-                recompute()
+                // 天體有變（解鎖後套用跳轉的月亮、或鎖定時強制回太陽）需重新錨定焦點時刻；
+                // 否則僅 premium 狀態變動，重算即可。
+                if (bodyChanged) resetTimeToSunset() else recompute()
             }
             .launchIn(viewModelScope)
 
@@ -146,13 +152,10 @@ class FocalSimulatorViewModel @Inject constructor(
     /** 切換模擬天體（太陽 / 月亮）。月亮為付費功能，鎖定時忽略。 */
     fun setBody(body: CelestialBody) {
         if (body == CelestialBody.MOON && !_state.value.premiumUnlocked) return
-        // 切回太陽時，把可能落在隔日的時間夾回當日範圍
-        val maxMin = if (body == CelestialBody.MOON) MOON_MAX_MINUTE else 24 * 60 - 1
-        _state.value = _state.value.copy(
-            body = body,
-            timeMinuteOfDay = _state.value.timeMinuteOfDay.coerceAtMost(maxMin),
-        )
-        recompute()
+        _state.value = _state.value.copy(body = body)
+        // 切換天體後重新把時間錨定到該天體的「穿塔」焦點時刻
+        // （太陽→視日落前後降段、月亮→月出後上升段；resetTimeToSunset 內依 body 分流）。
+        viewModelScope.launch { resetTimeToSunset() }
     }
 
     /**
@@ -235,12 +238,23 @@ class FocalSimulatorViewModel @Inject constructor(
         val events = withContext(Dispatchers.Default) {
             sunCalc.dailyEvents(s.date, s.observer)
         }
-        val targetEvent = withContext(Dispatchers.Default) {
-            targetSunResolver.resolve(s.date, s.observer, s.towerTarget)
+        // 依天體解析「穿塔」焦點時刻：月亮用月亮版解析器（以月出為錨點找上升穿越目標仰角），
+        // 太陽用太陽版（以視日落為錨點找下降穿越）。月亮模式可跨夜到隔日，故用與當日午夜的
+        // 時間差計算分鐘數（保留 >= 1440 的跨日偏移），上限夾到 MOON_MAX_MINUTE。
+        val moonEvent = if (s.body == CelestialBody.MOON) {
+            withContext(Dispatchers.Default) { targetMoonResolver.resolve(s.date, s.observer, s.towerTarget) }
+        } else {
+            null
         }
-        val defaultMinute = targetEvent.time
-            ?.toLocalTime()
-            ?.let { it.hour * 60 + it.minute }
+        val targetTime: ZonedDateTime? = if (s.body == CelestialBody.MOON) {
+            moonEvent?.time
+        } else {
+            withContext(Dispatchers.Default) { targetSunResolver.resolve(s.date, s.observer, s.towerTarget).time }
+        }
+        val midnight = s.date.atStartOfDay(ZoneId.of("Asia/Taipei"))
+        val maxMin = if (s.body == CelestialBody.MOON) MOON_MAX_MINUTE else 24 * 60 - 1
+        val defaultMinute = targetTime
+            ?.let { Duration.between(midnight, it).toMinutes().toInt().coerceIn(0, maxMin) }
             ?: events.sunset
             ?.toLocalTime()
             ?.let { it.hour * 60 + it.minute }
@@ -248,6 +262,8 @@ class FocalSimulatorViewModel @Inject constructor(
         _state.value = _state.value.copy(
             sunsetTime = events.sunset?.toLocalTime(),
             timeMinuteOfDay = defaultMinute,
+            // 月亮模式：記錄此對齊屬月出段或月落段，供畫面標示（太陽模式為 null）。
+            moonAscending = moonEvent?.ascending,
         )
         recompute()
     }
@@ -468,6 +484,8 @@ data class FocalSimulatorState(
     val body: CelestialBody = CelestialBody.SUN,
     /** 月相/潮汐付費功能是否解鎖（決定是否顯示月亮切換）。 */
     val premiumUnlocked: Boolean = false,
+    /** 月亮對齊屬月出段(true)或月落段(false)；太陽模式或當日無穿越為 null。 */
+    val moonAscending: Boolean? = null,
     /** 八里端（主跨 450m）是否在畫面左側；由觀察者方位動態計算 */
     val baliIsOnLeft: Boolean = true,
     /** 八里跨度（450m）在畫面中的寬度比例；隨焦段縮放 */

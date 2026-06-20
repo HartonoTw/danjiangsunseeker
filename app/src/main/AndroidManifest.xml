@@ -91,9 +91,9 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="${googleMapsApiKey}" />
 
-        <!-- AdMob App ID。目前為 Google 官方「測試」App ID；上架前須換成正式 App ID。 -->
+        <!-- AdMob App ID。實際值見 res/values/ads.xml。 -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713" />
+            android:value="@string/admob_app_id" />
     </application>
 </manifest>

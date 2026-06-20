@@ -263,6 +263,12 @@
 
     <!-- Changelog page -->
     <string name="changelog_title">Changelog</string>
+    <string-array name="changelog_1_1">
+        <item>Fixed the moon prediction in Focus, and labeled moonrise / moonset.</item>
+    </string-array>
+    <string-array name="changelog_1_0">
+        <item>Official launch.</item>
+    </string-array>
     <string-array name="changelog_0_12">
         <item>Added premium feature: moon &amp; tide.</item>
         <item>Adjusted page layout.</item>

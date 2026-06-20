@@ -16,15 +16,14 @@ import kotlin.math.abs
 /**
  * 「月亮穿塔」日曆掃描 (付費功能) — [ScanGoldenCalendarUseCase] 的月亮版。
  *
- * 對每個 (日期 × 熱點)，以**月落瞬間**的月亮方位與「觀察者→主塔」方位比較，
- * 偏差在容差內即為「月亮對齊日」。回傳 [GoldenDate] (isMoon = true) 以重用日曆 UI。
- *
- * Note: v1 以月落 (地平方位) 為基準，未細分塔頂/塔基目標仰角；日後可比照
- *   [TowerTargetSunResolver] 加一個月亮版解析器以對應不同目標高度。
+ * 對每個 (日期 × 熱點)，以 [TowerTargetMoonResolver] 找月亮穿越目標仰角 (塔頂 / 塔基) 的最佳
+ * 時刻 — 可能是**月出段 (上升穿塔)** 或**月落段 (下降穿塔)**，取與主塔方位對齊最佳者。偏差在容差
+ * 內即為「月亮對齊日」。回傳 [GoldenDate] (isMoon = true，moonAscending 標示月出/月落) 以重用日曆 UI。
  */
 class ScanMoonCalendarUseCase @Inject constructor(
     private val moonCalc: MoonCalcDataSource,
     private val tideDataSource: TideDataSource,
+    private val targetMoonResolver: TowerTargetMoonResolver,
 ) {
     operator fun invoke(
         fromDate: LocalDate,
@@ -45,11 +44,12 @@ class ScanMoonCalendarUseCase @Inject constructor(
         for (d in 0 until days) {
             val date = fromDate.plusDays(d.toLong())
             for (hotspot in hotspots) {
-                val moonset = moonCalc.moonTimes(date, hotspot.position).set ?: continue
-                // 排除月落落在白天時段 (10:00–16:00)：天空太亮，月亮幾乎看不見
-                val setLocal = moonset.toLocalTime()
-                if (setLocal >= DAYTIME_EXCLUDE_START && setLocal < DAYTIME_EXCLUDE_END) continue
-                val moonAz = moonCalc.moonPositionAt(moonset, hotspot.position).azimuthDegrees
+                val moonEvent = targetMoonResolver.resolve(date, hotspot.position, target)
+                val moonAz = moonEvent.azimuthDegrees ?: continue
+                val eventTime = moonEvent.time ?: continue
+                // 排除穿塔時刻落在白天時段 (10:00–16:00)：天空太亮，月亮幾乎看不見
+                val localT = eventTime.toLocalTime()
+                if (localT >= DAYTIME_EXCLUDE_START && localT < DAYTIME_EXCLUDE_END) continue
                 val towerBearing = hotspotBearings.getValue(hotspot)
                 val offset = Geodesy.signedAzimuthDelta(moonAz, towerBearing)
                 if (abs(offset) <= maxOffsetDegrees) {
@@ -60,12 +60,13 @@ class ScanMoonCalendarUseCase @Inject constructor(
                     result += GoldenDate(
                         date = date,
                         hotspot = hotspot,
-                        sunsetTime = moonset,
+                        sunsetTime = eventTime,
                         sunsetAzimuthDegrees = moonAz,
                         towerBearingDegrees = towerBearing,
                         alignmentOffsetDegrees = offset,
                         towerTarget = target,
                         isMoon = true,
+                        moonAscending = moonEvent.ascending,
                         moonFractionLit = frac,
                         moonWaxing = waxing,
                         tideInfo = tide,
@@ -77,7 +78,7 @@ class ScanMoonCalendarUseCase @Inject constructor(
     }
 
     private companion object {
-        /** 月落落在此白天時段內排除 (天空太亮，月亮幾乎不可見)：10:00–16:00。 */
+        /** 穿塔時刻落在此白天時段內排除 (天空太亮，月亮幾乎不可見)：10:00–16:00。 */
         val DAYTIME_EXCLUDE_START: LocalTime = LocalTime.of(10, 0)
         val DAYTIME_EXCLUDE_END: LocalTime = LocalTime.of(16, 0)
         /** 亮面比例低於此值視為「月亮全黑」(近新月) 而排除。 */

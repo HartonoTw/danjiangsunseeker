@@ -263,6 +263,12 @@
 
     <!-- Changelog page -->
     <string name="changelog_title">更新日誌</string>
+    <string-array name="changelog_1_1">
+        <item>修正「焦點」月亮的預測，並標示月出及月落。</item>
+    </string-array>
+    <string-array name="changelog_1_0">
+        <item>正式上線。</item>
+    </string-array>
     <string-array name="changelog_0_12">
         <item>新增付費功能：月亮與潮汐。</item>
         <item>調整頁面配置。</item>

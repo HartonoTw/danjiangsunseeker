@@ -263,13 +263,29 @@ private fun GoldenDateRow(
                     }
                 }
                 Spacer(Modifier.height(2.dp))
-                Text(
+                val timeLabel = golden.sunsetTime?.toLocalTime()
+                    ?.let { "%02d:%02d".format(it.hour, it.minute) }
+                    ?: stringResource(R.string.value_none)
+                val offsetLabel = "%+.2f".format(golden.alignmentOffsetDegrees)
+                // 月亮模式：在偏差後附上月出/月落標示；太陽模式維持原格式。
+                val detailText = if (golden.isMoon && golden.moonAscending != null) {
+                    stringResource(
+                        R.string.calendar_moon_row_detail,
+                        towerTargetLabel(golden.towerTarget),
+                        timeLabel,
+                        offsetLabel,
+                        stringResource(if (golden.moonAscending) R.string.moon_rise else R.string.moon_set),
+                    )
+                } else {
                     stringResource(
                         R.string.calendar_row_detail,
                         towerTargetLabel(golden.towerTarget),
-                        golden.sunsetTime?.toLocalTime()?.let { "%02d:%02d".format(it.hour, it.minute) } ?: stringResource(R.string.value_none),
-                        "%+.2f".format(golden.alignmentOffsetDegrees),
-                    ),
+                        timeLabel,
+                        offsetLabel,
+                    )
+                }
+                Text(
+                    detailText,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.outline,
                 )

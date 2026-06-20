@@ -11,12 +11,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
-
-/**
- * Google 官方「測試」橫幅廣告單元 ID。
- * 上架前須換成 AdMob 後台建立的正式 Banner 單元 ID（搭配 Manifest 的正式 App ID）。
- */
-private const val TEST_BANNER_AD_UNIT_ID = "ca-app-pub-3940256099942544/6300978111"
+import studio.freestyle.labs.danjiangsunseeker.R
 
 /**
  * 底部自適應 (anchored adaptive) 橫幅廣告。高度依螢幕寬度由 SDK 決定。
@@ -31,7 +26,7 @@ fun BannerAd(modifier: Modifier = Modifier) {
     val adView = remember {
         AdView(context).apply {
             setAdSize(AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(context, adWidthDp))
-            adUnitId = TEST_BANNER_AD_UNIT_ID
+            adUnitId = context.getString(R.string.admob_banner_unit_id)
             loadAd(AdRequest.Builder().build())
         }
     }

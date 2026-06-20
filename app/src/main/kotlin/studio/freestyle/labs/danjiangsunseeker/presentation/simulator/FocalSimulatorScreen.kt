@@ -210,6 +210,14 @@ fun FocalSimulatorScreen(vm: FocalSimulatorViewModel = hiltViewModel()) {
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                // 標示此對齊屬月出段或月落段
+                state.moonAscending?.let { asc ->
+                    Text(
+                        "· " + stringResource(if (asc) R.string.moon_rise else R.string.moon_set),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
             }
             // 潮汐：與月相一起顯示當日高低潮
             val tide = state.tideInfo
@@ -276,9 +284,9 @@ private fun CompactFocalSlider(
         }
         Slider(
             modifier = Modifier.weight(1f),
-            value = focalLengthMm.toFloat().coerceAtMost(300f),
+            value = focalLengthMm.toFloat().coerceIn(9f, 300f),
             onValueChange = onChange,
-            valueRange = 14f..300f,
+            valueRange = 9f..300f,
         )
     }
 }
@@ -381,7 +389,7 @@ private fun DrawScope.drawBridge(state: FocalSimulatorState, w: Float, h: Float)
     if (topY >= deckY) return   // 主塔不在畫面內
 
     // ── 主塔視覺寬度
-    //   下限 5px：避免廣角(14mm)時塔細到消失
+    //   下限 5px：避免廣角(9mm)時塔細到消失
     //   上限 6% 畫面寬：避免望遠(300mm)時塔變成牆壁；按畫面尺度等比放大，
     //   而非寫死 9px——否則 zoom in 時塔只變高不變寬，視覺上像被「拉長」
     val physW = ((state.towerRightFrac - state.towerLeftFrac).toFloat() * w)
