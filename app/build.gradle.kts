@@ -25,7 +25,7 @@ android {
         applicationId = "studio.freestyle.labs.danjiangsunseeker"
         minSdk = 26
         targetSdk = 35
-        versionCode = 120
+        versionCode = 121
         versionName = "1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -62,6 +62,13 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            // 把原生 .so 的符號表打包進 AAB，Play 才能還原當機堆疊。
+            // 現況：本專案沒有自己的 native code，.so 全來自 MapLibre / ARCore / CameraX 等
+            // 第三方 AAR 且出廠即 strip（無 .symtab），故此設定目前不會產出任何符號檔，
+            // Play 的「尚未上傳偵錯符號檔」警告無法消除。保留設定是為了日後若加入自有 native code。
+            ndk {
+                debugSymbolLevel = "SYMBOL_TABLE"
+            }
         }
     }
 
