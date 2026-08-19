@@ -133,7 +133,7 @@ dependencies {
     implementation(libs.guava)
 
     // Billing (Google Play 應用程式內購買)
-    implementation(libs.billing.ktx)
+    implementation(libs.billing)
 
     // Tests
     testImplementation(libs.junit)

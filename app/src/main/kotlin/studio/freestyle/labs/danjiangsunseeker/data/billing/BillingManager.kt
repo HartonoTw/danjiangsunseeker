@@ -45,6 +45,8 @@ class BillingManager @Inject constructor(
         .enablePendingPurchases(
             PendingPurchasesParams.newBuilder().enableOneTimeProducts().build(),
         )
+        // Billing 8+：斷線後由程式庫自動重連，不必自行在 onBillingServiceDisconnected 重試。
+        .enableAutoServiceReconnection()
         .build()
 
     @Volatile private var productDetails: ProductDetails? = null
@@ -69,7 +71,7 @@ class BillingManager @Inject constructor(
     }
 
     override fun onBillingServiceDisconnected() {
-        // 下次需要時再由 start() 重新連線即可。
+        // 已開啟 enableAutoServiceReconnection()，程式庫會自行重連；start() 仍可作為備援。
     }
 
     private fun queryProductDetails() {
@@ -83,9 +85,15 @@ class BillingManager @Inject constructor(
                 ),
             )
             .build()
-        billingClient.queryProductDetailsAsync(params) { result, products ->
+        // Billing 8+：回呼第二個參數改為 QueryProductDetailsResult（含未取得商品清單）。
+        billingClient.queryProductDetailsAsync(params) { result, productDetailsResult ->
             if (result.responseCode == BillingClient.BillingResponseCode.OK) {
-                productDetails = products.firstOrNull()
+                productDetails = productDetailsResult.productDetailsList.firstOrNull()
+                if (productDetails == null) {
+                    val unfetched = productDetailsResult.unfetchedProductList
+                        .joinToString { "${it.productId}(${it.statusCode})" }
+                    Log.w(TAG, "queryProductDetails returned no product; unfetched=[$unfetched]")
+                }
             } else {
                 Log.w(TAG, "queryProductDetails failed: ${result.debugMessage}")
             }

@@ -30,7 +30,7 @@ cameraX = "1.4.1"
 playServicesLocation = "21.3.0"
 playServicesAds = "23.6.0"
 guava = "33.3.1-android"
-billing = "7.1.1"
+billing = "9.1.0"
 
 junit = "4.13.2"
 androidxTestExt = "1.2.1"
@@ -114,7 +114,9 @@ play-services-ads = { group = "com.google.android.gms", name = "play-services-ad
 guava = { group = "com.google.guava", name = "guava", version.ref = "guava" }
 
 # Billing：Google Play 應用程式內購買（升級專業版）。提供 Play 所需的 Billing Library 版本資訊。
-billing-ktx = { group = "com.android.billingclient", name = "billing-ktx", version.ref = "billing" }
+# 用純 Java 的 billing 而非 billing-ktx：ktx 從 9.x 以 Kotlin 2.3 編譯，本專案 Kotlin 2.1 讀不到其 metadata；
+# BillingManager 只用 callback API，不需要 ktx 的 suspend 擴充函式。
+billing = { group = "com.android.billingclient", name = "billing", version.ref = "billing" }
 
 # Tests
 junit = { group = "junit", name = "junit", version.ref = "junit" }
