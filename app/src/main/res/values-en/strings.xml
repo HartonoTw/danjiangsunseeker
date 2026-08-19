@@ -10,6 +10,7 @@
     <string name="hotspot_bali">Bali Left Bank Park</string>
     <string name="hotspot_tamsui_ferry">Tamsui Ferry Pier</string>
     <string name="hotspot_bali_ferry">Bali Ferry Pier</string>
+    <string name="hotspot_coconut_bend">Coconut Palm Bend</string>
     <string name="hotspot_starbucks">Riverside Starbucks (Tamsui)</string>
     <string name="hotspot_customs_wharf">Tamsui Customs Wharf</string>
     <string name="hotspot_mackay_landing">Mackay Landing</string>
@@ -18,6 +19,7 @@
     <string name="hotspot_tamsui_mrt">Tamsui MRT</string>
 
     <!-- Hotspot descriptions -->
+    <string name="hotspot_desc_coconut_bend">Coconut Palm Bend on the north bank of the Tamsui River, ~1.4 km from the tower (due west, ~271°). **Two alignment windows a year: late March and late September** (the sun passes 271° just after the spring equinox / before the autumn equinox). The roadside palms give you a ready-made foreground, and at 22.5 m the sightline clears the embankment.</string>
     <string name="hotspot_desc_starbucks">Riverside Starbucks in Tamsui, with glass-window views, ~2.0 km from the tower (WNW, ~283°). **The best chance to catch the sun through the tower is around the summer solstice.** A relaxed vantage point — the comfiest fallback when perfect alignment isn\'t in season.</string>
     <string name="hotspot_desc_customs_wharf">The historic Customs Wharf, ~1.4 km from the tower (due west, ~274°). **Two alignment windows a year: early April and mid-September** (the sun passes 274° just after the spring equinox / before the autumn equinox). Heritage brick walls plus the bridge sunset make for a rich, historical composition.</string>
     <string name="hotspot_desc_mackay_landing">Mackay Landing, ~2.0 km from the tower (WNW, ~283°). Like the other Tamsui-bank spots, its high-azimuth alignment window is **around the summer solstice (late May, late July).**</string>
@@ -263,6 +265,10 @@
 
     <!-- Changelog page -->
     <string name="changelog_title">Changelog</string>
+    <string-array name="changelog_1_2">
+        <item>Added hotspot: Coconut Palm Bend.</item>
+        <item>Updated Google Play Billing Library.</item>
+    </string-array>
     <string-array name="changelog_1_1">
         <item>Fixed the moon prediction in Focus, and labeled moonrise / moonset.</item>
     </string-array>

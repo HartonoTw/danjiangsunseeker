@@ -11,6 +11,14 @@ object DefaultHotspots {
 
     // ============== 北岸 (淡水側) — 由西到東 ==============
 
+    val COCONUT_BEND = Hotspot(
+        id = "coconut_bend",
+        nameRes = R.string.hotspot_coconut_bend,
+        customName = null,
+        position = GeoPoint(25.175044, 121.431183, elevationMeters = 22.5),
+        descriptionRes = R.string.hotspot_desc_coconut_bend,
+    )
+
     val STARBUCKS = Hotspot(
         id = "starbucks",
         nameRes = R.string.hotspot_starbucks,
@@ -87,6 +95,7 @@ object DefaultHotspots {
 
     val ALL: List<Hotspot> = listOf(
         // 北岸 (淡水) — 由西到東
+        COCONUT_BEND,
         STARBUCKS,
         CUSTOMS_WHARF,
         MACKAY_LANDING,

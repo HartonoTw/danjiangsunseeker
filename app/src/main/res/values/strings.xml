@@ -10,6 +10,7 @@
     <string name="hotspot_bali">八里左岸公園</string>
     <string name="hotspot_tamsui_ferry">淡水渡船頭</string>
     <string name="hotspot_bali_ferry">八里渡船頭</string>
+    <string name="hotspot_coconut_bend">椰子樹彎道</string>
     <string name="hotspot_starbucks">淡水河岸星巴克</string>
     <string name="hotspot_customs_wharf">海關碼頭</string>
     <string name="hotspot_mackay_landing">馬偕上岸處</string>
@@ -18,6 +19,7 @@
     <string name="hotspot_tamsui_mrt">淡水捷運</string>
 
     <!-- Hotspot descriptions -->
+    <string name="hotspot_desc_coconut_bend">淡水河北岸椰子樹彎道，距主塔約 1.4 km。主塔位於正西方 (~271°)，**每年兩個對齊窗口：約 3 月下旬與 9 月下旬**（春分後 / 秋分前太陽方位通過 271°）。路旁椰子樹是現成前景，海拔 22.5 m 高於河岸步道，視線可越過堤防更開闊。</string>
     <string name="hotspot_desc_starbucks">淡水河岸星巴克，玻璃窗景觀，距主塔約 2.0 km，主塔在西北西方向 (約 283°)，**夏至前後最有機會看到夕陽穿塔**。閒適視角，等不到完美對齊時最舒服的退路。</string>
     <string name="hotspot_desc_customs_wharf">海關碼頭歷史古蹟，距主塔約 1.4 km。主塔位於正西方 (~274°)，**每年兩個對齊窗口：約 4 月初與 9 月中**（春分後 / 秋分前太陽方位通過 274°）。古蹟磚牆 + 大橋日落構圖極具歷史感。</string>
     <string name="hotspot_desc_mackay_landing">馬偕上岸處，距主塔約 2.0 km。主塔位於 WNW (~283°)，與淡水河岸其他點同屬**夏至前後（5 月底、7 月底）**的高方位對齊窗口。</string>
@@ -263,6 +265,10 @@
 
     <!-- Changelog page -->
     <string name="changelog_title">更新日誌</string>
+    <string-array name="changelog_1_2">
+        <item>新增熱點：椰子樹彎道。</item>
+        <item>更新 Google Play Billing Library。</item>
+    </string-array>
     <string-array name="changelog_1_1">
         <item>修正「焦點」月亮的預測，並標示月出及月落。</item>
     </string-array>

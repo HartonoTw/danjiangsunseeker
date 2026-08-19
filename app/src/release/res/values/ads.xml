@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    RELEASE build 專用：AdMob 後台建立的「正式」App ID 與廣告單元 ID。
+    TODO: 將下方 App ID 的 REPLACE_ME 換成 AdMob 後台「應用程式設定」的正式 App ID 再出版。
+-->
+<resources>
+    <!-- AdMob App ID（正式）。~ 後面那串請到 AdMob 後台查 -->
+    <string name="admob_app_id" translatable="false">ca-app-pub-8942247871867765~3702176513</string>
+
+    <!-- 底部自適應橫幅廣告單元（正式） -->
+    <string name="admob_banner_unit_id" translatable="false">ca-app-pub-8942247871867765/4851311506</string>
+
+    <!-- 獎勵式影片廣告單元（正式） -->
+    <string name="admob_rewarded_unit_id" translatable="false">ca-app-pub-8942247871867765/5191393719</string>
+</resources>

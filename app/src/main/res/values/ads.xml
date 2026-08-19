@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    AdMob ID 依 build type 分流：
+      debug   → 此檔 + src/debug/res/values/ads.xml   （Google 官方測試 ID）
+      release → src/release/res/values/ads.xml          （AdMob 後台正式 ID，覆寫 App ID 與兩個單元 ID）
+    這裡的 App ID 為測試值，供 debug build 使用；release build 會以 release/ads.xml 覆寫。
+    這些值不需翻譯，故標示 translatable="false"。
+-->
+<resources>
+    <!-- AdMob App ID（測試，debug 用；搭配 AndroidManifest 的 APPLICATION_ID meta-data） -->
+    <string name="admob_app_id" translatable="false">ca-app-pub-3940256099942544~3347511713</string>
+</resources>

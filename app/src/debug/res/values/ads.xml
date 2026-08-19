@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    DEBUG build 專用：Google 官方「測試」廣告單元 ID。
+    開發/測試請務必使用測試 ID，避免因點擊自己的正式廣告被 AdMob 停權。
+-->
+<resources>
+    <!-- 底部自適應橫幅廣告單元（測試） -->
+    <string name="admob_banner_unit_id" translatable="false">ca-app-pub-3940256099942544/6300978111</string>
+
+    <!-- 獎勵式影片廣告單元（測試） -->
+    <string name="admob_rewarded_unit_id" translatable="false">ca-app-pub-3940256099942544/5224354917</string>
+</resources>
