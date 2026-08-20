@@ -19,14 +19,14 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "studio.freestyle.labs.danjiangsunseeker"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "studio.freestyle.labs.danjiangsunseeker"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 121
-        versionName = "1.2"
+        targetSdk = 36
+        versionCode = 122
+        versionName = "1.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 

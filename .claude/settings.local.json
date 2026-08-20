@@ -57,7 +57,9 @@
       "Bash(./gradlew :app:compileDebugKotlin :app:processDebugResources --console=plain)",
       "Bash(./gradlew :app:processDebugResources :app:processDebugManifest --console=plain)",
       "Bash(./gradlew :app:processDebugManifest --console=plain)",
-      "Bash(adb devices *)"
+      "Bash(adb devices *)",
+      "Bash(curl -s --max-time 25 https://dl.google.com/dl/android/maven2/com/android/billingclient/billing-ktx/maven-metadata.xml)",
+      "Bash(keytool -printcert -jarfile \"D:/AI/danjiangsunseeker/app/release/app-release.aab\")"
     ]
   }
 }
